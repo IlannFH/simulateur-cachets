@@ -15,7 +15,10 @@ export const REGLAGES_DEFAUT = {
   pack: 'pack1', // Movinmotion : Pack 1 à 1,45 € HT le crédit
 };
 
-export const optionIntermediaire = (data, id) => data.intermediaires.options.find((o) => o.id === id) || data.intermediaires.options[0];
+export const optionIntermediaire = (data, id) => {
+  const options = (data.intermediaires?.options || []).filter((o) => o.id !== 'direct');
+  return options.find((o) => o.id === id) || options[0];
+};
 
 const enCredits = (o) => !!(o?.credits && o.packs?.length);
 

@@ -650,7 +650,7 @@ describe('Solutions de budget', () => {
   });
 
   it('réduit les heures seulement quand un taux horaire est publié', () => {
-    const regs = { ...REGLAGES_DEFAUT, intermediaire: 'direct', formule: 'aucune' };
+    const regs = { ...REGLAGES_DEFAUT, intermediaire: 'culturepay' };
     const large = solutionsBudget(data, { jobs, famille: 'hmc', typeProjet: 'spectacle', heures: 8, kind: 'heure', budgetEuros: 5000, reglages: regs });
     const heure = large.options.find((o) => o.kind === 'heure');
     expect(heure.reduit.heuresMax).toBe(8);
@@ -687,31 +687,32 @@ describe('Solutions de budget', () => {
     expect(guso.avertissements.join(' ')).toMatch(/spectacle vivant/);
     const s = solutionsBudget(data, { ...baseOpts, budgetEuros: 250 });
     expect(s.intermediaires.find((x) => x.id === 'culturepay').fraisCents).toBe(1790);
+    expect(s.intermediaires.some((x) => x.id === 'direct')).toBe(false);
   });
 
-  it('250 € pour un élec en clip : une reco, le moins cher réel, sans heure inventée', () => {
+  it('250 € pour un élec en clip : CulturePay, le moins cher au tarif public, sans heure inventée', () => {
     const s = solutionsBudget(data, { ...baseOpts, budgetEuros: 250 });
-    expect(s.reco.id).toBe('direct');
-    expect(s.reco.total).toBe(34707);
+    expect(s.reco.id).toBe('culturepay');
+    expect(s.reco.total).toBe(36497);
     expect(s.reco.brut).toBe(21076);
     expect(s.reco.net).toBe(15967);
-    expect(s.reco.texte).toBe('Passe en direct et monte à 347,07 € HT. Brut 210,76 €, net 159,67 €, coût total 347,07 € HT.');
-    expect(s.reco.texte).not.toMatch(/heure|GUSO|#DIESE|CulturePay/);
+    expect(s.reco.texte).toBe('Passe par CulturePay et monte à 364,97 € HT. Brut 210,76 €, net 159,67 €, coût total 364,97 € HT.');
+    expect(s.reco.texte).not.toMatch(/heure|GUSO|#DIESE|direct/i);
     const copie = texteResume({
       qui: 'Électricien / éclairagiste', projet: 'Clip', duree: '1 jour 8 h',
       mode: 'budget', possible: false, budgetEuros: 250, minimumCents: s.minimumHt,
       reco: s.reco.texte,
     });
-    expect(copie).toContain('Ma reco : Passe en direct et monte à 347,07 € HT.');
+    expect(copie).toContain('Ma reco : Passe par CulturePay et monte à 364,97 € HT.');
     expect(copie).not.toMatch(/Cotisations|crédits/);
   });
 
-  it('déjà en direct : on monte le budget, sans changer d’intermédiaire', () => {
+  it('déjà chez CulturePay : on monte le budget, sans changer d’intermédiaire', () => {
     const s = solutionsBudget(data, {
       ...baseOpts, budgetEuros: 250,
-      reglages: { ...REGLAGES_DEFAUT, intermediaire: 'direct', formule: 'aucune' },
+      reglages: { ...REGLAGES_DEFAUT, intermediaire: 'culturepay' },
     });
-    expect(s.reco.texte).toBe('Monte le budget à 347,07 € HT. Brut 210,76 €, net 159,67 €, coût total 347,07 € HT.');
+    expect(s.reco.texte).toBe('Monte le budget à 364,97 € HT. Brut 210,76 €, net 159,67 €, coût total 364,97 € HT.');
   });
 
   it('un budget qui passe confirme l’option, sans dire de monter', () => {
@@ -723,16 +724,16 @@ describe('Solutions de budget', () => {
     expect(s.reco.total).toBe(s.options[0].total);
   });
 
-  it('entre CulturePay et Movinmotion : le direct tient, on ne monte pas', () => {
+  it('370 € : CulturePay tient, Movinmotion non, on ne monte pas', () => {
     const s = solutionsBudget(data, { ...baseOpts, budgetEuros: 370 });
     expect(s.options[0].possible).toBe(false);
     expect(s.reco.possible).toBe(true);
-    expect(s.reco.id).toBe('direct');
-    expect(s.reco.texte).toBe('Passe en direct. Brut 224,99 €, net 170,80 €, coût total 369,99 € HT.');
+    expect(s.reco.id).toBe('culturepay');
+    expect(s.reco.texte).toBe('Passe par CulturePay. Brut 213,83 €, net 161,98 €, coût total 370,00 € HT.');
   });
 
   it('raccourcit seulement quand la grille publie l’heure', () => {
-    const regs = { ...REGLAGES_DEFAUT, intermediaire: 'direct', formule: 'aucune' };
+    const regs = { ...REGLAGES_DEFAUT, intermediaire: 'culturepay' };
     const large = solutionsBudget(data, { jobs, famille: 'hmc', typeProjet: 'spectacle', heures: 8, kind: 'heure', budgetEuros: 5000, reglages: regs });
     const heure = large.options.find((o) => o.kind === 'heure');
     const r3 = convertirBudget(data, { ...heure.poste, quantite: 3, demande: null }, 100000, regs);
@@ -742,8 +743,9 @@ describe('Solutions de budget', () => {
     });
     expect(s.reco.heures).toBe(3);
     expect(s.reco.heures).toBeLessThan(8);
-    expect(s.reco.texte).toMatch(/^Passe à 3 h\. Brut .+ net .+ coût total .+ HT\.$/);
-    expect(s.reco.texte).not.toMatch(/monte/);
+    expect(s.reco.id).not.toBe('direct');
+    expect(s.reco.texte).toMatch(/^Passe par Smart, à 3 h\. Brut .+ net .+ coût total .+ HT\.$/);
+    expect(s.reco.texte).not.toMatch(/monte|direct/i);
     const clip = solutionsBudget(data, { ...baseOpts, budgetEuros: 250 });
     expect(clip.reco.heures).toBeNull();
     expect(clip.reco.texte).not.toMatch(/\d+ h/);

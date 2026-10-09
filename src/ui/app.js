@@ -594,7 +594,8 @@ function htmlReglages() {
   const credit = !!(o.credits && o.packs?.length);
   const ab = credit ? o.credits.abonnement : (o.abonnement_mensuel_ht && typeof o.abonnement_mensuel_ht === 'object' ? o.abonnement_mensuel_ht : null);
   const pack = credit ? E.packChoisi(o, r) : null;
-  let h = `<label class="lbl" for="r-intermediaire">Intermédiaire</label><select id="r-intermediaire" data-r="intermediaire">${DATA.intermediaires.options.map((x) => `<option value="${x.id}" ${x.id === r.intermediaire ? 'selected' : ''}>${esc(x.nom.split(' (')[0])}</option>`).join('')}</select>`;
+  const choixInter = DATA.intermediaires.options.filter((x) => x.id !== 'direct');
+  let h = `<label class="lbl" for="r-intermediaire">Intermédiaire</label><select id="r-intermediaire" data-r="intermediaire">${choixInter.map((x) => `<option value="${x.id}" ${x.id === r.intermediaire ? 'selected' : ''}>${esc(x.nom.split(' (')[0])}</option>`).join('')}</select>`;
   if (credit) {
     h += `<label class="lbl" for="r-pack">Pack de crédits</label><select id="r-pack" data-r="pack">${o.packs.map((pk) => `<option value="${esc(pk.id)}" ${pk.id === pack.id ? 'selected' : ''}>${esc(pk.nom)} · ${esc(E.formatFrNombre(pk.credits))} crédits · ${esc(E.formatDecimal(E.toCents(pk.prix_credit_ht)))} €</option>`).join('')}</select><p class="lbl">Prix HT, TVA en plus.</p>`;
   }
@@ -875,7 +876,7 @@ function renderSources() {
   let h = `<div class="sources-grid"><section><h2>Sources</h2><p class="lbl">Données du ${esc(E.formatDateFr(DATA._meta.genere_le))}.</p><ul class="sources-list">`;
   for (const [k, url] of Object.entries(DATA._meta.sources)) h += `<li><code>${esc(k)}</code> ${lien(url, url)}</li>`;
   h += `</ul><h2>Intermédiaires</h2><ul class="sources-list">`;
-  for (const o of DATA.intermediaires.options) {
+  for (const o of DATA.intermediaires.options.filter((x) => x.id !== 'direct')) {
     const urls = Array.isArray(o.source) ? o.source : (o.source ? [o.source] : []);
     h += `<li>${esc(o.nom.split(' (')[0])} — ${esc(o.note || '')} ${urls.map((u) => lien(u, u)).join(' ')}</li>`;
   }
@@ -979,6 +980,9 @@ async function init() {
   state.reglages = { ...E.REGLAGES_DEFAUT, ...lsGet(LS.reglages, {}) };
   delete state.reglages.valeurCredit;
   delete state.reglages.prorata;
+  if (!DATA.intermediaires.options.some((o) => o.id === state.reglages.intermediaire && o.id !== 'direct')) {
+    state.reglages.intermediaire = E.REGLAGES_DEFAUT.intermediaire;
+  }
   const optReglages = E.optionIntermediaire(DATA, state.reglages.intermediaire);
   if (optReglages.packs?.length && !optReglages.packs.some((p) => p.id === state.reglages.pack)) {
     state.reglages.pack = optReglages.pack_defaut || optReglages.packs[0].id;

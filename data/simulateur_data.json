@@ -2175,16 +2175,6 @@
   "_date_releve": "09/10/2026",
   "options": [
    {
-    "id": "direct",
-    "nom": "En direct (paie interne)",
-    "prix_par_bulletin_ht": 0,
-    "prix_par_contrat_ht": 0,
-    "abonnement_mensuel_ht": 0,
-    "pourcentage": 0,
-    "source": null,
-    "note": "Aucun frais d'intermédiaire."
-   },
-   {
     "id": "movinmotion",
     "nom": "Movinmotion (utilisé par Facteur Humain)",
     "pourcentage": 0,
