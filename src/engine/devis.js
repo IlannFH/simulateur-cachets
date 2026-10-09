@@ -1,0 +1,198 @@
+// Ligne complète (minimum → brut → cotisations → intermédiaire) et devis d'équipe.
+import { toCents, mul, pctOf, roundInt, formatEuros } from './money.js';
+import { calculerMinimum, comparerDemande } from './poste.js';
+import { calculerCotisations } from './cotisations.js';
+
+const CONVENTIONS_AUDIOVISUELLES = ['3097_pub', '3097_cinema', '2642', '2412'];
+
+export const REGLAGES_DEFAUT = {
+  intermediaire: 'movinmotion',
+  formule: 'basic', // abonnement Movinmotion : basic | premium | aucune
+  mois: 1,
+  prorata: false,
+  premiereInscription: false,
+  valeurCredit: null, // null = valeur par défaut du JSON
+  signature: false,
+};
+
+export const optionIntermediaire = (data, id) => data.intermediaires.options.find((o) => o.id === id) || data.intermediaires.options[0];
+
+/**
+ * Frais d'intermédiaire d'une ligne (hors abonnement).
+ * ctx : { coutEmployeurCents, convention, bulletins, contrats, signature, fraisManuel }
+ */
+export function fraisIntermediaire(data, optionId, ctx) {
+  const o = optionIntermediaire(data, optionId);
+  const bulletins = Math.max(0, Number(ctx.bulletins ?? 1));
+  const contrats = Math.max(0, Number(ctx.contrats ?? 1));
+  const details = [];
+  const avertissements = [];
+  let ht = 0;
+  let tva = 0;
+  let surDevis = false;
+
+  if (o.prix_par_bulletin_ht === null || o.prix_par_contrat_ht === null || o.pourcentage === null) surDevis = true;
+  if (o.prix_par_bulletin_ht) {
+    const m = mul(toCents(o.prix_par_bulletin_ht), bulletins);
+    ht += m; details.push({ libelle: `${bulletins} bulletin(s) × ${formatEuros(toCents(o.prix_par_bulletin_ht))}`, montant: m });
+  }
+  if (o.prix_par_contrat_ht) {
+    const m = mul(toCents(o.prix_par_contrat_ht), contrats);
+    ht += m; details.push({ libelle: `${contrats} contrat(s) × ${formatEuros(toCents(o.prix_par_contrat_ht))}`, montant: m });
+  }
+  if (ctx.signature && o.signature_electronique_contrat_ht) {
+    const m = mul(toCents(o.signature_electronique_contrat_ht), contrats);
+    ht += m; details.push({ libelle: `Signature électronique × ${contrats}`, montant: m });
+  }
+  if (o.pourcentage) {
+    const m = pctOf(ctx.coutEmployeurCents, o.pourcentage);
+    ht += m; details.push({ libelle: `${String(o.pourcentage).replace('.', ',')} % du coût employeur`, montant: m });
+    if (o.tva_sur_frais) tva = pctOf(m, o.tva_sur_frais);
+  }
+  if (surDevis) {
+    const manuel = ctx.fraisManuel === '' || ctx.fraisManuel == null ? null : toCents(ctx.fraisManuel);
+    if (manuel !== null) { ht += manuel; details.push({ libelle: 'Montant saisi (tarif sur devis)', montant: manuel }); }
+    else avertissements.push('Tarif sur devis : saisir un montant.');
+  }
+  if (o.id === 'guso') {
+    if (CONVENTIONS_AUDIOVISUELLES.includes(ctx.convention)) avertissements.push('GUSO réservé au spectacle vivant occasionnel : non utilisable pour une production audiovisuelle ou cinéma.');
+    avertissements.push("GUSO interdit si le spectacle est l'activité principale de l'employeur.");
+  }
+  return { option: o, ht, tva, details, avertissements, surDevis };
+}
+
+/** Abonnement et frais de dossier d'une option, pour le devis entier. */
+export function fraisFixes(data, optionId, reglages) {
+  const o = optionIntermediaire(data, optionId);
+  const lignes = [];
+  const mois = Math.max(0, Number(reglages.mois ?? 1));
+  const ab = o.abonnement_mensuel_ht;
+  if (ab && typeof ab === 'object') {
+    const prix = ab[reglages.formule];
+    if (prix) lignes.push({ libelle: `Abonnement ${o.nom.split(' (')[0]} ${reglages.formule === 'premium' ? 'Premium' : 'Basic'} × ${mois} mois`, montant: mul(toCents(prix), mois) });
+  } else if (typeof ab === 'number' && ab > 0) {
+    lignes.push({ libelle: `Abonnement ${o.nom} × ${mois} mois`, montant: mul(toCents(ab), mois) });
+  }
+  if (reglages.premiereInscription && o.frais_dossier_credits) {
+    const v = reglages.valeurCredit ?? o.valeur_credit_ht?.defaut;
+    lignes.push({ libelle: `Frais de dossier : ${o.frais_dossier_credits} crédits × ${String(v).replace('.', ',')} €`, montant: mul(toCents(v), o.frais_dossier_credits) });
+  }
+  return lignes;
+}
+
+/** Calcule une ligne de devis complète. */
+export function calculerLigne(data, poste, reglages = REGLAGES_DEFAUT) {
+  const min = calculerMinimum(data, poste);
+  if (!min) return null;
+  const demande = comparerDemande(min, poste.demande);
+  const brutCents = demande ? demande.cents : min.minimumCents;
+  const statut = poste.statut || { categorie: 'technicien', cadre: false };
+  const jours = Number(poste.jours) > 0 ? Number(poste.jours) : min.jours;
+  const cot = calculerCotisations(data, { brutCents, statut, idcc: min.conv.idcc, jours, abattementPct: poste.abattementPct, rgduPct: poste.rgduPct });
+  const intermediaire = poste.intermediaire || reglages.intermediaire;
+  const frais = fraisIntermediaire(data, intermediaire, {
+    coutEmployeurCents: cot.coutEmployeur, convention: poste.convention,
+    bulletins: poste.bulletins, contrats: poste.contrats, signature: reglages.signature, fraisManuel: poste.fraisManuel,
+  });
+  return { poste, min, demande, brutCents, statut, jours, cot, intermediaire, frais, coutTotal: cot.coutEmployeur + frais.ht };
+}
+
+/**
+ * Convertit un budget HT (montant facturé ou enveloppe disponible) en brut maximal pour un poste.
+ * Le budget couvre brut + cotisations patronales + frais d'intermédiaire de la ligne (hors abonnement).
+ * opts.parUnite : le budget est exprimé par unité (jour, cachet…) et multiplié par la quantité.
+ */
+export function convertirBudget(data, poste, budgetEuros, reglages = REGLAGES_DEFAUT, opts = {}) {
+  const base = calculerLigne(data, { ...poste, demande: null }, reglages);
+  if (!base) return null;
+  const quantite = base.min.quantite || 1;
+  const budgetCents = opts.parUnite ? mul(toCents(budgetEuros), quantite) : toCents(budgetEuros);
+  const cout = (brut) => calculerLigne(data, { ...poste, demande: { montant: brut / 100, mode: 'total' } }, reglages);
+  const avertissements = [];
+
+  // Le coût total croît avec le brut : recherche dichotomique du plus grand brut qui tient dans le budget
+  let lo = 0;
+  let hi = Math.max(budgetCents, 1);
+  let meilleur = null;
+  if (cout(0).coutTotal > budgetCents) {
+    avertissements.push({ niveau: 'bloquant', texte: `Impossible : les frais fixes de l'intermédiaire (${formatEuros(cout(0).frais.ht)} HT) dépassent déjà le budget.` });
+  } else {
+    while (lo <= hi) {
+      const mid = Math.floor((lo + hi) / 2);
+      const l = cout(mid);
+      if (l.coutTotal <= budgetCents) { meilleur = l; lo = mid + 1; } else hi = mid - 1;
+    }
+  }
+  const brutCents = meilleur ? meilleur.brutCents : 0;
+  const minimumCents = base.min.minimumCents;
+  const budgetMinimum = base.coutTotal;
+  const possible = !!meilleur && brutCents >= minimumCents;
+  if (meilleur && !possible) {
+    avertissements.push({
+      niveau: 'bloquant',
+      texte: `Impossible au minimum conventionnel : ce budget donne ${formatEuros(brutCents)} brut, alors que le minimum est de ${formatEuros(minimumCents)}. Il faut au moins ${formatEuros(budgetMinimum)} HT (il manque ${formatEuros(budgetMinimum - budgetCents)}). Payer moins que le minimum expose à un rappel de salaire et à une sanction.`,
+    });
+  }
+  if (base.min.nonTrouve) {
+    avertissements.push({ niveau: 'attention', texte: "Minimum conventionnel non trouvé pour ce métier : la comparaison se fait au SMIC, qui n'est qu'un plancher légal." });
+  }
+  if (base.cot.nonTrouves) {
+    avertissements.push({ niveau: 'attention', texte: `${base.cot.nonTrouves} cotisation(s) non trouvée(s) comptée(s) à 0 € : le brut réellement possible est un peu plus bas.` });
+  }
+  const opt = optionIntermediaire(data, base.intermediaire);
+  if (opt.abonnement_mensuel_ht && typeof opt.abonnement_mensuel_ht === 'object' && reglages.formule !== 'aucune') {
+    avertissements.push({ niveau: 'info', texte: "L'abonnement mensuel de l'intermédiaire n'est pas déduit : il est compté une fois au total du devis." });
+  }
+  if (base.frais.surDevis && (poste.fraisManuel === null || poste.fraisManuel === undefined || poste.fraisManuel === '')) {
+    avertissements.push({ niveau: 'attention', texte: "Tarif de l'intermédiaire sur devis : ses frais ne sont pas déduits du budget." });
+  }
+  for (const a of base.frais.avertissements) if (/GUSO/.test(a)) avertissements.push({ niveau: 'bloquant', texte: a });
+  if (base.statut.categorie === 'artiste') {
+    avertissements.push({ niveau: 'info', texte: "Un artiste engagé pour un spectacle ou un tournage est présumé salarié (code du travail, art. L7121-3) : il ne peut pas vous facturer sa prestation, d'où la conversion en cachet." });
+  } else {
+    avertissements.push({ niveau: 'info', texte: "Un technicien engagé en CDDU sur une fonction des annexes 8 et 10 est salarié : sa facture doit être remplacée par un bulletin de paie (à vérifier selon son statut)." });
+  }
+  return {
+    budgetCents, brutCents, possible, minimumCents, budgetMinimum, quantite,
+    brutParUnite: quantite ? roundInt(brutCents / quantite) : brutCents,
+    ligne: meilleur, reste: meilleur ? budgetCents - meilleur.coutTotal : budgetCents,
+    avertissements,
+  };
+}
+
+/** Devis d'équipe : lignes, abonnements (comptés une fois), totaux. */
+export function calculerDevis(data, postes, reglages = REGLAGES_DEFAUT) {
+  const lignes = postes.map((p) => calculerLigne(data, p, reglages)).filter(Boolean);
+  const optionsUtilisees = [...new Set(lignes.map((l) => l.intermediaire))];
+  if (lignes.length === 0) optionsUtilisees.push(reglages.intermediaire);
+  const fixes = lignes.length ? optionsUtilisees.flatMap((id) => fraisFixes(data, id, reglages)) : [];
+  const fixesCents = fixes.reduce((s, f) => s + f.montant, 0);
+
+  // Répartition facultative des frais fixes au prorata du coût employeur
+  if (reglages.prorata && fixesCents && lignes.length) {
+    const totalCE = lignes.reduce((s, l) => s + l.cot.coutEmployeur, 0) || 1;
+    let reste = fixesCents;
+    lignes.forEach((l, i) => {
+      const part = i === lignes.length - 1 ? reste : roundInt((fixesCents * l.cot.coutEmployeur) / totalCE);
+      reste -= part;
+      l.partFixes = part;
+    });
+  }
+
+  const somme = (f, filtre = () => true) => lignes.filter(filtre).reduce((s, l) => s + f(l), 0);
+  const estArtiste = (l) => l.statut.categorie === 'artiste';
+  const t = {
+    brut: somme((l) => l.brutCents),
+    patronal: somme((l) => l.cot.patronal),
+    salarial: somme((l) => l.cot.salarial),
+    coutEmployeur: somme((l) => l.cot.coutEmployeur),
+    fraisLignes: somme((l) => l.frais.ht),
+    tva: somme((l) => l.frais.tva),
+    fixes: fixesCents,
+    artistes: somme((l) => l.coutTotal, estArtiste),
+    techniciens: somme((l) => l.coutTotal, (l) => !estArtiste(l)),
+  };
+  t.frais = t.fraisLignes + t.fixes;
+  t.coutTotal = t.coutEmployeur + t.frais;
+  return { lignes, fixes, totaux: t };
+}

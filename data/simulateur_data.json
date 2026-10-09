@@ -1,0 +1,2251 @@
+{
+ "_meta": {
+  "titre": "Données simulateur cachets intermittents",
+  "genere_le": "2026-10-09",
+  "avertissement": "Simulation indicative, pas un conseil de paie. Seuls les chiffres relevés dans les sources sont saisis ; null = non trouvé.",
+  "sources": {
+   "SNTPCT_CINE": "https://sntpct.fr/wp-content/uploads/2026/04/SNTPCT_salaires_mini_Prod_cine_au_1er_Janvier_2026.pdf",
+   "AV_3097_2025": "https://www.juristique.org/wp-content/uploads/2026/08/avenant-du-26-septembre-2025-salaires-titre-2-production-cinematographique.pdf",
+   "LEGI_3097": "https://www.legisocial.fr/conventions-collectives-nationales/3097-production-cinematographique/",
+   "TITRE3": "https://sntpct.fr/wp-content/uploads/2024/09/SNTPCT-CCN-Prod-Cine-Texte-convention-19-01-2012-titres-III-artistes-engages-sur-court-metrage-salaires-2023.pdf",
+   "ACFDA": "https://www.acfda.fr/wp-content/uploads/2026/06/ACFDA_Salaire_figu-1er-juin-2026.pdf",
+   "CND": "https://www.cnd.fr/sites/default/files/medias/fichier/2026/09/droit_salaires_et_indemnites_des_artistes_choregraphiques_dans_le_spectacle_vivant_et_av_sept26.pdf",
+   "SNTPCT_AV": "https://sntpct.fr/wp-content/uploads/2026/09/SNTPCT_salaires_mini_Prod_AV_01-07-2026-reevalues-par-le-sntpct-2026.pdf",
+   "AV20": "https://lespi.org/wp-content/uploads/2025/03/PAV_Avenant-20_Salaires-signe-v2.pdf",
+   "AV17": "https://www.uspa.fr/storage/wsm_medias/avenant-n017-a-la-convention-collective-nationale-de-la-production-audiovisuelle-idcc-2642-3.pdf",
+   "CCNEAC": "https://www.sceneensemble.com/wp-content/uploads/2026/08/accord-nao-2026-def.pdf",
+   "CCNEAC_EXT": "https://presse.tripalio.fr/arrete-dextension-dun-avenant-a-un-accord-dans-la-ccn-des-entreprises-artistiques-et-culturelles/",
+   "SVP_2025": "https://www.juristique.org/wp-content/uploads/2026/02/avenant-du-21-juillet-2025-salaires-2026-spectacle-vivant.pdf",
+   "SVP_2026": "https://synptac-cgt.com/wp-content/uploads/2026/08/CCNSVP_NAO26_annexe1.pdf",
+   "SVP_2026_SMA": "https://www.sma-syndicat.org/docs-conventions/ccn-svp-nao-2026-nouveaux-salaires-applicables-au-1er-septembre-2026/",
+   "AUDIENS": "https://www.audiens.org/files/live/sites/siteAudiens/files/03_documents/entreprise/Fiches-techniques/Parametres-et-taux-2026.pdf",
+   "AUDIENS_WC": "https://www.audiens.org/files/live/sites/siteAudiens/files/06_medias/entreprise/Webconferences/Web-conf-Audiens-Nouveautes-reglementaires-2026.pdf",
+   "ARTCENA": "https://www.artcena.fr/precis-juridique/etudes/paie-et-cotisations/cotisations-et-contributions-sociales"
+  }
+ },
+ "conventions": {
+  "3097_pub": {
+   "nom": "Production cinématographique et de films publicitaires – films publicitaires (art. 34)",
+   "idcc": "3097",
+   "date_effet": "Grille accord applicable au 1er mars 2024 + avenant 26/09/2025 (étendu arr. 26/03/2026, JORF 03/04/2026, en vigueur 01/05/2026). Aucune revalorisation au 01/01/2026.",
+   "majorations": {
+    "journee_min_heures": 8,
+    "base_horaire": "hebdo_39h/40 × 1,5",
+    "heures_sup_au_dela_8h": 1.0,
+    "heures_au_dela_10h_total": 2.0,
+    "nuit_8_premieres": 0.5,
+    "nuit_au_dela_8": 1.0,
+    "dimanche": 1.0,
+    "ferie": 1.0,
+    "plafond_cumul_conventionnel": 1.0,
+    "nuit_plage": "22h-6h (1/04-30/09), 20h-6h (1/10-31/03)",
+    "source": "https://sntpct.fr/wp-content/uploads/2026/04/SNTPCT_salaires_mini_Prod_cine_au_1er_Janvier_2026.pdf",
+    "note": "Dimanche/férié/nuit : articles 40-42 titre II (s'appliquent aussi à la pub, à vérifier). Cumul conventionnel plafonné à 100 % (art. 36)."
+   },
+   "lignes": [
+    {
+     "categorie": "Technicien",
+     "departement": "Réalisation",
+     "metier": "Réalisateur de films publicitaires",
+     "source": "https://sntpct.fr/wp-content/uploads/2026/04/SNTPCT_salaires_mini_Prod_cine_au_1er_Janvier_2026.pdf",
+     "date_effet": "01/03/2024 (grille) – 01/05/2026 (avenant classification)",
+     "minimum_journee_8h": 1120.18,
+     "unite": "journée 8 h",
+     "note": "Taux horaire = hebdo 39 h / 40 × 1,5"
+    },
+    {
+     "categorie": "Technicien",
+     "departement": "Réalisation",
+     "metier": "1er assistant réalisateur",
+     "source": "https://sntpct.fr/wp-content/uploads/2026/04/SNTPCT_salaires_mini_Prod_cine_au_1er_Janvier_2026.pdf",
+     "date_effet": "01/03/2024 (grille) – 01/05/2026 (avenant classification)",
+     "minimum_journee_8h": 443.85,
+     "unite": "journée 8 h",
+     "note": "Taux horaire = hebdo 39 h / 40 × 1,5"
+    },
+    {
+     "categorie": "Technicien",
+     "departement": "Réalisation",
+     "metier": "2e assistant réalisateur",
+     "source": "https://sntpct.fr/wp-content/uploads/2026/04/SNTPCT_salaires_mini_Prod_cine_au_1er_Janvier_2026.pdf",
+     "date_effet": "01/03/2024 (grille) – 01/05/2026 (avenant classification)",
+     "minimum_journee_8h": 321.11,
+     "unite": "journée 8 h",
+     "note": "Taux horaire = hebdo 39 h / 40 × 1,5"
+    },
+    {
+     "categorie": "Technicien",
+     "departement": "Réalisation",
+     "metier": "Scripte",
+     "source": "https://sntpct.fr/wp-content/uploads/2026/04/SNTPCT_salaires_mini_Prod_cine_au_1er_Janvier_2026.pdf",
+     "date_effet": "01/03/2024 (grille) – 01/05/2026 (avenant classification)",
+     "minimum_journee_8h": 393.24,
+     "unite": "journée 8 h",
+     "note": "Taux horaire = hebdo 39 h / 40 × 1,5"
+    },
+    {
+     "categorie": "Technicien",
+     "departement": "Réalisation",
+     "metier": "Directeur de casting",
+     "source": "https://sntpct.fr/wp-content/uploads/2026/04/SNTPCT_salaires_mini_Prod_cine_au_1er_Janvier_2026.pdf",
+     "date_effet": "01/03/2024 (grille) – 01/05/2026 (avenant classification)",
+     "minimum_journee_8h": 465.39,
+     "unite": "journée 8 h",
+     "note": "Taux horaire = hebdo 39 h / 40 × 1,5"
+    },
+    {
+     "categorie": "Technicien",
+     "departement": "Réalisation",
+     "metier": "Chargé de la figuration",
+     "source": "https://sntpct.fr/wp-content/uploads/2026/04/SNTPCT_salaires_mini_Prod_cine_au_1er_Janvier_2026.pdf",
+     "date_effet": "01/03/2024 (grille) – 01/05/2026 (avenant classification)",
+     "minimum_journee_8h": 336.52,
+     "unite": "journée 8 h",
+     "note": "Taux horaire = hebdo 39 h / 40 × 1,5"
+    },
+    {
+     "categorie": "Technicien",
+     "departement": "Production",
+     "metier": "Directeur de production",
+     "source": "https://sntpct.fr/wp-content/uploads/2026/04/SNTPCT_salaires_mini_Prod_cine_au_1er_Janvier_2026.pdf",
+     "date_effet": "01/03/2024 (grille) – 01/05/2026 (avenant classification)",
+     "minimum_journee_8h": 816.49,
+     "unite": "journée 8 h",
+     "note": "Taux horaire = hebdo 39 h / 40 × 1,5"
+    },
+    {
+     "categorie": "Technicien",
+     "departement": "Production",
+     "metier": "Coordinateur de production",
+     "source": "https://sntpct.fr/wp-content/uploads/2026/04/SNTPCT_salaires_mini_Prod_cine_au_1er_Janvier_2026.pdf",
+     "date_effet": "01/03/2024 (grille) – 01/05/2026 (avenant classification)",
+     "minimum_journee_8h": 409.37,
+     "unite": "journée 8 h",
+     "note": "Taux horaire = hebdo 39 h / 40 × 1,5"
+    },
+    {
+     "categorie": "Technicien",
+     "departement": "Production",
+     "metier": "Assistant de production",
+     "source": "https://sntpct.fr/wp-content/uploads/2026/04/SNTPCT_salaires_mini_Prod_cine_au_1er_Janvier_2026.pdf",
+     "date_effet": "01/03/2024 (grille) – 01/05/2026 (avenant classification)",
+     "minimum_journee_8h": 321.11,
+     "unite": "journée 8 h",
+     "note": "Taux horaire = hebdo 39 h / 40 × 1,5"
+    },
+    {
+     "categorie": "Technicien",
+     "departement": "Régie",
+     "metier": "Régisseur général",
+     "source": "https://sntpct.fr/wp-content/uploads/2026/04/SNTPCT_salaires_mini_Prod_cine_au_1er_Janvier_2026.pdf",
+     "date_effet": "01/03/2024 (grille) – 01/05/2026 (avenant classification)",
+     "minimum_journee_8h": 443.85,
+     "unite": "journée 8 h",
+     "note": "Taux horaire = hebdo 39 h / 40 × 1,5"
+    },
+    {
+     "categorie": "Technicien",
+     "departement": "Régie",
+     "metier": "Régisseur adjoint",
+     "source": "https://sntpct.fr/wp-content/uploads/2026/04/SNTPCT_salaires_mini_Prod_cine_au_1er_Janvier_2026.pdf",
+     "date_effet": "01/03/2024 (grille) – 01/05/2026 (avenant classification)",
+     "minimum_journee_8h": 321.11,
+     "unite": "journée 8 h",
+     "note": "Taux horaire = hebdo 39 h / 40 × 1,5"
+    },
+    {
+     "categorie": "Technicien",
+     "departement": "Régie",
+     "metier": "Auxiliaire de régie",
+     "source": "https://sntpct.fr/wp-content/uploads/2026/04/SNTPCT_salaires_mini_Prod_cine_au_1er_Janvier_2026.pdf",
+     "date_effet": "01/03/2024 (grille) – 01/05/2026 (avenant classification)",
+     "minimum_journee_8h": 160.42,
+     "unite": "journée 8 h",
+     "note": "Taux horaire = hebdo 39 h / 40 × 1,5"
+    },
+    {
+     "categorie": "Technicien",
+     "departement": "Image",
+     "metier": "Directeur de la photographie",
+     "source": "https://sntpct.fr/wp-content/uploads/2026/04/SNTPCT_salaires_mini_Prod_cine_au_1er_Janvier_2026.pdf",
+     "date_effet": "01/03/2024 (grille) – 01/05/2026 (avenant classification)",
+     "minimum_journee_8h": 827.43,
+     "unite": "journée 8 h",
+     "note": "Taux horaire = hebdo 39 h / 40 × 1,5"
+    },
+    {
+     "categorie": "Technicien",
+     "departement": "Image",
+     "metier": "Cadreur",
+     "source": "https://sntpct.fr/wp-content/uploads/2026/04/SNTPCT_salaires_mini_Prod_cine_au_1er_Janvier_2026.pdf",
+     "date_effet": "01/03/2024 (grille) – 01/05/2026 (avenant classification)",
+     "minimum_journee_8h": 524.35,
+     "unite": "journée 8 h",
+     "note": "Taux horaire = hebdo 39 h / 40 × 1,5"
+    },
+    {
+     "categorie": "Technicien",
+     "departement": "Image",
+     "metier": "1er assistant opérateur",
+     "source": "https://sntpct.fr/wp-content/uploads/2026/04/SNTPCT_salaires_mini_Prod_cine_au_1er_Janvier_2026.pdf",
+     "date_effet": "01/03/2024 (grille) – 01/05/2026 (avenant classification)",
+     "minimum_journee_8h": 409.37,
+     "unite": "journée 8 h",
+     "note": "Taux horaire = hebdo 39 h / 40 × 1,5"
+    },
+    {
+     "categorie": "Technicien",
+     "departement": "Image",
+     "metier": "2e assistant opérateur",
+     "source": "https://sntpct.fr/wp-content/uploads/2026/04/SNTPCT_salaires_mini_Prod_cine_au_1er_Janvier_2026.pdf",
+     "date_effet": "01/03/2024 (grille) – 01/05/2026 (avenant classification)",
+     "minimum_journee_8h": 321.11,
+     "unite": "journée 8 h",
+     "note": "Taux horaire = hebdo 39 h / 40 × 1,5"
+    },
+    {
+     "categorie": "Technicien",
+     "departement": "Image",
+     "metier": "Photographe de plateau",
+     "source": "https://sntpct.fr/wp-content/uploads/2026/04/SNTPCT_salaires_mini_Prod_cine_au_1er_Janvier_2026.pdf",
+     "date_effet": "01/03/2024 (grille) – 01/05/2026 (avenant classification)",
+     "minimum_journee_8h": 381.83,
+     "unite": "journée 8 h",
+     "note": "Taux horaire = hebdo 39 h / 40 × 1,5"
+    },
+    {
+     "categorie": "Technicien",
+     "departement": "Image",
+     "metier": "Étalonneur",
+     "source": "https://sntpct.fr/wp-content/uploads/2026/04/SNTPCT_salaires_mini_Prod_cine_au_1er_Janvier_2026.pdf",
+     "date_effet": "01/03/2024 (grille) – 01/05/2026 (avenant classification)",
+     "minimum_journee_8h": 633.14,
+     "unite": "journée 8 h",
+     "note": "Taux horaire = hebdo 39 h / 40 × 1,5"
+    },
+    {
+     "categorie": "Technicien",
+     "departement": "Électriciens / machinistes",
+     "metier": "Chef électricien de prise de vues",
+     "source": "https://sntpct.fr/wp-content/uploads/2026/04/SNTPCT_salaires_mini_Prod_cine_au_1er_Janvier_2026.pdf",
+     "date_effet": "01/03/2024 (grille) – 01/05/2026 (avenant classification)",
+     "minimum_journee_8h": 363.6,
+     "unite": "journée 8 h",
+     "note": "Taux horaire = hebdo 39 h / 40 × 1,5"
+    },
+    {
+     "categorie": "Technicien",
+     "departement": "Électriciens / machinistes",
+     "metier": "Sous-chef électricien PDV",
+     "source": "https://sntpct.fr/wp-content/uploads/2026/04/SNTPCT_salaires_mini_Prod_cine_au_1er_Janvier_2026.pdf",
+     "date_effet": "01/03/2024 (grille) – 01/05/2026 (avenant classification)",
+     "minimum_journee_8h": 320.9,
+     "unite": "journée 8 h",
+     "note": "Taux horaire = hebdo 39 h / 40 × 1,5"
+    },
+    {
+     "categorie": "Technicien",
+     "departement": "Électriciens / machinistes",
+     "metier": "Électricien de prise de vues",
+     "source": "https://sntpct.fr/wp-content/uploads/2026/04/SNTPCT_salaires_mini_Prod_cine_au_1er_Janvier_2026.pdf",
+     "date_effet": "01/03/2024 (grille) – 01/05/2026 (avenant classification)",
+     "minimum_journee_8h": 302.71,
+     "unite": "journée 8 h",
+     "note": "Taux horaire = hebdo 39 h / 40 × 1,5"
+    },
+    {
+     "categorie": "Technicien",
+     "departement": "Électriciens / machinistes",
+     "metier": "Chef machiniste de prise de vues",
+     "source": "https://sntpct.fr/wp-content/uploads/2026/04/SNTPCT_salaires_mini_Prod_cine_au_1er_Janvier_2026.pdf",
+     "date_effet": "01/03/2024 (grille) – 01/05/2026 (avenant classification)",
+     "minimum_journee_8h": 363.6,
+     "unite": "journée 8 h",
+     "note": "Taux horaire = hebdo 39 h / 40 × 1,5"
+    },
+    {
+     "categorie": "Technicien",
+     "departement": "Électriciens / machinistes",
+     "metier": "Machiniste de prise de vues",
+     "source": "https://sntpct.fr/wp-content/uploads/2026/04/SNTPCT_salaires_mini_Prod_cine_au_1er_Janvier_2026.pdf",
+     "date_effet": "01/03/2024 (grille) – 01/05/2026 (avenant classification)",
+     "minimum_journee_8h": 302.71,
+     "unite": "journée 8 h",
+     "note": "Taux horaire = hebdo 39 h / 40 × 1,5"
+    },
+    {
+     "categorie": "Technicien",
+     "departement": "Électriciens / machinistes",
+     "metier": "Conducteur de groupe",
+     "source": "https://sntpct.fr/wp-content/uploads/2026/04/SNTPCT_salaires_mini_Prod_cine_au_1er_Janvier_2026.pdf",
+     "date_effet": "01/03/2024 (grille) – 01/05/2026 (avenant classification)",
+     "minimum_journee_8h": 326.24,
+     "unite": "journée 8 h",
+     "note": "Taux horaire = hebdo 39 h / 40 × 1,5"
+    },
+    {
+     "categorie": "Technicien",
+     "departement": "Son",
+     "metier": "Chef opérateur du son",
+     "source": "https://sntpct.fr/wp-content/uploads/2026/04/SNTPCT_salaires_mini_Prod_cine_au_1er_Janvier_2026.pdf",
+     "date_effet": "01/03/2024 (grille) – 01/05/2026 (avenant classification)",
+     "minimum_journee_8h": 579.02,
+     "unite": "journée 8 h",
+     "note": "Taux horaire = hebdo 39 h / 40 × 1,5"
+    },
+    {
+     "categorie": "Technicien",
+     "departement": "Son",
+     "metier": "1er assistant opérateur du son",
+     "source": "https://sntpct.fr/wp-content/uploads/2026/04/SNTPCT_salaires_mini_Prod_cine_au_1er_Janvier_2026.pdf",
+     "date_effet": "01/03/2024 (grille) – 01/05/2026 (avenant classification)",
+     "minimum_journee_8h": 383.48,
+     "unite": "journée 8 h",
+     "note": "Taux horaire = hebdo 39 h / 40 × 1,5"
+    },
+    {
+     "categorie": "Technicien",
+     "departement": "Costumes / HMC",
+     "metier": "Créateur de costumes",
+     "source": "https://sntpct.fr/wp-content/uploads/2026/04/SNTPCT_salaires_mini_Prod_cine_au_1er_Janvier_2026.pdf",
+     "date_effet": "01/03/2024 (grille) – 01/05/2026 (avenant classification)",
+     "minimum_journee_8h": 805.84,
+     "unite": "journée 8 h",
+     "note": "Taux horaire = hebdo 39 h / 40 × 1,5"
+    },
+    {
+     "categorie": "Technicien",
+     "departement": "Costumes / HMC",
+     "metier": "Chef costumier",
+     "source": "https://sntpct.fr/wp-content/uploads/2026/04/SNTPCT_salaires_mini_Prod_cine_au_1er_Janvier_2026.pdf",
+     "date_effet": "01/03/2024 (grille) – 01/05/2026 (avenant classification)",
+     "minimum_journee_8h": 579.02,
+     "unite": "journée 8 h",
+     "note": "Taux horaire = hebdo 39 h / 40 × 1,5"
+    },
+    {
+     "categorie": "Technicien",
+     "departement": "Costumes / HMC",
+     "metier": "Costumier",
+     "source": "https://sntpct.fr/wp-content/uploads/2026/04/SNTPCT_salaires_mini_Prod_cine_au_1er_Janvier_2026.pdf",
+     "date_effet": "01/03/2024 (grille) – 01/05/2026 (avenant classification)",
+     "minimum_journee_8h": 319.11,
+     "unite": "journée 8 h",
+     "note": "Taux horaire = hebdo 39 h / 40 × 1,5"
+    },
+    {
+     "categorie": "Technicien",
+     "departement": "Costumes / HMC",
+     "metier": "Habilleur",
+     "source": "https://sntpct.fr/wp-content/uploads/2026/04/SNTPCT_salaires_mini_Prod_cine_au_1er_Janvier_2026.pdf",
+     "date_effet": "01/03/2024 (grille) – 01/05/2026 (avenant classification)",
+     "minimum_journee_8h": 273.86,
+     "unite": "journée 8 h",
+     "note": "Taux horaire = hebdo 39 h / 40 × 1,5"
+    },
+    {
+     "categorie": "Technicien",
+     "departement": "Costumes / HMC",
+     "metier": "Chef maquilleur",
+     "source": "https://sntpct.fr/wp-content/uploads/2026/04/SNTPCT_salaires_mini_Prod_cine_au_1er_Janvier_2026.pdf",
+     "date_effet": "01/03/2024 (grille) – 01/05/2026 (avenant classification)",
+     "minimum_journee_8h": 396.36,
+     "unite": "journée 8 h",
+     "note": "Taux horaire = hebdo 39 h / 40 × 1,5"
+    },
+    {
+     "categorie": "Technicien",
+     "departement": "Costumes / HMC",
+     "metier": "Assistant maquilleur",
+     "source": "https://sntpct.fr/wp-content/uploads/2026/04/SNTPCT_salaires_mini_Prod_cine_au_1er_Janvier_2026.pdf",
+     "date_effet": "01/03/2024 (grille) – 01/05/2026 (avenant classification)",
+     "minimum_journee_8h": 319.11,
+     "unite": "journée 8 h",
+     "note": "Taux horaire = hebdo 39 h / 40 × 1,5"
+    },
+    {
+     "categorie": "Technicien",
+     "departement": "Costumes / HMC",
+     "metier": "Chef coiffeur",
+     "source": "https://sntpct.fr/wp-content/uploads/2026/04/SNTPCT_salaires_mini_Prod_cine_au_1er_Janvier_2026.pdf",
+     "date_effet": "01/03/2024 (grille) – 01/05/2026 (avenant classification)",
+     "minimum_journee_8h": 393.24,
+     "unite": "journée 8 h",
+     "note": "Taux horaire = hebdo 39 h / 40 × 1,5"
+    },
+    {
+     "categorie": "Technicien",
+     "departement": "Costumes / HMC",
+     "metier": "Coiffeur",
+     "source": "https://sntpct.fr/wp-content/uploads/2026/04/SNTPCT_salaires_mini_Prod_cine_au_1er_Janvier_2026.pdf",
+     "date_effet": "01/03/2024 (grille) – 01/05/2026 (avenant classification)",
+     "minimum_journee_8h": 319.11,
+     "unite": "journée 8 h",
+     "note": "Taux horaire = hebdo 39 h / 40 × 1,5"
+    },
+    {
+     "categorie": "Technicien",
+     "departement": "Décoration",
+     "metier": "Chef décorateur",
+     "source": "https://sntpct.fr/wp-content/uploads/2026/04/SNTPCT_salaires_mini_Prod_cine_au_1er_Janvier_2026.pdf",
+     "date_effet": "01/03/2024 (grille) – 01/05/2026 (avenant classification)",
+     "minimum_journee_8h": 816.49,
+     "unite": "journée 8 h",
+     "note": "Taux horaire = hebdo 39 h / 40 × 1,5"
+    },
+    {
+     "categorie": "Technicien",
+     "departement": "Décoration",
+     "metier": "Ensemblier décorateur",
+     "source": "https://sntpct.fr/wp-content/uploads/2026/04/SNTPCT_salaires_mini_Prod_cine_au_1er_Janvier_2026.pdf",
+     "date_effet": "01/03/2024 (grille) – 01/05/2026 (avenant classification)",
+     "minimum_journee_8h": 579.02,
+     "unite": "journée 8 h",
+     "note": "Taux horaire = hebdo 39 h / 40 × 1,5"
+    },
+    {
+     "categorie": "Technicien",
+     "departement": "Décoration",
+     "metier": "Accessoiriste de plateau",
+     "source": "https://sntpct.fr/wp-content/uploads/2026/04/SNTPCT_salaires_mini_Prod_cine_au_1er_Janvier_2026.pdf",
+     "date_effet": "01/03/2024 (grille) – 01/05/2026 (avenant classification)",
+     "minimum_journee_8h": 381.83,
+     "unite": "journée 8 h",
+     "note": "Taux horaire = hebdo 39 h / 40 × 1,5"
+    },
+    {
+     "categorie": "Technicien",
+     "departement": "Post-production",
+     "metier": "Chef monteur",
+     "source": "https://sntpct.fr/wp-content/uploads/2026/04/SNTPCT_salaires_mini_Prod_cine_au_1er_Janvier_2026.pdf",
+     "date_effet": "01/03/2024 (grille) – 01/05/2026 (avenant classification)",
+     "minimum_journee_8h": 549.92,
+     "unite": "journée 8 h",
+     "note": "Taux horaire = hebdo 39 h / 40 × 1,5"
+    },
+    {
+     "categorie": "Technicien",
+     "departement": "Post-production",
+     "metier": "Mixeur",
+     "source": "https://sntpct.fr/wp-content/uploads/2026/04/SNTPCT_salaires_mini_Prod_cine_au_1er_Janvier_2026.pdf",
+     "date_effet": "01/03/2024 (grille) – 01/05/2026 (avenant classification)",
+     "minimum_journee_8h": 633.14,
+     "unite": "journée 8 h",
+     "note": "Taux horaire = hebdo 39 h / 40 × 1,5"
+    },
+    {
+     "categorie": "Technicien",
+     "departement": "Costumes / HMC",
+     "metier": "Styliste",
+     "source": "https://sntpct.fr/wp-content/uploads/2026/04/SNTPCT_salaires_mini_Prod_cine_au_1er_Janvier_2026.pdf",
+     "date_effet": "—",
+     "minimum_journee_8h": null,
+     "unite": "journée 8 h",
+     "note": "Non trouvé : pas de fonction « styliste » dans la grille 3097 (équivalents : chef costumier / créateur de costumes)."
+    },
+    {
+     "categorie": "Artiste",
+     "departement": "Artistes",
+     "metier": "Comédien / mannequin / danseur en film publicitaire",
+     "source": "https://sntpct.fr/wp-content/uploads/2024/09/SNTPCT-CCN-Prod-Cine-Texte-convention-19-01-2012-titres-III-artistes-engages-sur-court-metrage-salaires-2023.pdf",
+     "date_effet": "—",
+     "minimum_journee_8h": null,
+     "unite": "cachet",
+     "note": "Non trouvé : le titre III renvoie à un « accord spécifique » pub jamais publié dans les sources consultées. Aucun minimum conventionnel étendu trouvé (seul un barème syndical SFA 2016, périmé, non retenu). Plancher légal : SMIC."
+    },
+    {
+     "categorie": "Artiste",
+     "departement": "Figuration",
+     "metier": "Figurant (cinéma, réf. ACFDA)",
+     "source": "https://www.acfda.fr/wp-content/uploads/2026/06/ACFDA_Salaire_figu-1er-juin-2026.pdf",
+     "date_effet": "01/06/2026",
+     "minimum_journee_8h": 108.33,
+     "unite": "journée 8 h",
+     "note": "8 h × SMIC 12,31 € + 10 % ; applicabilité exacte à la pub à vérifier."
+    }
+   ]
+  },
+  "3097_cinema": {
+   "nom": "Production cinématographique – long et court métrage",
+   "idcc": "3097",
+   "date_effet": "Grille accord applicable au 1er mars 2024 + avenant 26/09/2025 (étendu arr. 26/03/2026, JORF 03/04/2026, en vigueur 01/05/2026). Aucune revalorisation au 01/01/2026.",
+   "majorations": {
+    "journee_min_heures": 7,
+    "base_horaire_journee": "hebdo_39h/40 × 1,25",
+    "heures_sup_journee_au_dela_7h": 0.5,
+    "heures_au_dela_10h": "+100 % + 100 % spécifique",
+    "hebdo_36_43": 0.25,
+    "hebdo_44_48": 0.5,
+    "hebdo_49_plus": 0.75,
+    "nuit_8_premieres": 0.5,
+    "nuit_au_dela_8": 1.0,
+    "dimanche": 1.0,
+    "ferie": 1.0,
+    "source": "https://sntpct.fr/wp-content/uploads/2026/04/SNTPCT_salaires_mini_Prod_cine_au_1er_Janvier_2026.pdf",
+    "heures_au_dela_10h_total": 2.0
+   },
+   "lignes": [
+    {
+     "categorie": "Technicien",
+     "departement": "Réalisation",
+     "metier": "Réalisateur",
+     "source": "https://sntpct.fr/wp-content/uploads/2026/04/SNTPCT_salaires_mini_Prod_cine_au_1er_Janvier_2026.pdf",
+     "date_effet": "01/03/2024 (grille) – 01/05/2026 (avenant)",
+     "minimum_semaine_39h": 3015.27,
+     "minimum_journee_7h": 659.59,
+     "note": "Annexe I (hors tournage ou fonctions hors annexe II). Journée (<5 j) = hebdo/40 × 1,25 × 7 h."
+    },
+    {
+     "categorie": "Technicien",
+     "departement": "Réalisation",
+     "metier": "1er assistant réalisateur",
+     "source": "https://sntpct.fr/wp-content/uploads/2026/04/SNTPCT_salaires_mini_Prod_cine_au_1er_Janvier_2026.pdf",
+     "date_effet": "01/03/2024 (grille) – 01/05/2026 (avenant)",
+     "minimum_semaine_39h": 1479.49,
+     "minimum_journee_7h": 323.64,
+     "note": "Annexe I (hors tournage ou fonctions hors annexe II). Journée (<5 j) = hebdo/40 × 1,25 × 7 h."
+    },
+    {
+     "categorie": "Technicien",
+     "departement": "Réalisation",
+     "metier": "2e assistant réalisateur",
+     "source": "https://sntpct.fr/wp-content/uploads/2026/04/SNTPCT_salaires_mini_Prod_cine_au_1er_Janvier_2026.pdf",
+     "date_effet": "01/03/2024 (grille) – 01/05/2026 (avenant)",
+     "minimum_semaine_39h": 1070.37,
+     "minimum_journee_7h": 234.14,
+     "note": "Annexe I (hors tournage ou fonctions hors annexe II). Journée (<5 j) = hebdo/40 × 1,25 × 7 h."
+    },
+    {
+     "categorie": "Technicien",
+     "departement": "Réalisation",
+     "metier": "Scripte",
+     "source": "https://sntpct.fr/wp-content/uploads/2026/04/SNTPCT_salaires_mini_Prod_cine_au_1er_Janvier_2026.pdf",
+     "date_effet": "01/03/2024 (grille) – 01/05/2026 (avenant)",
+     "minimum_semaine_39h": 1310.82,
+     "minimum_journee_7h": null,
+     "note": "Annexe I (hors tournage ou fonctions hors annexe II). Journée (<5 j) = hebdo/40 × 1,25 × 7 h. Journée : non relevée."
+    },
+    {
+     "categorie": "Technicien",
+     "departement": "Production",
+     "metier": "Directeur de production",
+     "source": "https://sntpct.fr/wp-content/uploads/2026/04/SNTPCT_salaires_mini_Prod_cine_au_1er_Janvier_2026.pdf",
+     "date_effet": "01/03/2024 (grille) – 01/05/2026 (avenant)",
+     "minimum_semaine_39h": 2721.64,
+     "minimum_journee_7h": null,
+     "note": "Annexe I (hors tournage ou fonctions hors annexe II). Journée (<5 j) = hebdo/40 × 1,25 × 7 h. Journée : non relevée."
+    },
+    {
+     "categorie": "Technicien",
+     "departement": "Régie",
+     "metier": "Régisseur général",
+     "source": "https://sntpct.fr/wp-content/uploads/2026/04/SNTPCT_salaires_mini_Prod_cine_au_1er_Janvier_2026.pdf",
+     "date_effet": "01/03/2024 (grille) – 01/05/2026 (avenant)",
+     "minimum_semaine_39h": 1479.49,
+     "minimum_journee_7h": 323.64,
+     "note": "Annexe I (hors tournage ou fonctions hors annexe II). Journée (<5 j) = hebdo/40 × 1,25 × 7 h."
+    },
+    {
+     "categorie": "Technicien",
+     "departement": "Image",
+     "metier": "Directeur de la photographie",
+     "source": "https://sntpct.fr/wp-content/uploads/2026/04/SNTPCT_salaires_mini_Prod_cine_au_1er_Janvier_2026.pdf",
+     "date_effet": "01/03/2024 (grille) – 01/05/2026 (avenant)",
+     "minimum_semaine_39h": 2758.11,
+     "minimum_journee_7h": 603.34,
+     "note": "Annexe I (hors tournage ou fonctions hors annexe II). Journée (<5 j) = hebdo/40 × 1,25 × 7 h."
+    },
+    {
+     "categorie": "Technicien",
+     "departement": "Image",
+     "metier": "Cadreur",
+     "source": "https://sntpct.fr/wp-content/uploads/2026/04/SNTPCT_salaires_mini_Prod_cine_au_1er_Janvier_2026.pdf",
+     "date_effet": "01/03/2024 (grille) – 01/05/2026 (avenant)",
+     "minimum_semaine_39h": 1747.82,
+     "minimum_journee_7h": null,
+     "note": "Annexe I (hors tournage ou fonctions hors annexe II). Journée (<5 j) = hebdo/40 × 1,25 × 7 h. Journée : non relevée."
+    },
+    {
+     "categorie": "Technicien",
+     "departement": "Image",
+     "metier": "1er assistant opérateur",
+     "source": "https://sntpct.fr/wp-content/uploads/2026/04/SNTPCT_salaires_mini_Prod_cine_au_1er_Janvier_2026.pdf",
+     "date_effet": "01/03/2024 (grille) – 01/05/2026 (avenant)",
+     "minimum_semaine_39h": 1364.56,
+     "minimum_journee_7h": null,
+     "note": "Annexe I (hors tournage ou fonctions hors annexe II). Journée (<5 j) = hebdo/40 × 1,25 × 7 h. Journée : non relevée."
+    },
+    {
+     "categorie": "Technicien",
+     "departement": "Électriciens / machinistes",
+     "metier": "Chef électricien de prise de vues",
+     "source": "https://sntpct.fr/wp-content/uploads/2026/04/SNTPCT_salaires_mini_Prod_cine_au_1er_Janvier_2026.pdf",
+     "date_effet": "01/03/2024 (grille) – 01/05/2026 (avenant)",
+     "minimum_semaine_39h": 1211.99,
+     "minimum_journee_7h": 265.12,
+     "note": "Annexe I (hors tournage ou fonctions hors annexe II). Journée (<5 j) = hebdo/40 × 1,25 × 7 h."
+    },
+    {
+     "categorie": "Technicien",
+     "departement": "Électriciens / machinistes",
+     "metier": "Chef machiniste de prise de vues",
+     "source": "https://sntpct.fr/wp-content/uploads/2026/04/SNTPCT_salaires_mini_Prod_cine_au_1er_Janvier_2026.pdf",
+     "date_effet": "01/03/2024 (grille) – 01/05/2026 (avenant)",
+     "minimum_semaine_39h": 1211.99,
+     "minimum_journee_7h": 265.12,
+     "note": "Annexe I (hors tournage ou fonctions hors annexe II). Journée (<5 j) = hebdo/40 × 1,25 × 7 h."
+    },
+    {
+     "categorie": "Technicien",
+     "departement": "Électriciens / machinistes",
+     "metier": "Machiniste de prise de vues",
+     "source": "https://sntpct.fr/wp-content/uploads/2026/04/SNTPCT_salaires_mini_Prod_cine_au_1er_Janvier_2026.pdf",
+     "date_effet": "01/03/2024 (grille) – 01/05/2026 (avenant)",
+     "minimum_semaine_39h": 1009.05,
+     "minimum_journee_7h": 220.73,
+     "note": "Annexe I (hors tournage ou fonctions hors annexe II). Journée (<5 j) = hebdo/40 × 1,25 × 7 h."
+    },
+    {
+     "categorie": "Technicien",
+     "departement": "Son",
+     "metier": "Chef opérateur du son",
+     "source": "https://sntpct.fr/wp-content/uploads/2026/04/SNTPCT_salaires_mini_Prod_cine_au_1er_Janvier_2026.pdf",
+     "date_effet": "01/03/2024 (grille) – 01/05/2026 (avenant)",
+     "minimum_semaine_39h": 1930.06,
+     "minimum_journee_7h": 422.2,
+     "note": "Annexe I (hors tournage ou fonctions hors annexe II). Journée (<5 j) = hebdo/40 × 1,25 × 7 h."
+    },
+    {
+     "categorie": "Technicien",
+     "departement": "Costumes / HMC",
+     "metier": "Chef costumier",
+     "source": "https://sntpct.fr/wp-content/uploads/2026/04/SNTPCT_salaires_mini_Prod_cine_au_1er_Janvier_2026.pdf",
+     "date_effet": "01/03/2024 (grille) – 01/05/2026 (avenant)",
+     "minimum_semaine_39h": 1930.06,
+     "minimum_journee_7h": 422.2,
+     "note": "Annexe I (hors tournage ou fonctions hors annexe II). Journée (<5 j) = hebdo/40 × 1,25 × 7 h."
+    },
+    {
+     "categorie": "Technicien",
+     "departement": "Costumes / HMC",
+     "metier": "Chef maquilleur",
+     "source": "https://sntpct.fr/wp-content/uploads/2026/04/SNTPCT_salaires_mini_Prod_cine_au_1er_Janvier_2026.pdf",
+     "date_effet": "01/03/2024 (grille) – 01/05/2026 (avenant)",
+     "minimum_semaine_39h": 1321.21,
+     "minimum_journee_7h": 289.01,
+     "note": "Annexe I (hors tournage ou fonctions hors annexe II). Journée (<5 j) = hebdo/40 × 1,25 × 7 h."
+    },
+    {
+     "categorie": "Technicien",
+     "departement": "Costumes / HMC",
+     "metier": "Chef coiffeur",
+     "source": "https://sntpct.fr/wp-content/uploads/2026/04/SNTPCT_salaires_mini_Prod_cine_au_1er_Janvier_2026.pdf",
+     "date_effet": "01/03/2024 (grille) – 01/05/2026 (avenant)",
+     "minimum_semaine_39h": 1310.82,
+     "minimum_journee_7h": 286.74,
+     "note": "Annexe I (hors tournage ou fonctions hors annexe II). Journée (<5 j) = hebdo/40 × 1,25 × 7 h."
+    },
+    {
+     "categorie": "Technicien",
+     "departement": "Costumes / HMC",
+     "metier": "Coiffeur",
+     "source": "https://sntpct.fr/wp-content/uploads/2026/04/SNTPCT_salaires_mini_Prod_cine_au_1er_Janvier_2026.pdf",
+     "date_effet": "01/03/2024 (grille) – 01/05/2026 (avenant)",
+     "minimum_semaine_39h": 1063.71,
+     "minimum_journee_7h": null,
+     "note": "Annexe I (hors tournage ou fonctions hors annexe II). Journée (<5 j) = hebdo/40 × 1,25 × 7 h. Journée : non relevée."
+    },
+    {
+     "categorie": "Technicien",
+     "departement": "Costumes / HMC",
+     "metier": "Assistant maquilleur",
+     "source": "https://sntpct.fr/wp-content/uploads/2026/04/SNTPCT_salaires_mini_Prod_cine_au_1er_Janvier_2026.pdf",
+     "date_effet": "01/03/2024 (grille) – 01/05/2026 (avenant)",
+     "minimum_semaine_39h": 1063.71,
+     "minimum_journee_7h": null,
+     "note": "Annexe I (hors tournage ou fonctions hors annexe II). Journée (<5 j) = hebdo/40 × 1,25 × 7 h. Journée : non relevée."
+    },
+    {
+     "categorie": "Technicien",
+     "departement": "Décoration",
+     "metier": "Chef décorateur",
+     "source": "https://sntpct.fr/wp-content/uploads/2026/04/SNTPCT_salaires_mini_Prod_cine_au_1er_Janvier_2026.pdf",
+     "date_effet": "01/03/2024 (grille) – 01/05/2026 (avenant)",
+     "minimum_semaine_39h": 2721.64,
+     "minimum_journee_7h": null,
+     "note": "Annexe I (hors tournage ou fonctions hors annexe II). Journée (<5 j) = hebdo/40 × 1,25 × 7 h. Journée : non relevée."
+    },
+    {
+     "categorie": "Technicien",
+     "departement": "Post-production",
+     "metier": "Chef monteur",
+     "source": "https://sntpct.fr/wp-content/uploads/2026/04/SNTPCT_salaires_mini_Prod_cine_au_1er_Janvier_2026.pdf",
+     "date_effet": "01/03/2024 (grille) – 01/05/2026 (avenant)",
+     "minimum_semaine_39h": 1833.05,
+     "minimum_journee_7h": 400.98,
+     "note": "Annexe I (hors tournage ou fonctions hors annexe II). Journée (<5 j) = hebdo/40 × 1,25 × 7 h."
+    },
+    {
+     "categorie": "Technicien",
+     "departement": "Post-production",
+     "metier": "Chef monteur son",
+     "source": "https://sntpct.fr/wp-content/uploads/2026/04/SNTPCT_salaires_mini_Prod_cine_au_1er_Janvier_2026.pdf",
+     "date_effet": "01/03/2024 (grille) – 01/05/2026 (avenant)",
+     "minimum_semaine_39h": 1656.25,
+     "minimum_journee_7h": 362.3,
+     "note": "Annexe I (hors tournage ou fonctions hors annexe II). Journée (<5 j) = hebdo/40 × 1,25 × 7 h."
+    },
+    {
+     "categorie": "Technicien",
+     "departement": "Post-production",
+     "metier": "Mixeur",
+     "source": "https://sntpct.fr/wp-content/uploads/2026/04/SNTPCT_salaires_mini_Prod_cine_au_1er_Janvier_2026.pdf",
+     "date_effet": "01/03/2024 (grille) – 01/05/2026 (avenant)",
+     "minimum_semaine_39h": 2110.45,
+     "minimum_journee_7h": null,
+     "note": "Annexe I (hors tournage ou fonctions hors annexe II). Journée (<5 j) = hebdo/40 × 1,25 × 7 h. Journée : non relevée."
+    },
+    {
+     "categorie": "Artiste",
+     "departement": "Artistes",
+     "metier": "Artiste-interprète long métrage – engagement à la journée",
+     "source": "https://sntpct.fr/wp-content/uploads/2024/09/SNTPCT-CCN-Prod-Cine-Texte-convention-19-01-2012-titres-III-artistes-engages-sur-court-metrage-salaires-2023.pdf",
+     "date_effet": "01/09/2023 (adhérents) / 12/02/2024 (tous)",
+     "minimum_journee": 418.25,
+     "note": "8 h × 29,68 € +75 % courte durée + 16,73 € HMC. Pas de revalorisation trouvée depuis : à vérifier."
+    },
+    {
+     "categorie": "Artiste",
+     "departement": "Artistes",
+     "metier": "Artiste-interprète long métrage – semaine 5 jours",
+     "source": "https://sntpct.fr/wp-content/uploads/2024/09/SNTPCT-CCN-Prod-Cine-Texte-convention-19-01-2012-titres-III-artistes-engages-sur-court-metrage-salaires-2023.pdf",
+     "date_effet": "01/09/2023 / 12/02/2024",
+     "minimum_semaine": 1266.7
+    },
+    {
+     "categorie": "Artiste",
+     "departement": "Artistes",
+     "metier": "Artiste-interprète COURT MÉTRAGE – journée",
+     "source": "https://sntpct.fr/wp-content/uploads/2024/09/SNTPCT-CCN-Prod-Cine-Texte-convention-19-01-2012-titres-III-artistes-engages-sur-court-metrage-salaires-2023.pdf",
+     "date_effet": "01/09/2023 / 12/02/2024",
+     "minimum_journee": 149.5,
+     "note": "Accord du 9/07/2014 revalorisé (BOCC 2023-52). Semaine 5 j : 560,68 €."
+    },
+    {
+     "categorie": "Artiste",
+     "departement": "Artistes",
+     "metier": "Répétition hors tournage – service 3 h",
+     "source": "https://sntpct.fr/wp-content/uploads/2024/09/SNTPCT-CCN-Prod-Cine-Texte-convention-19-01-2012-titres-III-artistes-engages-sur-court-metrage-salaires-2023.pdf",
+     "date_effet": "01/09/2023",
+     "minimum_service": 54.37
+    },
+    {
+     "categorie": "Artiste",
+     "departement": "Figuration",
+     "metier": "Figurant",
+     "source": "https://www.acfda.fr/wp-content/uploads/2026/06/ACFDA_Salaire_figu-1er-juin-2026.pdf",
+     "date_effet": "01/06/2026",
+     "minimum_journee": 108.33,
+     "note": "8 h × SMIC +10 %"
+    },
+    {
+     "categorie": "Artiste",
+     "departement": "Figuration",
+     "metier": "Silhouette",
+     "source": "https://www.acfda.fr/wp-content/uploads/2026/06/ACFDA_Salaire_figu-1er-juin-2026.pdf",
+     "date_effet": "01/06/2026",
+     "minimum_journee": 150.04
+    },
+    {
+     "categorie": "Artiste",
+     "departement": "Figuration",
+     "metier": "Silhouette parlante (≤ 5 mots)",
+     "source": "https://www.acfda.fr/wp-content/uploads/2026/06/ACFDA_Salaire_figu-1er-juin-2026.pdf",
+     "date_effet": "01/06/2026",
+     "minimum_journee": 250.01
+    },
+    {
+     "categorie": "Technicien",
+     "departement": "Tous",
+     "metier": "COURT MÉTRAGE – techniciens",
+     "source": "https://www.legisocial.fr/conventions-collectives-nationales/3097-production-cinematographique/",
+     "date_effet": "—",
+     "note": "Selon l'art. 1er du titre I (source secondaire), les annexes de salaires ne s'appliquent pas aux courts métrages : plancher SMIC. À VÉRIFIER sur Légifrance."
+    }
+   ]
+  },
+  "2642": {
+   "nom": "Production audiovisuelle (clips, séries, émissions, contenus)",
+   "idcc": "2642",
+   "date_effet": "Minima en vigueur depuis le 01/07/2025 (avenant 17 : +2,2 %/+1 % fiction ; +1 % flux/doc) – aucune revalorisation depuis ; grille SNTPCT publiée 07/2026.",
+   "majorations": {
+    "journee_min_heures": 7,
+    "journee": "hebdo 39 h / 4,5 (engagements ≤ 4 jours)",
+    "hebdo_36_43": 0.25,
+    "hebdo_44_plus": 0.5,
+    "hebdo_48_plus_ouvriers": 1.0,
+    "dimanche": 0.5,
+    "nuit_ouvriers_deco": 0.5,
+    "nuit_autres": 0.25,
+    "nuit_plage": "22h-7h (21/03-20/12), 20h-6h (21/12-20/03)",
+    "ferie_1er_mai": 2.0,
+    "ferie_principaux": 1.0,
+    "ferie_paques_8mai_ascension": 0.5,
+    "source": "https://sntpct.fr/wp-content/uploads/2026/09/SNTPCT_salaires_mini_Prod_AV_01-07-2026-reevalues-par-le-sntpct-2026.pdf",
+    "note": "Choix du genre (fiction/doc vs flux) à confirmer pour un clip musical : non trouvé."
+   },
+   "lignes": [
+    {
+     "categorie": "Technicien",
+     "departement": "Réalisation",
+     "metier": "Réalisateur fiction",
+     "source": "https://sntpct.fr/wp-content/uploads/2026/09/SNTPCT_salaires_mini_Prod_AV_01-07-2026-reevalues-par-le-sntpct-2026.pdf",
+     "date_effet": "01/07/2025",
+     "genre": "Fiction / documentaire",
+     "minimum_semaine_35h": null,
+     "minimum_semaine_39h": 1500.96,
+     "minimum_journee_8h": 300.07,
+     "note": "Colonne « minima garantis » (pas la revendication SNTPCT). Journée (≤4 j) = hebdo 39 h / 4,5. Forfait hebdo base 45 h et journalier base 9 h (accord 15/09/2023) – à vérifier"
+    },
+    {
+     "categorie": "Technicien",
+     "departement": "Réalisation",
+     "metier": "1er assistant réalisateur",
+     "source": "https://sntpct.fr/wp-content/uploads/2026/09/SNTPCT_salaires_mini_Prod_AV_01-07-2026-reevalues-par-le-sntpct-2026.pdf",
+     "date_effet": "01/07/2025",
+     "genre": "Fiction / documentaire",
+     "minimum_semaine_35h": 1201.13,
+     "minimum_semaine_39h": 1372.72,
+     "minimum_journee_8h": 305.05,
+     "note": "Colonne « minima garantis » (pas la revendication SNTPCT). Journée (≤4 j) = hebdo 39 h / 4,5."
+    },
+    {
+     "categorie": "Technicien",
+     "departement": "Réalisation",
+     "metier": "2e assistant réalisateur",
+     "source": "https://sntpct.fr/wp-content/uploads/2026/09/SNTPCT_salaires_mini_Prod_AV_01-07-2026-reevalues-par-le-sntpct-2026.pdf",
+     "date_effet": "01/07/2025",
+     "genre": "Fiction / documentaire",
+     "minimum_semaine_35h": 922.46,
+     "minimum_semaine_39h": 1054.24,
+     "minimum_journee_8h": 234.27,
+     "note": "Colonne « minima garantis » (pas la revendication SNTPCT). Journée (≤4 j) = hebdo 39 h / 4,5."
+    },
+    {
+     "categorie": "Technicien",
+     "departement": "Réalisation",
+     "metier": "Scripte",
+     "source": "https://sntpct.fr/wp-content/uploads/2026/09/SNTPCT_salaires_mini_Prod_AV_01-07-2026-reevalues-par-le-sntpct-2026.pdf",
+     "date_effet": "01/07/2025",
+     "genre": "Fiction / documentaire",
+     "minimum_semaine_35h": 1114.66,
+     "minimum_semaine_39h": 1273.9,
+     "minimum_journee_8h": 283.09,
+     "note": "Colonne « minima garantis » (pas la revendication SNTPCT). Journée (≤4 j) = hebdo 39 h / 4,5."
+    },
+    {
+     "categorie": "Technicien",
+     "departement": "Production",
+     "metier": "Directeur de production",
+     "source": "https://sntpct.fr/wp-content/uploads/2026/09/SNTPCT_salaires_mini_Prod_AV_01-07-2026-reevalues-par-le-sntpct-2026.pdf",
+     "date_effet": "01/07/2025",
+     "genre": "Fiction / documentaire",
+     "minimum_semaine_35h": 2241.51,
+     "minimum_semaine_39h": 2561.72,
+     "minimum_journee_8h": 569.27,
+     "note": "Colonne « minima garantis » (pas la revendication SNTPCT). Journée (≤4 j) = hebdo 39 h / 4,5."
+    },
+    {
+     "categorie": "Technicien",
+     "departement": "Régie",
+     "metier": "Régisseur général",
+     "source": "https://sntpct.fr/wp-content/uploads/2026/09/SNTPCT_salaires_mini_Prod_AV_01-07-2026-reevalues-par-le-sntpct-2026.pdf",
+     "date_effet": "01/07/2025",
+     "genre": "Fiction / documentaire",
+     "minimum_semaine_35h": 1201.13,
+     "minimum_semaine_39h": 1372.72,
+     "minimum_journee_8h": 305.05,
+     "note": "Colonne « minima garantis » (pas la revendication SNTPCT). Journée (≤4 j) = hebdo 39 h / 4,5."
+    },
+    {
+     "categorie": "Technicien",
+     "departement": "Image",
+     "metier": "Directeur photo",
+     "source": "https://sntpct.fr/wp-content/uploads/2026/09/SNTPCT_salaires_mini_Prod_AV_01-07-2026-reevalues-par-le-sntpct-2026.pdf",
+     "date_effet": "01/07/2025",
+     "genre": "Fiction / documentaire",
+     "minimum_semaine_35h": 2270.94,
+     "minimum_semaine_39h": 2595.36,
+     "minimum_journee_8h": 576.75,
+     "note": "Colonne « minima garantis » (pas la revendication SNTPCT). Journée (≤4 j) = hebdo 39 h / 4,5."
+    },
+    {
+     "categorie": "Technicien",
+     "departement": "Image",
+     "metier": "Cadreur / opérateur de prise de vues",
+     "source": "https://sntpct.fr/wp-content/uploads/2026/09/SNTPCT_salaires_mini_Prod_AV_01-07-2026-reevalues-par-le-sntpct-2026.pdf",
+     "date_effet": "01/07/2025",
+     "genre": "Fiction / documentaire",
+     "minimum_semaine_35h": 1426.42,
+     "minimum_semaine_39h": 1630.19,
+     "minimum_journee_8h": 362.27,
+     "note": "Colonne « minima garantis » (pas la revendication SNTPCT). Journée (≤4 j) = hebdo 39 h / 4,5."
+    },
+    {
+     "categorie": "Technicien",
+     "departement": "Image",
+     "metier": "1er assistant opérateur",
+     "source": "https://sntpct.fr/wp-content/uploads/2026/09/SNTPCT_salaires_mini_Prod_AV_01-07-2026-reevalues-par-le-sntpct-2026.pdf",
+     "date_effet": "01/07/2025",
+     "genre": "Fiction / documentaire",
+     "minimum_semaine_35h": 1134.43,
+     "minimum_semaine_39h": 1296.5,
+     "minimum_journee_8h": 288.11,
+     "note": "Colonne « minima garantis » (pas la revendication SNTPCT). Journée (≤4 j) = hebdo 39 h / 4,5."
+    },
+    {
+     "categorie": "Technicien",
+     "departement": "Électriciens / machinistes",
+     "metier": "Chef électricien",
+     "source": "https://sntpct.fr/wp-content/uploads/2026/09/SNTPCT_salaires_mini_Prod_AV_01-07-2026-reevalues-par-le-sntpct-2026.pdf",
+     "date_effet": "01/07/2025",
+     "genre": "Fiction / documentaire",
+     "minimum_semaine_35h": 1011.45,
+     "minimum_semaine_39h": 1155.94,
+     "minimum_journee_8h": 256.88,
+     "note": "Colonne « minima garantis » (pas la revendication SNTPCT). Journée (≤4 j) = hebdo 39 h / 4,5."
+    },
+    {
+     "categorie": "Technicien",
+     "departement": "Électriciens / machinistes",
+     "metier": "Chef machiniste",
+     "source": "https://sntpct.fr/wp-content/uploads/2026/09/SNTPCT_salaires_mini_Prod_AV_01-07-2026-reevalues-par-le-sntpct-2026.pdf",
+     "date_effet": "01/07/2025",
+     "genre": "Fiction / documentaire",
+     "minimum_semaine_35h": 1011.45,
+     "minimum_semaine_39h": 1155.94,
+     "minimum_journee_8h": 229.56,
+     "note": "Colonne « minima garantis » (pas la revendication SNTPCT). Journée (≤4 j) = hebdo 39 h / 4,5. Journalier publié ≠ hebdo/4,5 (256,88) : anomalie de la source, à vérifier"
+    },
+    {
+     "categorie": "Technicien",
+     "departement": "Électriciens / machinistes",
+     "metier": "Électricien / éclairagiste",
+     "source": "https://sntpct.fr/wp-content/uploads/2026/09/SNTPCT_salaires_mini_Prod_AV_01-07-2026-reevalues-par-le-sntpct-2026.pdf",
+     "date_effet": "01/07/2025",
+     "genre": "Fiction / documentaire",
+     "minimum_semaine_35h": 829.85,
+     "minimum_semaine_39h": 948.4,
+     "minimum_journee_8h": 210.76,
+     "note": "Colonne « minima garantis » (pas la revendication SNTPCT). Journée (≤4 j) = hebdo 39 h / 4,5."
+    },
+    {
+     "categorie": "Technicien",
+     "departement": "Électriciens / machinistes",
+     "metier": "Machiniste",
+     "source": "https://sntpct.fr/wp-content/uploads/2026/09/SNTPCT_salaires_mini_Prod_AV_01-07-2026-reevalues-par-le-sntpct-2026.pdf",
+     "date_effet": "01/07/2025",
+     "genre": "Fiction / documentaire",
+     "minimum_semaine_35h": 829.85,
+     "minimum_semaine_39h": 948.4,
+     "minimum_journee_8h": 210.76,
+     "note": "Colonne « minima garantis » (pas la revendication SNTPCT). Journée (≤4 j) = hebdo 39 h / 4,5."
+    },
+    {
+     "categorie": "Technicien",
+     "departement": "Son",
+     "metier": "Chef opérateur du son / ingénieur du son",
+     "source": "https://sntpct.fr/wp-content/uploads/2026/09/SNTPCT_salaires_mini_Prod_AV_01-07-2026-reevalues-par-le-sntpct-2026.pdf",
+     "date_effet": "01/07/2025",
+     "genre": "Fiction / documentaire",
+     "minimum_semaine_35h": 1578.11,
+     "minimum_semaine_39h": 1803.55,
+     "minimum_journee_8h": 400.79,
+     "note": "Colonne « minima garantis » (pas la revendication SNTPCT). Journée (≤4 j) = hebdo 39 h / 4,5."
+    },
+    {
+     "categorie": "Technicien",
+     "departement": "Son",
+     "metier": "Perchiste / 1er assistant son",
+     "source": "https://sntpct.fr/wp-content/uploads/2026/09/SNTPCT_salaires_mini_Prod_AV_01-07-2026-reevalues-par-le-sntpct-2026.pdf",
+     "date_effet": "01/07/2025",
+     "genre": "Fiction / documentaire",
+     "minimum_semaine_35h": 1093.23,
+     "minimum_semaine_39h": 1249.41,
+     "minimum_journee_8h": 277.65,
+     "note": "Colonne « minima garantis » (pas la revendication SNTPCT). Journée (≤4 j) = hebdo 39 h / 4,5."
+    },
+    {
+     "categorie": "Technicien",
+     "departement": "Costumes / HMC",
+     "metier": "Maquilleur",
+     "source": "https://sntpct.fr/wp-content/uploads/2026/09/SNTPCT_salaires_mini_Prod_AV_01-07-2026-reevalues-par-le-sntpct-2026.pdf",
+     "date_effet": "01/07/2025",
+     "genre": "Fiction / documentaire",
+     "minimum_semaine_35h": 916.45,
+     "minimum_semaine_39h": 1047.37,
+     "minimum_journee_8h": 232.75,
+     "note": "Colonne « minima garantis » (pas la revendication SNTPCT). Journée (≤4 j) = hebdo 39 h / 4,5."
+    },
+    {
+     "categorie": "Technicien",
+     "departement": "Costumes / HMC",
+     "metier": "Chef maquilleur",
+     "source": "https://sntpct.fr/wp-content/uploads/2026/09/SNTPCT_salaires_mini_Prod_AV_01-07-2026-reevalues-par-le-sntpct-2026.pdf",
+     "date_effet": "01/07/2025",
+     "genre": "Fiction / documentaire",
+     "minimum_semaine_35h": 1121.6,
+     "minimum_semaine_39h": 1281.82,
+     "minimum_journee_8h": 284.85,
+     "note": "Colonne « minima garantis » (pas la revendication SNTPCT). Journée (≤4 j) = hebdo 39 h / 4,5."
+    },
+    {
+     "categorie": "Technicien",
+     "departement": "Costumes / HMC",
+     "metier": "Coiffeur",
+     "source": "https://sntpct.fr/wp-content/uploads/2026/09/SNTPCT_salaires_mini_Prod_AV_01-07-2026-reevalues-par-le-sntpct-2026.pdf",
+     "date_effet": "01/07/2025",
+     "genre": "Fiction / documentaire",
+     "minimum_semaine_35h": 916.45,
+     "minimum_semaine_39h": 1047.37,
+     "minimum_journee_8h": 232.75,
+     "note": "Colonne « minima garantis » (pas la revendication SNTPCT). Journée (≤4 j) = hebdo 39 h / 4,5."
+    },
+    {
+     "categorie": "Technicien",
+     "departement": "Costumes / HMC",
+     "metier": "Styliste",
+     "source": "https://sntpct.fr/wp-content/uploads/2026/09/SNTPCT_salaires_mini_Prod_AV_01-07-2026-reevalues-par-le-sntpct-2026.pdf",
+     "date_effet": "01/07/2025",
+     "genre": "Fiction / documentaire",
+     "minimum_semaine_35h": 822.64,
+     "minimum_semaine_39h": 940.16,
+     "minimum_journee_8h": 208.92,
+     "note": "Colonne « minima garantis » (pas la revendication SNTPCT). Journée (≤4 j) = hebdo 39 h / 4,5."
+    },
+    {
+     "categorie": "Technicien",
+     "departement": "Costumes / HMC",
+     "metier": "Costumier",
+     "source": "https://sntpct.fr/wp-content/uploads/2026/09/SNTPCT_salaires_mini_Prod_AV_01-07-2026-reevalues-par-le-sntpct-2026.pdf",
+     "date_effet": "01/07/2025",
+     "genre": "Fiction / documentaire",
+     "minimum_semaine_35h": 916.45,
+     "minimum_semaine_39h": 1047.37,
+     "minimum_journee_8h": 232.75,
+     "note": "Colonne « minima garantis » (pas la revendication SNTPCT). Journée (≤4 j) = hebdo 39 h / 4,5."
+    },
+    {
+     "categorie": "Technicien",
+     "departement": "Costumes / HMC",
+     "metier": "Chef costumier",
+     "source": "https://sntpct.fr/wp-content/uploads/2026/09/SNTPCT_salaires_mini_Prod_AV_01-07-2026-reevalues-par-le-sntpct-2026.pdf",
+     "date_effet": "01/07/2025",
+     "genre": "Fiction / documentaire",
+     "minimum_semaine_35h": 1124.37,
+     "minimum_semaine_39h": 1285.0,
+     "minimum_journee_8h": 285.56,
+     "note": "Colonne « minima garantis » (pas la revendication SNTPCT). Journée (≤4 j) = hebdo 39 h / 4,5."
+    },
+    {
+     "categorie": "Technicien",
+     "departement": "Costumes / HMC",
+     "metier": "Habilleur",
+     "source": "https://sntpct.fr/wp-content/uploads/2026/09/SNTPCT_salaires_mini_Prod_AV_01-07-2026-reevalues-par-le-sntpct-2026.pdf",
+     "date_effet": "01/07/2025",
+     "genre": "Fiction / documentaire",
+     "minimum_semaine_35h": 715.59,
+     "minimum_semaine_39h": 817.82,
+     "minimum_journee_8h": 181.74,
+     "note": "Colonne « minima garantis » (pas la revendication SNTPCT). Journée (≤4 j) = hebdo 39 h / 4,5."
+    },
+    {
+     "categorie": "Technicien",
+     "departement": "Post-production",
+     "metier": "Chef monteur",
+     "source": "https://sntpct.fr/wp-content/uploads/2026/09/SNTPCT_salaires_mini_Prod_AV_01-07-2026-reevalues-par-le-sntpct-2026.pdf",
+     "date_effet": "01/07/2025",
+     "genre": "Fiction / documentaire",
+     "minimum_semaine_35h": 1261.13,
+     "minimum_semaine_39h": 1441.29,
+     "minimum_journee_8h": 320.29,
+     "note": "Colonne « minima garantis » (pas la revendication SNTPCT). Journée (≤4 j) = hebdo 39 h / 4,5."
+    },
+    {
+     "categorie": "Technicien",
+     "departement": "Post-production",
+     "metier": "Étalonneur",
+     "source": "https://sntpct.fr/wp-content/uploads/2026/09/SNTPCT_salaires_mini_Prod_AV_01-07-2026-reevalues-par-le-sntpct-2026.pdf",
+     "date_effet": "01/07/2025",
+     "genre": "Fiction / documentaire",
+     "minimum_semaine_35h": 986.19,
+     "minimum_semaine_39h": 1127.08,
+     "minimum_journee_8h": 250.46,
+     "note": "Colonne « minima garantis » (pas la revendication SNTPCT). Journée (≤4 j) = hebdo 39 h / 4,5."
+    },
+    {
+     "categorie": "Technicien",
+     "departement": "Post-production",
+     "metier": "Mixeur",
+     "source": "https://sntpct.fr/wp-content/uploads/2026/09/SNTPCT_salaires_mini_Prod_AV_01-07-2026-reevalues-par-le-sntpct-2026.pdf",
+     "date_effet": "01/07/2025",
+     "genre": "Fiction / documentaire",
+     "minimum_semaine_35h": 1361.89,
+     "minimum_semaine_39h": 1556.44,
+     "minimum_journee_8h": 340.76,
+     "note": "Colonne « minima garantis » (pas la revendication SNTPCT). Journée (≤4 j) = hebdo 39 h / 4,5."
+    },
+    {
+     "categorie": "Technicien",
+     "departement": "Réalisation",
+     "metier": "Réalisateur d'émissions",
+     "source": "https://sntpct.fr/wp-content/uploads/2026/09/SNTPCT_salaires_mini_Prod_AV_01-07-2026-reevalues-par-le-sntpct-2026.pdf",
+     "date_effet": "01/07/2025",
+     "genre": "Flux (émissions TV)",
+     "minimum_semaine_35h": 1661.1,
+     "minimum_semaine_39h": 1898.4,
+     "minimum_journee_8h": 379.68,
+     "note": "Colonne « minima garantis »."
+    },
+    {
+     "categorie": "Technicien",
+     "departement": "Réalisation",
+     "metier": "1er assistant réalisateur",
+     "source": "https://sntpct.fr/wp-content/uploads/2026/09/SNTPCT_salaires_mini_Prod_AV_01-07-2026-reevalues-par-le-sntpct-2026.pdf",
+     "date_effet": "01/07/2025",
+     "genre": "Flux (émissions TV)",
+     "minimum_semaine_35h": 957.89,
+     "minimum_semaine_39h": 1094.73,
+     "minimum_journee_8h": 243.27,
+     "note": "Colonne « minima garantis »."
+    },
+    {
+     "categorie": "Technicien",
+     "departement": "Réalisation",
+     "metier": "Scripte",
+     "source": "https://sntpct.fr/wp-content/uploads/2026/09/SNTPCT_salaires_mini_Prod_AV_01-07-2026-reevalues-par-le-sntpct-2026.pdf",
+     "date_effet": "01/07/2025",
+     "genre": "Flux (émissions TV)",
+     "minimum_semaine_35h": 957.89,
+     "minimum_semaine_39h": 1094.73,
+     "minimum_journee_8h": 243.27,
+     "note": "Colonne « minima garantis »."
+    },
+    {
+     "categorie": "Technicien",
+     "departement": "Production",
+     "metier": "Directeur de production",
+     "source": "https://sntpct.fr/wp-content/uploads/2026/09/SNTPCT_salaires_mini_Prod_AV_01-07-2026-reevalues-par-le-sntpct-2026.pdf",
+     "date_effet": "01/07/2025",
+     "genre": "Flux (émissions TV)",
+     "minimum_semaine_35h": 1524.67,
+     "minimum_semaine_39h": 1742.49,
+     "minimum_journee_8h": 387.22,
+     "note": "Colonne « minima garantis »."
+    },
+    {
+     "categorie": "Technicien",
+     "departement": "Production",
+     "metier": "Chargé de production",
+     "source": "https://sntpct.fr/wp-content/uploads/2026/09/SNTPCT_salaires_mini_Prod_AV_01-07-2026-reevalues-par-le-sntpct-2026.pdf",
+     "date_effet": "01/07/2025",
+     "genre": "Flux (émissions TV)",
+     "minimum_semaine_35h": 957.89,
+     "minimum_semaine_39h": 1094.73,
+     "minimum_journee_8h": 243.27,
+     "note": "Colonne « minima garantis »."
+    },
+    {
+     "categorie": "Technicien",
+     "departement": "Régie",
+     "metier": "Régisseur général",
+     "source": "https://sntpct.fr/wp-content/uploads/2026/09/SNTPCT_salaires_mini_Prod_AV_01-07-2026-reevalues-par-le-sntpct-2026.pdf",
+     "date_effet": "01/07/2025",
+     "genre": "Flux (émissions TV)",
+     "minimum_semaine_35h": 957.89,
+     "minimum_semaine_39h": 1094.73,
+     "minimum_journee_8h": 238.48,
+     "note": "Colonne « minima garantis »."
+    },
+    {
+     "categorie": "Technicien",
+     "departement": "Image",
+     "metier": "Chef opérateur prise de vues",
+     "source": "https://sntpct.fr/wp-content/uploads/2026/09/SNTPCT_salaires_mini_Prod_AV_01-07-2026-reevalues-par-le-sntpct-2026.pdf",
+     "date_effet": "01/07/2025",
+     "genre": "Flux (émissions TV)",
+     "minimum_semaine_35h": 1258.1,
+     "minimum_semaine_39h": 1437.83,
+     "minimum_journee_8h": 319.52,
+     "note": "Colonne « minima garantis »."
+    },
+    {
+     "categorie": "Technicien",
+     "departement": "Image",
+     "metier": "Cadreur / opérateur prise de vues",
+     "source": "https://sntpct.fr/wp-content/uploads/2026/09/SNTPCT_salaires_mini_Prod_AV_01-07-2026-reevalues-par-le-sntpct-2026.pdf",
+     "date_effet": "01/07/2025",
+     "genre": "Flux (émissions TV)",
+     "minimum_semaine_35h": 1119.66,
+     "minimum_semaine_39h": 1279.61,
+     "minimum_journee_8h": 284.36,
+     "note": "Colonne « minima garantis »."
+    },
+    {
+     "categorie": "Technicien",
+     "departement": "Électriciens / machinistes",
+     "metier": "Chef électricien",
+     "source": "https://sntpct.fr/wp-content/uploads/2026/09/SNTPCT_salaires_mini_Prod_AV_01-07-2026-reevalues-par-le-sntpct-2026.pdf",
+     "date_effet": "01/07/2025",
+     "genre": "Flux (émissions TV)",
+     "minimum_semaine_35h": 984.95,
+     "minimum_semaine_39h": 1125.65,
+     "minimum_journee_8h": 250.15,
+     "note": "Colonne « minima garantis »."
+    },
+    {
+     "categorie": "Technicien",
+     "departement": "Électriciens / machinistes",
+     "metier": "Chef machiniste",
+     "source": "https://sntpct.fr/wp-content/uploads/2026/09/SNTPCT_salaires_mini_Prod_AV_01-07-2026-reevalues-par-le-sntpct-2026.pdf",
+     "date_effet": "01/07/2025",
+     "genre": "Flux (émissions TV)",
+     "minimum_semaine_35h": 984.95,
+     "minimum_semaine_39h": 1125.65,
+     "minimum_journee_8h": 250.15,
+     "note": "Colonne « minima garantis »."
+    },
+    {
+     "categorie": "Technicien",
+     "departement": "Électriciens / machinistes",
+     "metier": "Électricien / éclairagiste",
+     "source": "https://sntpct.fr/wp-content/uploads/2026/09/SNTPCT_salaires_mini_Prod_AV_01-07-2026-reevalues-par-le-sntpct-2026.pdf",
+     "date_effet": "01/07/2025",
+     "genre": "Flux (émissions TV)",
+     "minimum_semaine_35h": 808.11,
+     "minimum_semaine_39h": 923.55,
+     "minimum_journee_8h": 232.45,
+     "note": "Colonne « minima garantis ». Journalier publié incohérent avec hebdo/4,5 (205,23) : à vérifier"
+    },
+    {
+     "categorie": "Technicien",
+     "departement": "Électriciens / machinistes",
+     "metier": "Machiniste",
+     "source": "https://sntpct.fr/wp-content/uploads/2026/09/SNTPCT_salaires_mini_Prod_AV_01-07-2026-reevalues-par-le-sntpct-2026.pdf",
+     "date_effet": "01/07/2025",
+     "genre": "Flux (émissions TV)",
+     "minimum_semaine_35h": 800.11,
+     "minimum_semaine_39h": 914.41,
+     "minimum_journee_8h": 203.2,
+     "note": "Colonne « minima garantis »."
+    },
+    {
+     "categorie": "Technicien",
+     "departement": "Son",
+     "metier": "Chef OPS / ingénieur du son",
+     "source": "https://sntpct.fr/wp-content/uploads/2026/09/SNTPCT_salaires_mini_Prod_AV_01-07-2026-reevalues-par-le-sntpct-2026.pdf",
+     "date_effet": "01/07/2025",
+     "genre": "Flux (émissions TV)",
+     "minimum_semaine_35h": 1206.8,
+     "minimum_semaine_39h": 1379.2,
+     "minimum_journee_8h": 306.49,
+     "note": "Colonne « minima garantis »."
+    },
+    {
+     "categorie": "Technicien",
+     "departement": "Costumes / HMC",
+     "metier": "Maquilleur",
+     "source": "https://sntpct.fr/wp-content/uploads/2026/09/SNTPCT_salaires_mini_Prod_AV_01-07-2026-reevalues-par-le-sntpct-2026.pdf",
+     "date_effet": "01/07/2025",
+     "genre": "Flux (émissions TV)",
+     "minimum_semaine_35h": 710.9,
+     "minimum_semaine_39h": 812.46,
+     "minimum_journee_8h": 180.55,
+     "note": "Colonne « minima garantis »."
+    },
+    {
+     "categorie": "Technicien",
+     "departement": "Costumes / HMC",
+     "metier": "Coiffeur",
+     "source": "https://sntpct.fr/wp-content/uploads/2026/09/SNTPCT_salaires_mini_Prod_AV_01-07-2026-reevalues-par-le-sntpct-2026.pdf",
+     "date_effet": "01/07/2025",
+     "genre": "Flux (émissions TV)",
+     "minimum_semaine_35h": 710.9,
+     "minimum_semaine_39h": 812.46,
+     "minimum_journee_8h": 180.55,
+     "note": "Colonne « minima garantis »."
+    },
+    {
+     "categorie": "Technicien",
+     "departement": "Costumes / HMC",
+     "metier": "Chef maquilleur",
+     "source": "https://sntpct.fr/wp-content/uploads/2026/09/SNTPCT_salaires_mini_Prod_AV_01-07-2026-reevalues-par-le-sntpct-2026.pdf",
+     "date_effet": "01/07/2025",
+     "genre": "Flux (émissions TV)",
+     "minimum_semaine_35h": 880.2,
+     "minimum_semaine_39h": 1005.95,
+     "minimum_journee_8h": 223.54,
+     "note": "Colonne « minima garantis »."
+    },
+    {
+     "categorie": "Technicien",
+     "departement": "Costumes / HMC",
+     "metier": "Styliste",
+     "source": "https://sntpct.fr/wp-content/uploads/2026/09/SNTPCT_salaires_mini_Prod_AV_01-07-2026-reevalues-par-le-sntpct-2026.pdf",
+     "date_effet": "01/07/2025",
+     "genre": "Flux (émissions TV)",
+     "minimum_semaine_35h": 801.08,
+     "minimum_semaine_39h": 915.52,
+     "minimum_journee_8h": 203.45,
+     "note": "Colonne « minima garantis »."
+    },
+    {
+     "categorie": "Technicien",
+     "departement": "Costumes / HMC",
+     "metier": "Chef costumier",
+     "source": "https://sntpct.fr/wp-content/uploads/2026/09/SNTPCT_salaires_mini_Prod_AV_01-07-2026-reevalues-par-le-sntpct-2026.pdf",
+     "date_effet": "01/07/2025",
+     "genre": "Flux (émissions TV)",
+     "minimum_semaine_35h": 890.09,
+     "minimum_semaine_39h": 1017.25,
+     "minimum_journee_8h": 226.06,
+     "note": "Colonne « minima garantis »."
+    },
+    {
+     "categorie": "Technicien",
+     "departement": "Post-production",
+     "metier": "Monteur",
+     "source": "https://sntpct.fr/wp-content/uploads/2026/09/SNTPCT_salaires_mini_Prod_AV_01-07-2026-reevalues-par-le-sntpct-2026.pdf",
+     "date_effet": "01/07/2025",
+     "genre": "Flux (émissions TV)",
+     "minimum_semaine_35h": 936.93,
+     "minimum_semaine_39h": 1070.78,
+     "minimum_journee_8h": 237.95,
+     "note": "Colonne « minima garantis »."
+    },
+    {
+     "categorie": "Technicien",
+     "departement": "Post-production",
+     "metier": "Chef monteur",
+     "source": "https://sntpct.fr/wp-content/uploads/2026/09/SNTPCT_salaires_mini_Prod_AV_01-07-2026-reevalues-par-le-sntpct-2026.pdf",
+     "date_effet": "01/07/2025",
+     "genre": "Flux (émissions TV)",
+     "minimum_semaine_35h": 1121.96,
+     "minimum_semaine_39h": 1282.24,
+     "minimum_journee_8h": 284.94,
+     "note": "Colonne « minima garantis »."
+    },
+    {
+     "categorie": "Artiste",
+     "departement": "Artistes",
+     "metier": "Émission dramatique / fiction – journée unique",
+     "source": "https://lespi.org/wp-content/uploads/2025/03/PAV_Avenant-20_Salaires-signe-v2.pdf",
+     "date_effet": "01/01/2025",
+     "minimum_journee": 304.99,
+     "note": "Avenant 20 (+1 %). Statut d'extension à vérifier."
+    },
+    {
+     "categorie": "Artiste",
+     "departement": "Artistes",
+     "metier": "Émission dramatique – journée de répétition ou d'enregistrement",
+     "source": "https://lespi.org/wp-content/uploads/2025/03/PAV_Avenant-20_Salaires-signe-v2.pdf",
+     "date_effet": "01/01/2025",
+     "minimum_journee": 289.23
+    },
+    {
+     "categorie": "Artiste",
+     "departement": "Artistes",
+     "metier": "Danseur – émission chorégraphique, soliste (≤ 6 h)",
+     "source": "https://lespi.org/wp-content/uploads/2025/03/PAV_Avenant-20_Salaires-signe-v2.pdf",
+     "date_effet": "01/01/2025",
+     "minimum_journee": 432.86
+    },
+    {
+     "categorie": "Artiste",
+     "departement": "Artistes",
+     "metier": "Danseur – émission chorégraphique, corps de ballet (≤ 6 h)",
+     "source": "https://lespi.org/wp-content/uploads/2025/03/PAV_Avenant-20_Salaires-signe-v2.pdf",
+     "date_effet": "01/01/2025",
+     "minimum_journee": 289.23
+    },
+    {
+     "categorie": "Artiste",
+     "departement": "Artistes",
+     "metier": "Émission de variétés – enregistrement",
+     "source": "https://lespi.org/wp-content/uploads/2025/03/PAV_Avenant-20_Salaires-signe-v2.pdf",
+     "date_effet": "01/01/2025",
+     "minimum_journee": 419.31
+    },
+    {
+     "categorie": "Artiste",
+     "departement": "Artistes",
+     "metier": "Musicien – cachet journée isolée (enregistrement)",
+     "source": "https://lespi.org/wp-content/uploads/2025/03/PAV_Avenant-20_Salaires-signe-v2.pdf",
+     "date_effet": "01/07/2025",
+     "minimum_journee": 239.42
+    },
+    {
+     "categorie": "Artiste",
+     "departement": "Figuration",
+     "metier": "Figurant (< 30 personnes)",
+     "source": "https://lespi.org/wp-content/uploads/2025/03/PAV_Avenant-20_Salaires-signe-v2.pdf",
+     "date_effet": "01/01/2025",
+     "minimum_journee": 98.0,
+     "note": "Inférieur au SMIC 8 h (98,48 €, ACFDA 01/06/2026) : appliquer 98,48 €."
+    },
+    {
+     "categorie": "Artiste",
+     "departement": "Figuration",
+     "metier": "Doublure lumière",
+     "source": "https://lespi.org/wp-content/uploads/2025/03/PAV_Avenant-20_Salaires-signe-v2.pdf",
+     "date_effet": "01/01/2025",
+     "minimum_journee": 122.0
+    },
+    {
+     "categorie": "Artiste",
+     "departement": "Artistes",
+     "metier": "Mannequin",
+     "source": "https://lespi.org/wp-content/uploads/2025/03/PAV_Avenant-20_Salaires-signe-v2.pdf",
+     "date_effet": "—",
+     "minimum_journee": null,
+     "note": "Non trouvé dans la grille 2642."
+    }
+   ]
+  },
+  "1285": {
+   "nom": "Entreprises artistiques et culturelles (CCNEAC – spectacle vivant subventionné)",
+   "idcc": "1285",
+   "date_effet": "Accord salaires 01/07/2026, applicable 01/08/2026 ; étendu arr. 07/09/2026 (JORF 19/09/2026).",
+   "majorations": {
+    "note": "Non collectées (heures sup, nuit, dimanche, férié) : non trouvé dans les sources téléchargées."
+   },
+   "lignes": [
+    {
+     "categorie": "Artiste",
+     "departement": "Artistes",
+     "metier": "Artiste dramatique / chorégraphique – cachet représentation (1 ou 2 dans le mois)",
+     "source": "https://www.sceneensemble.com/wp-content/uploads/2026/08/accord-nao-2026-def.pdf",
+     "date_effet": "01/08/2026",
+     "minimum_cachet": 162.75
+    },
+    {
+     "categorie": "Artiste",
+     "departement": "Artistes",
+     "metier": "Artiste dramatique / chorégraphique – cachet représentation (> 2 dans le mois)",
+     "source": "https://www.sceneensemble.com/wp-content/uploads/2026/08/accord-nao-2026-def.pdf",
+     "date_effet": "01/08/2026",
+     "minimum_cachet": 141.63
+    },
+    {
+     "categorie": "Artiste",
+     "departement": "Artistes",
+     "metier": "Artiste dramatique / chorégraphique – service de répétition (CDD < 1 mois)",
+     "source": "https://www.sceneensemble.com/wp-content/uploads/2026/08/accord-nao-2026-def.pdf",
+     "date_effet": "01/08/2026",
+     "minimum_service": 61.05,
+     "note": "Inchangé en 2026"
+    },
+    {
+     "categorie": "Artiste",
+     "departement": "Artistes",
+     "metier": "Artiste dramatique / chorégraphique – mensuel CDD < 4 mois",
+     "source": "https://www.sceneensemble.com/wp-content/uploads/2026/08/accord-nao-2026-def.pdf",
+     "date_effet": "01/08/2026",
+     "minimum_mois": 2252.37
+    },
+    {
+     "categorie": "Artiste",
+     "departement": "Artistes",
+     "metier": "Idem – CDD < 4 mois fractionné",
+     "source": "https://www.sceneensemble.com/wp-content/uploads/2026/08/accord-nao-2026-def.pdf",
+     "date_effet": "01/08/2026",
+     "minimum_mois": 2469.98
+    },
+    {
+     "categorie": "Artiste",
+     "departement": "Artistes",
+     "metier": "Artiste de cirque – répétition/création, cachet de base par jour",
+     "source": "https://www.sceneensemble.com/wp-content/uploads/2026/08/accord-nao-2026-def.pdf",
+     "date_effet": "01/08/2026",
+     "minimum_cachet": 122.1
+    },
+    {
+     "categorie": "Artiste",
+     "departement": "Musiciens",
+     "metier": "Musicien (ensemble sans nomenclature) – représentation cas général",
+     "source": "https://www.sceneensemble.com/wp-content/uploads/2026/08/accord-nao-2026-def.pdf",
+     "date_effet": "01/08/2026",
+     "minimum_cachet": 166.75
+    },
+    {
+     "categorie": "Artiste",
+     "departement": "Musiciens",
+     "metier": "Musicien (musiques actuelles) – représentation cas général",
+     "source": "https://www.sceneensemble.com/wp-content/uploads/2026/08/accord-nao-2026-def.pdf",
+     "date_effet": "01/08/2026",
+     "minimum_cachet": 166.75
+    },
+    {
+     "categorie": "Technicien / non-artistique",
+     "departement": "Grille groupes",
+     "metier": "Groupe 1 – échelon 1",
+     "source": "https://www.sceneensemble.com/wp-content/uploads/2026/08/accord-nao-2026-def.pdf",
+     "date_effet": "01/08/2026",
+     "minimum_mois": 3513.35,
+     "taux_horaire_calcule": 23.16,
+     "note": "Mensuel 151,67 h ; horaire = calcul (mensuel/151,67), pas un chiffre publié. Classement des métiers (régisseur, éclairagiste…) dans les groupes : non vérifié."
+    },
+    {
+     "categorie": "Technicien / non-artistique",
+     "departement": "Grille groupes",
+     "metier": "Groupe 2 – échelon 1",
+     "source": "https://www.sceneensemble.com/wp-content/uploads/2026/08/accord-nao-2026-def.pdf",
+     "date_effet": "01/08/2026",
+     "minimum_mois": 2748.58,
+     "taux_horaire_calcule": 18.12,
+     "note": "Mensuel 151,67 h ; horaire = calcul (mensuel/151,67), pas un chiffre publié. Classement des métiers (régisseur, éclairagiste…) dans les groupes : non vérifié."
+    },
+    {
+     "categorie": "Technicien / non-artistique",
+     "departement": "Grille groupes",
+     "metier": "Groupe 3 – échelon 1",
+     "source": "https://www.sceneensemble.com/wp-content/uploads/2026/08/accord-nao-2026-def.pdf",
+     "date_effet": "01/08/2026",
+     "minimum_mois": 2547.66,
+     "taux_horaire_calcule": 16.8,
+     "note": "Mensuel 151,67 h ; horaire = calcul (mensuel/151,67), pas un chiffre publié. Classement des métiers (régisseur, éclairagiste…) dans les groupes : non vérifié."
+    },
+    {
+     "categorie": "Technicien / non-artistique",
+     "departement": "Grille groupes",
+     "metier": "Groupe 4 – échelon 1",
+     "source": "https://www.sceneensemble.com/wp-content/uploads/2026/08/accord-nao-2026-def.pdf",
+     "date_effet": "01/08/2026",
+     "minimum_mois": 2359.38,
+     "taux_horaire_calcule": 15.56,
+     "note": "Mensuel 151,67 h ; horaire = calcul (mensuel/151,67), pas un chiffre publié. Classement des métiers (régisseur, éclairagiste…) dans les groupes : non vérifié."
+    },
+    {
+     "categorie": "Technicien / non-artistique",
+     "departement": "Grille groupes",
+     "metier": "Groupe 5 – échelon 1",
+     "source": "https://www.sceneensemble.com/wp-content/uploads/2026/08/accord-nao-2026-def.pdf",
+     "date_effet": "01/08/2026",
+     "minimum_mois": 2037.24,
+     "taux_horaire_calcule": 13.43,
+     "note": "Mensuel 151,67 h ; horaire = calcul (mensuel/151,67), pas un chiffre publié. Classement des métiers (régisseur, éclairagiste…) dans les groupes : non vérifié."
+    },
+    {
+     "categorie": "Technicien / non-artistique",
+     "departement": "Grille groupes",
+     "metier": "Groupe 6 – échelon 1",
+     "source": "https://www.sceneensemble.com/wp-content/uploads/2026/08/accord-nao-2026-def.pdf",
+     "date_effet": "01/08/2026",
+     "minimum_mois": 1921.51,
+     "taux_horaire_calcule": 12.67,
+     "note": "Mensuel 151,67 h ; horaire = calcul (mensuel/151,67), pas un chiffre publié. Classement des métiers (régisseur, éclairagiste…) dans les groupes : non vérifié."
+    },
+    {
+     "categorie": "Technicien / non-artistique",
+     "departement": "Grille groupes",
+     "metier": "Groupe 7 – échelon 1",
+     "source": "https://www.sceneensemble.com/wp-content/uploads/2026/08/accord-nao-2026-def.pdf",
+     "date_effet": "01/08/2026",
+     "minimum_mois": 1904.09,
+     "taux_horaire_calcule": 12.55,
+     "note": "Mensuel 151,67 h ; horaire = calcul (mensuel/151,67), pas un chiffre publié. Classement des métiers (régisseur, éclairagiste…) dans les groupes : non vérifié."
+    },
+    {
+     "categorie": "Technicien / non-artistique",
+     "departement": "Grille groupes",
+     "metier": "Groupe 8 – échelon 1",
+     "source": "https://www.sceneensemble.com/wp-content/uploads/2026/08/accord-nao-2026-def.pdf",
+     "date_effet": "01/08/2026",
+     "minimum_mois": 1882.56,
+     "taux_horaire_calcule": 12.41,
+     "note": "Mensuel 151,67 h ; horaire = calcul (mensuel/151,67), pas un chiffre publié. Classement des métiers (régisseur, éclairagiste…) dans les groupes : non vérifié."
+    },
+    {
+     "categorie": "Technicien / non-artistique",
+     "departement": "Grille groupes",
+     "metier": "Groupe 9 – échelon 1",
+     "source": "https://www.sceneensemble.com/wp-content/uploads/2026/08/accord-nao-2026-def.pdf",
+     "date_effet": "01/08/2026",
+     "minimum_mois": 1868.67,
+     "taux_horaire_calcule": 12.32,
+     "note": "Mensuel 151,67 h ; horaire = calcul (mensuel/151,67), pas un chiffre publié. Classement des métiers (régisseur, éclairagiste…) dans les groupes : non vérifié."
+    }
+   ]
+  },
+  "3090": {
+   "nom": "Spectacle vivant privé (CCNSVP) – annexe 1 (spectacles chorégraphiques) / annexe 4 (tournée)",
+   "idcc": "3090",
+   "date_effet": "Grille 2025 étendue (tous employeurs depuis 24/02/2026) ; NAO 2026 applicable aux adhérents depuis 01/09/2026.",
+   "majorations": {
+    "note": "Non collectées : non trouvé."
+   },
+   "lignes": [
+    {
+     "categorie": "Artiste",
+     "departement": "Artistes",
+     "metier": "Artiste chorégraphique d'ensemble – grille 2025",
+     "source": "https://www.juristique.org/wp-content/uploads/2026/02/avenant-du-21-juillet-2025-salaires-2026-spectacle-vivant.pdf",
+     "date_effet": "01/09/2025 adhérents ; 24/02/2026 tous (extension)",
+     "cachet_1_7_dates": 144.26,
+     "cachet_8_16_dates": 128.76,
+     "cachet_exploitation_continue": 98.23,
+     "note": "Grille opposable à TOUS les employeurs 3090 tant que la NAO 2026 n'est pas étendue."
+    },
+    {
+     "categorie": "Artiste",
+     "departement": "Artistes",
+     "metier": "Artiste chorégraphique d'ensemble – grille NAO 2026",
+     "source": "https://synptac-cgt.com/wp-content/uploads/2026/08/CCNSVP_NAO26_annexe1.pdf",
+     "date_effet": "01/09/2026 (adhérents des syndicats signataires uniquement)",
+     "cachet_1_7_dates": 146.42,
+     "cachet_8_16_dates": 130.69,
+     "cachet_exploitation_continue": 99.7,
+     "note": "Accord du 23/07/2026 ; extension non trouvée au 09/10/2026."
+    },
+    {
+     "categorie": "Artiste",
+     "departement": "Artistes",
+     "metier": "Artiste chorégraphique 2d rôle – grille 2025",
+     "source": "https://www.juristique.org/wp-content/uploads/2026/02/avenant-du-21-juillet-2025-salaires-2026-spectacle-vivant.pdf",
+     "date_effet": "01/09/2025 adhérents ; 24/02/2026 tous (extension)",
+     "cachet_1_7_dates": 168.1,
+     "cachet_8_16_dates": 147.83,
+     "cachet_exploitation_continue": 109.68,
+     "note": "Grille opposable à TOUS les employeurs 3090 tant que la NAO 2026 n'est pas étendue."
+    },
+    {
+     "categorie": "Artiste",
+     "departement": "Artistes",
+     "metier": "Artiste chorégraphique 2d rôle – grille NAO 2026",
+     "source": "https://synptac-cgt.com/wp-content/uploads/2026/08/CCNSVP_NAO26_annexe1.pdf",
+     "date_effet": "01/09/2026 (adhérents des syndicats signataires uniquement)",
+     "cachet_1_7_dates": 170.62,
+     "cachet_8_16_dates": 150.05,
+     "cachet_exploitation_continue": 111.33,
+     "note": "Accord du 23/07/2026 ; extension non trouvée au 09/10/2026."
+    },
+    {
+     "categorie": "Artiste",
+     "departement": "Artistes",
+     "metier": "Artiste chorégraphique 1er rôle – grille 2025",
+     "source": "https://www.juristique.org/wp-content/uploads/2026/02/avenant-du-21-juillet-2025-salaires-2026-spectacle-vivant.pdf",
+     "date_effet": "01/09/2025 adhérents ; 24/02/2026 tous (extension)",
+     "cachet_1_7_dates": 180.02,
+     "cachet_8_16_dates": 162.14,
+     "cachet_exploitation_continue": 131.15,
+     "note": "Grille opposable à TOUS les employeurs 3090 tant que la NAO 2026 n'est pas étendue."
+    },
+    {
+     "categorie": "Artiste",
+     "departement": "Artistes",
+     "metier": "Artiste chorégraphique 1er rôle – grille NAO 2026",
+     "source": "https://synptac-cgt.com/wp-content/uploads/2026/08/CCNSVP_NAO26_annexe1.pdf",
+     "date_effet": "01/09/2026 (adhérents des syndicats signataires uniquement)",
+     "cachet_1_7_dates": 182.72,
+     "cachet_8_16_dates": 164.57,
+     "cachet_exploitation_continue": 133.12,
+     "note": "Accord du 23/07/2026 ; extension non trouvée au 09/10/2026."
+    },
+    {
+     "categorie": "Artiste",
+     "departement": "Artistes",
+     "metier": "Service de répétition (annexe 1) – 2025",
+     "source": "https://www.juristique.org/wp-content/uploads/2026/02/avenant-du-21-juillet-2025-salaires-2026-spectacle-vivant.pdf",
+     "date_effet": "24/02/2026 (tous)",
+     "minimum_service": 47.52
+    },
+    {
+     "categorie": "Artiste",
+     "departement": "Artistes",
+     "metier": "Service de répétition (annexe 1, théâtre musical) – NAO 2026",
+     "source": "https://synptac-cgt.com/wp-content/uploads/2026/08/CCNSVP_NAO26_annexe1.pdf",
+     "date_effet": "01/09/2026 (adhérents)",
+     "minimum_service": 49.24,
+     "note": "Montant lu sous le tableau musiciens ; à vérifier pour les danseurs."
+    },
+    {
+     "categorie": "Artiste",
+     "departement": "Artistes",
+     "metier": "Danseur soliste en tournée (annexe 4) – 1 à 7 représentations/mois",
+     "source": "https://www.cnd.fr/sites/default/files/medias/fichier/2026/09/droit_salaires_et_indemnites_des_artistes_choregraphiques_dans_le_spectacle_vivant_et_av_sept26.pdf",
+     "date_effet": "24/02/2026",
+     "minimum_cachet": 197.91
+    },
+    {
+     "categorie": "Artiste",
+     "departement": "Artistes",
+     "metier": "Danseur du ballet en tournée (annexe 4) – 1 à 7 représentations/mois",
+     "source": "https://www.cnd.fr/sites/default/files/medias/fichier/2026/09/droit_salaires_et_indemnites_des_artistes_choregraphiques_dans_le_spectacle_vivant_et_av_sept26.pdf",
+     "date_effet": "24/02/2026",
+     "minimum_cachet": 146.0
+    },
+    {
+     "categorie": "Artiste",
+     "departement": "Artistes",
+     "metier": "Cachet de répétition en tournée (annexe 4, 1 ou 2 services de 4 h)",
+     "source": "https://www.cnd.fr/sites/default/files/medias/fichier/2026/09/droit_salaires_et_indemnites_des_artistes_choregraphiques_dans_le_spectacle_vivant_et_av_sept26.pdf",
+     "date_effet": "24/02/2026",
+     "minimum_cachet": 94.34
+    },
+    {
+     "categorie": "Technicien",
+     "departement": "Technique",
+     "metier": "Cadres : directeur technique, régisseur général, ingé son, concepteur/réalisateur lumière… – 2025",
+     "source": "https://www.juristique.org/wp-content/uploads/2026/02/avenant-du-21-juillet-2025-salaires-2026-spectacle-vivant.pdf",
+     "date_effet": "24/02/2026 (tous)",
+     "horaire_salle_200": 14.91,
+     "horaire_salle_201_500": 19.01,
+     "horaire_salle_500_plus": 23.62,
+     "note": "Taux < SMIC (12,31 €) → SMIC."
+    },
+    {
+     "categorie": "Technicien",
+     "departement": "Technique",
+     "metier": "Cadres : directeur technique, régisseur général, ingé son, concepteur/réalisateur lumière… – NAO 2026",
+     "source": "https://synptac-cgt.com/wp-content/uploads/2026/08/CCNSVP_NAO26_annexe1.pdf",
+     "date_effet": "01/09/2026 (adhérents)",
+     "horaire_salle_200": 15.13,
+     "horaire_salle_201_500": 19.3,
+     "horaire_salle_500_plus": 23.97
+    },
+    {
+     "categorie": "Technicien",
+     "departement": "Technique",
+     "metier": "Agents de maîtrise : régisseur (plateau/son/lumière), chef électricien, chef machiniste, pupitreur, cadreur, monteur… – 2025",
+     "source": "https://www.juristique.org/wp-content/uploads/2026/02/avenant-du-21-juillet-2025-salaires-2026-spectacle-vivant.pdf",
+     "date_effet": "24/02/2026 (tous)",
+     "horaire_salle_200": 14.41,
+     "horaire_salle_201_500": 15.63,
+     "horaire_salle_500_plus": 19.01,
+     "note": "Taux < SMIC (12,31 €) → SMIC."
+    },
+    {
+     "categorie": "Technicien",
+     "departement": "Technique",
+     "metier": "Agents de maîtrise : régisseur (plateau/son/lumière), chef électricien, chef machiniste, pupitreur, cadreur, monteur… – NAO 2026",
+     "source": "https://synptac-cgt.com/wp-content/uploads/2026/08/CCNSVP_NAO26_annexe1.pdf",
+     "date_effet": "01/09/2026 (adhérents)",
+     "horaire_salle_200": 14.63,
+     "horaire_salle_201_500": 15.86,
+     "horaire_salle_500_plus": 19.3
+    },
+    {
+     "categorie": "Technicien",
+     "departement": "Technique",
+     "metier": "Employés qualifiés : régisseur adjoint, électricien, technicien son/lumière, machiniste, accessoiriste… – 2025",
+     "source": "https://www.juristique.org/wp-content/uploads/2026/02/avenant-du-21-juillet-2025-salaires-2026-spectacle-vivant.pdf",
+     "date_effet": "24/02/2026 (tous)",
+     "horaire_salle_200": 13.11,
+     "horaire_salle_201_500": 13.11,
+     "horaire_salle_500_plus": 15.14,
+     "note": "Taux < SMIC (12,31 €) → SMIC."
+    },
+    {
+     "categorie": "Technicien",
+     "departement": "Technique",
+     "metier": "Employés qualifiés : régisseur adjoint, électricien, technicien son/lumière, machiniste, accessoiriste… – NAO 2026",
+     "source": "https://synptac-cgt.com/wp-content/uploads/2026/08/CCNSVP_NAO26_annexe1.pdf",
+     "date_effet": "01/09/2026 (adhérents)",
+     "horaire_salle_200": 13.37,
+     "horaire_salle_201_500": 13.37,
+     "horaire_salle_500_plus": 15.37
+    },
+    {
+     "categorie": "Technicien",
+     "departement": "Technique",
+     "metier": "Employés : poursuiteur, prompteur, agent de sécurité… – 2025",
+     "source": "https://www.juristique.org/wp-content/uploads/2026/02/avenant-du-21-juillet-2025-salaires-2026-spectacle-vivant.pdf",
+     "date_effet": "24/02/2026 (tous)",
+     "horaire_salle_200": 12.24,
+     "horaire_salle_201_500": 12.24,
+     "horaire_salle_500_plus": 12.81,
+     "note": "Taux < SMIC (12,31 €) → SMIC."
+    },
+    {
+     "categorie": "Technicien",
+     "departement": "Technique",
+     "metier": "Employés : poursuiteur, prompteur, agent de sécurité… – NAO 2026",
+     "source": "https://synptac-cgt.com/wp-content/uploads/2026/08/CCNSVP_NAO26_annexe1.pdf",
+     "date_effet": "01/09/2026 (adhérents)",
+     "horaire_salle_200": 12.48,
+     "horaire_salle_201_500": 12.48,
+     "horaire_salle_500_plus": 13.07
+    },
+    {
+     "categorie": "Technicien",
+     "departement": "Habillage / maquillage",
+     "metier": "HMC cadres (chef costumier, concepteur maquillage/coiffure…)",
+     "source": "https://www.juristique.org/wp-content/uploads/2026/02/avenant-du-21-juillet-2025-salaires-2026-spectacle-vivant.pdf",
+     "date_effet": "2025 : 24/02/2026 ; 2026 : 01/09/2026 adhérents",
+     "horaire_2025": 16.83,
+     "horaire_2026": 17.08
+    },
+    {
+     "categorie": "Technicien",
+     "departement": "Habillage / maquillage",
+     "metier": "HMC agents de maîtrise (chef habilleur, réalisateur costumes…)",
+     "source": "https://www.juristique.org/wp-content/uploads/2026/02/avenant-du-21-juillet-2025-salaires-2026-spectacle-vivant.pdf",
+     "date_effet": "2025 : 24/02/2026 ; 2026 : 01/09/2026 adhérents",
+     "horaire_2025": 15.62,
+     "horaire_2026": 15.85
+    },
+    {
+     "categorie": "Technicien",
+     "departement": "Habillage / maquillage",
+     "metier": "HMC employés qualifiés (maquilleur, coiffeur, couturier, habilleur-couturier)",
+     "source": "https://www.juristique.org/wp-content/uploads/2026/02/avenant-du-21-juillet-2025-salaires-2026-spectacle-vivant.pdf",
+     "date_effet": "2025 : 24/02/2026 ; 2026 : 01/09/2026 adhérents",
+     "horaire_2025": 14.41,
+     "horaire_2026": 14.63
+    },
+    {
+     "categorie": "Technicien",
+     "departement": "Habillage / maquillage",
+     "metier": "HMC employés (habilleur-repasseur…)",
+     "source": "https://www.juristique.org/wp-content/uploads/2026/02/avenant-du-21-juillet-2025-salaires-2026-spectacle-vivant.pdf",
+     "date_effet": "2025 : 24/02/2026 ; 2026 : 01/09/2026 adhérents",
+     "horaire_2025": 13.11,
+     "horaire_2026": 13.37
+    }
+   ]
+  },
+  "2412": {
+   "nom": "Production de films d'animation",
+   "idcc": "2412",
+   "date_effet": "—",
+   "lignes": [],
+   "note": "ATTENTION : l'IDCC 2412 est la convention de l'ANIMATION (y compris pubs d'animation), pas celle des films publicitaires en prise de vues réelle, qui relèvent de l'IDCC 3097. Grille animation non collectée."
+  }
+ },
+ "cotisations": {
+  "_avertissement": "Taux 2026 : ceux marqués verifie=true viennent d'Audiens 2026 ; les autres sont À VÉRIFIER (source ancienne ou non trouvée). AT/MP et versement mobilité propres à chaque structure.",
+  "plafonds_2026": {
+   "PSS_mensuel": 4005,
+   "plafond_journalier_intermittent_cadre_T1": 220,
+   "T1_annuel_non_cadre": 48060,
+   "source": "https://www.audiens.org/files/live/sites/siteAudiens/files/03_documents/entreprise/Fiches-techniques/Parametres-et-taux-2026.pdf",
+   "verifie": true
+  },
+  "smic_horaire_brut": {
+   "valeur": 12.31,
+   "date_effet": "01/06/2026",
+   "source": "https://www.juristique.org/conventionnel/salaires-production-cinematographique-titres-2-2026",
+   "verifie": true
+  },
+  "lignes": [
+   {
+    "code": "conges_spectacles",
+    "libelle": "Congés Spectacles (Audiens)",
+    "patronal": 15.5,
+    "salarial": 0,
+    "assiette": "brut avant abattement",
+    "applique_a": "tous",
+    "verifie": true,
+    "date_effet": "01/01/2026–31/03/2027",
+    "source": "https://www.audiens.org/files/live/sites/siteAudiens/files/03_documents/entreprise/Fiches-techniques/Parametres-et-taux-2026.pdf"
+   },
+   {
+    "code": "ac_intermittent",
+    "libelle": "Assurance chômage annexes 8 et 10 (France Travail spectacle)",
+    "patronal": 9.05,
+    "salarial": 2.4,
+    "assiette": "brut",
+    "applique_a": "tous",
+    "verifie": true,
+    "date_effet": "2026",
+    "source": "https://www.audiens.org/files/live/sites/siteAudiens/files/06_medias/entreprise/Webconferences/Web-conf-Audiens-Nouveautes-reglementaires-2026.pdf"
+   },
+   {
+    "code": "ac_majoration_cddu",
+    "libelle": "Majoration AC CDDU ≤ 3 mois",
+    "patronal": 0.5,
+    "salarial": 0,
+    "applique_a": "tous",
+    "verifie": true,
+    "source": "https://www.audiens.org/files/live/sites/siteAudiens/files/06_medias/entreprise/Webconferences/Web-conf-Audiens-Nouveautes-reglementaires-2026.pdf"
+   },
+   {
+    "code": "ags_fngs",
+    "libelle": "AGS / FNGS",
+    "patronal": 0.25,
+    "salarial": 0,
+    "applique_a": "tous",
+    "verifie": true,
+    "note": "0,25 % dans l'exemple Audiens 2026 ; ARTCENA (2022) indiquait 0,15 %",
+    "source": "https://www.audiens.org/files/live/sites/siteAudiens/files/06_medias/entreprise/Webconferences/Web-conf-Audiens-Nouveautes-reglementaires-2026.pdf"
+   },
+   {
+    "code": "retraite_t1_artiste",
+    "libelle": "Retraite complémentaire T1 – artiste non cadre",
+    "patronal": 4.45,
+    "salarial": 4.44,
+    "applique_a": "artiste_non_cadre",
+    "verifie": true,
+    "source": "https://www.audiens.org/files/live/sites/siteAudiens/files/03_documents/entreprise/Fiches-techniques/Parametres-et-taux-2026.pdf"
+   },
+   {
+    "code": "retraite_t1_technicien",
+    "libelle": "Retraite complémentaire T1 – technicien non cadre",
+    "patronal": 3.94,
+    "salarial": 3.93,
+    "applique_a": "technicien_non_cadre",
+    "verifie": true,
+    "source": "https://www.audiens.org/files/live/sites/siteAudiens/files/03_documents/entreprise/Fiches-techniques/Parametres-et-taux-2026.pdf"
+   },
+   {
+    "code": "retraite_t1_cadre",
+    "libelle": "Retraite complémentaire T1 journalière – cadre (plafond 220 €/jour)",
+    "patronal": 3.94,
+    "salarial": 3.93,
+    "applique_a": "cadre",
+    "verifie": true,
+    "source": "https://www.audiens.org/files/live/sites/siteAudiens/files/03_documents/entreprise/Fiches-techniques/Parametres-et-taux-2026.pdf"
+   },
+   {
+    "code": "retraite_t2_cadre",
+    "libelle": "Retraite complémentaire T2 journalière – cadre (220–1 540 €/jour)",
+    "patronal": 12.95,
+    "salarial": 8.64,
+    "applique_a": "cadre",
+    "verifie": true,
+    "source": "https://www.audiens.org/files/live/sites/siteAudiens/files/03_documents/entreprise/Fiches-techniques/Parametres-et-taux-2026.pdf"
+   },
+   {
+    "code": "ceg_t1",
+    "libelle": "Contribution d'équilibre général T1",
+    "patronal": 1.29,
+    "salarial": 0.86,
+    "applique_a": "tous",
+    "verifie": true,
+    "source": "https://www.audiens.org/files/live/sites/siteAudiens/files/03_documents/entreprise/Fiches-techniques/Parametres-et-taux-2026.pdf"
+   },
+   {
+    "code": "apec",
+    "libelle": "APEC (cadres)",
+    "patronal": 0.036,
+    "salarial": 0.024,
+    "applique_a": "cadre",
+    "verifie": true,
+    "source": "https://www.audiens.org/files/live/sites/siteAudiens/files/03_documents/entreprise/Fiches-techniques/Parametres-et-taux-2026.pdf"
+   },
+   {
+    "code": "prevoyance_non_cadre",
+    "libelle": "Prévoyance + fonds collectif santé – non cadre (plafond journalier)",
+    "patronal": 1.11,
+    "salarial": 0.12,
+    "applique_a": "non_cadre",
+    "verifie": true,
+    "source": "https://www.audiens.org/files/live/sites/siteAudiens/files/03_documents/entreprise/Fiches-techniques/Parametres-et-taux-2026.pdf"
+   },
+   {
+    "code": "prevoyance_cadre",
+    "libelle": "Prévoyance + fonds collectif santé – cadre",
+    "patronal": 1.69,
+    "salarial": 0.12,
+    "applique_a": "cadre",
+    "verifie": true,
+    "note": "CCNEAC cadres : 2,14 % TA + 0,95 % TB",
+    "source": "https://www.audiens.org/files/live/sites/siteAudiens/files/03_documents/entreprise/Fiches-techniques/Parametres-et-taux-2026.pdf"
+   },
+   {
+    "code": "thalie_cmb",
+    "libelle": "Médecine du travail Thalie Santé (ex-CMB)",
+    "patronal": 0.42,
+    "salarial": 0,
+    "applique_a": "tous",
+    "verifie": true,
+    "note": "0,35 % HT = 0,42 % TTC, intermittents, 2026",
+    "source": "https://www.audiens.org/files/live/sites/siteAudiens/files/06_medias/entreprise/Webconferences/Web-conf-Audiens-Nouveautes-reglementaires-2026.pdf"
+   },
+   {
+    "code": "afdas",
+    "libelle": "Formation professionnelle AFDAS intermittents",
+    "patronal": 2.1,
+    "salarial": 0,
+    "applique_a": "tous",
+    "verifie": true,
+    "note": "+ forfait annuel 50 € (non affecté par ligne)",
+    "source": "https://www.audiens.org/files/live/sites/siteAudiens/files/06_medias/entreprise/Webconferences/Web-conf-Audiens-Nouveautes-reglementaires-2026.pdf"
+   },
+   {
+    "code": "casc_svp",
+    "libelle": "CASC-SVP (CCN 3090 uniquement)",
+    "patronal": 0.5,
+    "salarial": 0,
+    "applique_a": "idcc_3090",
+    "verifie": true,
+    "source": "https://www.audiens.org/files/live/sites/siteAudiens/files/06_medias/entreprise/Webconferences/Web-conf-Audiens-Nouveautes-reglementaires-2026.pdf"
+   },
+   {
+    "code": "fcap_svp",
+    "libelle": "FCAP-SVP (CCN 3090 uniquement)",
+    "patronal": 0.1,
+    "salarial": 0,
+    "applique_a": "idcc_3090",
+    "verifie": true,
+    "note": "plancher 80 €/plafond 300 € annuels",
+    "source": "https://www.audiens.org/files/live/sites/siteAudiens/files/06_medias/entreprise/Webconferences/Web-conf-Audiens-Nouveautes-reglementaires-2026.pdf"
+   },
+   {
+    "code": "fnas",
+    "libelle": "FNAS (CCNEAC 1285)",
+    "patronal": 1.45,
+    "salarial": 0,
+    "applique_a": "idcc_1285",
+    "verifie": true,
+    "source": "https://www.audiens.org/files/live/sites/siteAudiens/files/06_medias/entreprise/Webconferences/Web-conf-Audiens-Nouveautes-reglementaires-2026.pdf"
+   },
+   {
+    "code": "fcap_eac",
+    "libelle": "FCAP (CCNEAC 1285)",
+    "patronal": 0.25,
+    "salarial": 0,
+    "applique_a": "idcc_1285",
+    "verifie": true,
+    "source": "https://www.audiens.org/files/live/sites/siteAudiens/files/06_medias/entreprise/Webconferences/Web-conf-Audiens-Nouveautes-reglementaires-2026.pdf"
+   },
+   {
+    "code": "urssaf_maladie_artiste",
+    "libelle": "URSSAF maladie – artiste (taux réduit 70 %)",
+    "patronal": 9.1,
+    "salarial": 0,
+    "applique_a": "artiste",
+    "verifie": true,
+    "source": "https://www.audiens.org/files/live/sites/siteAudiens/files/06_medias/entreprise/Webconferences/Web-conf-Audiens-Nouveautes-reglementaires-2026.pdf"
+   },
+   {
+    "code": "urssaf_vieillesse_deplaf_artiste",
+    "libelle": "URSSAF vieillesse déplafonnée – artiste",
+    "patronal": 1.48,
+    "salarial": 0.28,
+    "applique_a": "artiste",
+    "verifie": true,
+    "source": "https://www.audiens.org/files/live/sites/siteAudiens/files/06_medias/entreprise/Webconferences/Web-conf-Audiens-Nouveautes-reglementaires-2026.pdf"
+   },
+   {
+    "code": "urssaf_vieillesse_plaf_artiste",
+    "libelle": "URSSAF vieillesse plafonnée – artiste (plafond = 12 × plafond horaire × jours)",
+    "patronal": 5.99,
+    "salarial": 4.83,
+    "applique_a": "artiste",
+    "verifie": true,
+    "note": "exemple Audiens : 360 € de plafond pour 1 jour",
+    "source": "https://www.audiens.org/files/live/sites/siteAudiens/files/06_medias/entreprise/Webconferences/Web-conf-Audiens-Nouveautes-reglementaires-2026.pdf"
+   },
+   {
+    "code": "urssaf_af_artiste",
+    "libelle": "URSSAF allocations familiales – artiste",
+    "patronal": 3.68,
+    "salarial": 0,
+    "applique_a": "artiste",
+    "verifie": true,
+    "source": "https://www.audiens.org/files/live/sites/siteAudiens/files/06_medias/entreprise/Webconferences/Web-conf-Audiens-Nouveautes-reglementaires-2026.pdf"
+   },
+   {
+    "code": "urssaf_fnal_artiste",
+    "libelle": "FNAL – artiste (< 50 sal., assiette plafonnée majorée 11,5 %)",
+    "patronal": 0.07,
+    "salarial": 0,
+    "applique_a": "artiste",
+    "verifie": true,
+    "source": "https://www.audiens.org/files/live/sites/siteAudiens/files/06_medias/entreprise/Webconferences/Web-conf-Audiens-Nouveautes-reglementaires-2026.pdf"
+   },
+   {
+    "code": "urssaf_dialogue_social",
+    "libelle": "Contribution dialogue social",
+    "patronal": 0.016,
+    "salarial": 0,
+    "applique_a": "tous",
+    "verifie": true,
+    "source": "https://www.audiens.org/files/live/sites/siteAudiens/files/06_medias/entreprise/Webconferences/Web-conf-Audiens-Nouveautes-reglementaires-2026.pdf"
+   },
+   {
+    "code": "csa",
+    "libelle": "Contribution solidarité autonomie",
+    "patronal": 0.3,
+    "salarial": 0,
+    "applique_a": "tous",
+    "verifie": true,
+    "source": "https://www.audiens.org/files/live/sites/siteAudiens/files/06_medias/entreprise/Webconferences/Web-conf-Audiens-Nouveautes-reglementaires-2026.pdf"
+   },
+   {
+    "code": "at_mp",
+    "libelle": "Accident du travail (taux propre à la structure)",
+    "patronal": 1.19,
+    "salarial": 0,
+    "applique_a": "tous",
+    "verifie": false,
+    "note": "1,19 % = valeur de l'exemple Audiens ; À REMPLACER par le taux notifié à l'entreprise",
+    "source": "https://www.audiens.org/files/live/sites/siteAudiens/files/06_medias/entreprise/Webconferences/Web-conf-Audiens-Nouveautes-reglementaires-2026.pdf"
+   },
+   {
+    "code": "urssaf_maladie_technicien",
+    "libelle": "URSSAF maladie – technicien",
+    "patronal": 13.0,
+    "salarial": 0,
+    "applique_a": "technicien",
+    "verifie": false,
+    "note": "7 % si rémunération < 2,25 SMIC (règle 2026, Audiens) ; taux 13 % issu d'ARTCENA 2022 – À VÉRIFIER",
+    "source": "https://www.artcena.fr/precis-juridique/etudes/paie-et-cotisations/cotisations-et-contributions-sociales"
+   },
+   {
+    "code": "urssaf_af_technicien",
+    "libelle": "URSSAF allocations familiales – technicien",
+    "patronal": 5.25,
+    "salarial": 0,
+    "applique_a": "technicien",
+    "verifie": false,
+    "note": "3,45 % si < 3,3 SMIC ; ARTCENA 2022 – À VÉRIFIER",
+    "source": "https://www.artcena.fr/precis-juridique/etudes/paie-et-cotisations/cotisations-et-contributions-sociales"
+   },
+   {
+    "code": "urssaf_vieillesse_technicien",
+    "libelle": "URSSAF vieillesse plafonnée + déplafonnée – technicien",
+    "patronal": null,
+    "salarial": null,
+    "applique_a": "technicien",
+    "verifie": false,
+    "note": "Non trouvé dans les sources consultées (Audiens indique seulement déplafonnée patronale 2,11 % en 2026)",
+    "source": "https://www.audiens.org/files/live/sites/siteAudiens/files/06_medias/entreprise/Webconferences/Web-conf-Audiens-Nouveautes-reglementaires-2026.pdf"
+   },
+   {
+    "code": "urssaf_fnal_technicien",
+    "libelle": "FNAL – technicien (< 50 sal.)",
+    "patronal": 0.1,
+    "salarial": 0,
+    "applique_a": "technicien",
+    "verifie": false,
+    "note": "ARTCENA 2022 – À VÉRIFIER",
+    "source": "https://www.artcena.fr/precis-juridique/etudes/paie-et-cotisations/cotisations-et-contributions-sociales"
+   },
+   {
+    "code": "csg_crds",
+    "libelle": "CSG/CRDS (salarial, assiette 98,25 %)",
+    "patronal": 0,
+    "salarial": 9.7,
+    "applique_a": "tous",
+    "verifie": true,
+    "note": "6,8 % déductible + 2,9 % non déductible (exemple Audiens)",
+    "source": "https://www.audiens.org/files/live/sites/siteAudiens/files/06_medias/entreprise/Webconferences/Web-conf-Audiens-Nouveautes-reglementaires-2026.pdf",
+    "ventilation": [
+     {
+      "libelle": "CSG déductible",
+      "salarial": 6.8
+     },
+     {
+      "libelle": "CSG non déductible + CRDS",
+      "salarial": 2.9,
+      "non_deductible": true
+     }
+    ]
+   }
+  ],
+  "reductions": {
+   "note": "Réduction générale dégressive unique (RGDU) 2026 et abattement pour frais professionnels : NON modélisés par défaut (option désactivée, à vérifier)."
+  },
+  "parametres_calcul": {
+   "_note": "Paramètres de calcul ajoutés pour le simulateur (éditables dans la page Paramètres).",
+   "plafond_journalier_T2": 1540,
+   "plafond_vieillesse_artiste_jour": 360,
+   "fnal_majoration_assiette": 1.115,
+   "csg_assiette_pct": 98.25,
+   "heures_mensuelles": 151.67,
+   "jours_prorata_mois": 30,
+   "source": "https://www.audiens.org/files/live/sites/siteAudiens/files/03_documents/entreprise/Fiches-techniques/Parametres-et-taux-2026.pdf"
+  }
+ },
+ "intermediaires": {
+  "_date_releve": "09/10/2026",
+  "options": [
+   {
+    "id": "direct",
+    "nom": "En direct (paie interne)",
+    "prix_par_bulletin_ht": 0,
+    "prix_par_contrat_ht": 0,
+    "abonnement_mensuel_ht": 0,
+    "pourcentage": 0,
+    "source": null,
+    "note": "Aucun frais d'intermédiaire."
+   },
+   {
+    "id": "movinmotion",
+    "nom": "Movinmotion (utilisé par Facteur Humain)",
+    "prix_par_bulletin_ht": 16.1,
+    "prix_par_bulletin_mode": "à partir de (14 crédits ; bulletin + AEM + déclaration Congés Spectacles)",
+    "signature_electronique_contrat_ht": 2.3,
+    "abonnement_mensuel_ht": {
+     "basic": 23.0,
+     "premium": 46.0,
+     "mode": "à partir de (20 / 40 crédits)"
+    },
+    "frais_dossier": "150 crédits à l'inscription (valeur du crédit 1,15–1,45 € HT selon pack)",
+    "sur_mesure": "> 100 bulletins intermittents/mois : sur devis",
+    "pourcentage": 0,
+    "source": [
+     "https://www.movinmotion.com/social/tarifs/",
+     "https://support.movinmotion.com/portal/fr/kb/articles/quels-sont-les-tarifs-du-service-movinmotion"
+    ],
+    "note": "Prix « à partir de » : le tarif réel dépend du pack de crédits et du contrat de Facteur Humain – à remplacer par le prix négocié.",
+    "frais_dossier_credits": 150,
+    "valeur_credit_ht": {
+     "min": 1.15,
+     "max": 1.45,
+     "defaut": 1.3
+    }
+   },
+   {
+    "id": "culturepay",
+    "nom": "CulturePay",
+    "prix_par_contrat_ht": 17.9,
+    "abonnement_mensuel_ht": 0,
+    "pourcentage": 0,
+    "source": [
+     "https://www.culturepay.fr/",
+     "https://aide.culturepay.fr/hc/fr/articles/9191990361757-Comment-payer-CulturePay"
+    ],
+    "note": "Prix unique par contrat, sans abonnement ni frais d'inscription, signature électronique incluse."
+   },
+   {
+    "id": "guso",
+    "nom": "GUSO (France Travail)",
+    "prix_par_contrat_ht": 0,
+    "abonnement_mensuel_ht": 0,
+    "pourcentage": 0,
+    "source": [
+     "https://www.guso.fr/information/accueil",
+     "https://www.service-public.gouv.fr/particuliers/vosdroits/F1928"
+    ],
+    "note": "Gratuit et obligatoire, réservé aux employeurs dont l'activité principale n'est PAS le spectacle (donc ni Facteur Humain, ni une compagnie dont c'est l'activité principale). Spectacle vivant uniquement."
+   },
+   {
+    "id": "smart",
+    "nom": "Smart (France)",
+    "prix_par_contrat_ht": 0,
+    "abonnement_mensuel_ht": 0,
+    "pourcentage": 6.5,
+    "assiette_pourcentage": "coût employeur total (salaires bruts + cotisations patronales)",
+    "tva_sur_frais": 20,
+    "source": [
+     "https://www.smartfr.fr/communaute/employeur/"
+    ],
+    "note": "6,5 % HT = 4,5 % services + 2 % fonds de garantie ; TVA 20 % sur les frais uniquement."
+   },
+   {
+    "id": "diese",
+    "nom": "#DIESE Software",
+    "prix_par_contrat_ht": null,
+    "abonnement_mensuel_ht": null,
+    "pourcentage": null,
+    "source": [
+     "https://www.diesesoftware.com/planification-du-personnel/"
+    ],
+    "note": "Logiciel de planification/contrats (interface avec sPAIEctacle), pas un intermédiaire de paie ; tarif non public (sur devis)."
+   }
+  ]
+ }
+}
