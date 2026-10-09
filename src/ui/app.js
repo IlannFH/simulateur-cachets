@@ -1,4 +1,4 @@
-// Parcours en trois branches. Le statut artiste/technicien vient du métier.
+// Parcours. Artistes et techniciens ne partagent ni grille, ni question, ni résultat.
 import * as E from '../engine/index.js';
 
 const LS = {
@@ -19,7 +19,7 @@ const majoVides = () => ({ sup: '', nuit: '', dimanche: '', ferie: '' });
 function parcoursVide() {
   return {
     depart: null, etape: 'depart', montant: '', convention: '', posteId: null, recherche: '',
-    phrase: '', famille: '', typeProjet: '', grade: '', kindDemande: '', metierCle: '',
+    phrase: '', famille: '', statut: '', typeProjet: '', grade: '', kindDemande: '', metierCle: '',
     roles: [], sauf: [], choix: [], question: '',
     heuresDemandees: '', joursDemandes: '', cachetsDemandes: '',
     genre: '', grille: '2025', jauge: '200', unite: null, quantite: '1', representations: '',
@@ -76,7 +76,11 @@ function statutCourant(e = entreeCourante()) {
   const souhait = state.parcours.cadreTouche ? { cadre: !!state.parcours.cadre } : {};
   return E.statutPourMetier(e, souhait);
 }
-const libelleStatut = (s) => `${s.categorie === 'artiste' ? 'Artiste' : 'Technicien'} · ${s.cadre ? 'cadre' : 'non-cadre'}`;
+function marqueStatut(categorie, convention) {
+  const idcc = DATA?.conventions?.[convention]?.idcc || '';
+  const qui = categorie === 'artiste' ? 'Artiste' : 'Technicien';
+  return idcc ? `${qui} · convention ${idcc}` : qui;
+}
 
 function assurerMetier() {
   const p = state.parcours;
@@ -135,6 +139,7 @@ function lierPoste() {
 function etapeManquante() {
   const p = state.parcours;
   if ((p.depart === 'budget' || p.depart === 'brut') && erreurMontant()) return 'montant';
+  if (!p.statut) return 'statut';
   if (p.choix?.length && !p.metierCle) return 'choix';
   if (!p.metierCle && (p.depart !== 'budget' || !p.famille)) return 'metier';
   if (typesCourants().length > 1 && !p.typeProjet) return 'projet';
@@ -155,6 +160,7 @@ function appliquerPhrase() {
   p.montant = a.montant != null ? String(a.montant).replace('.', ',') : '';
   p.depart = a.brut ? 'brut' : (a.montant != null ? 'budget' : 'metier');
   p.famille = a.famille || '';
+  p.statut = a.statut || '';
   p.metierCle = a.choix?.length ? '' : (a.metierCle || '');
   p.roles = a.roles || [];
   p.sauf = a.sauf || [];
@@ -170,17 +176,12 @@ function appliquerPhrase() {
   p.cadreTouche = false;
   p.cadre = null;
   state.parcours = p;
-  if (p.choix.length) {
-    p.etape = 'choix';
-    p.ouvert = false;
-    sauverForm();
-    render();
-    return;
+  if (!(p.choix?.length && !p.metierCle)) {
+    const types = typesCourants();
+    if (p.typeProjet && !types.some((t) => t.id === p.typeProjet)) p.typeProjet = '';
+    if (!p.typeProjet && types.length === 1) p.typeProjet = types[0].id;
+    lierPoste();
   }
-  const types = typesCourants();
-  if (p.typeProjet && !types.some((t) => t.id === p.typeProjet)) p.typeProjet = '';
-  if (!p.typeProjet && types.length === 1) p.typeProjet = types[0].id;
-  lierPoste();
   p.etape = etapeManquante();
   p.ouvert = p.etape === 'metier';
   sauverForm();
@@ -194,6 +195,8 @@ function etapesActives() {
   const p = state.parcours;
   const list = [];
   if (p.depart === 'budget' || p.depart === 'brut') list.push('montant');
+  if (!p.statut) list.push('statut');
+  if (p.choix?.length && !p.metierCle) list.push('choix');
   list.push('metier');
   if (typesCourants().length > 1) list.push('projet');
   if (p.depart !== 'budget') {
@@ -288,6 +291,8 @@ function crumb(et) {
     const v = E.parseInput(p.montant);
     return v == null ? 'Montant' : `${E.formatNumber(v)} €`;
   }
+  if (et === 'statut') return p.statut === 'artiste' ? 'Artiste' : p.statut === 'technicien' ? 'Technicien' : 'Statut';
+  if (et === 'choix') return 'Lequel';
   if (et === 'metier') {
     const nom = jobCourant()?.nom || E.labelFamille(p.famille) || 'Métier';
     return nom.length > 32 ? `${nom.slice(0, 30)}…` : nom;
@@ -310,11 +315,13 @@ function crumb(et) {
 function titre() {
   const p = state.parcours;
   if (p.etape === 'montant') return p.depart === 'budget' ? 'Quel budget HT ?' : 'Quel brut ?';
+  if (p.etape === 'statut') return 'Artiste ou technicien ?';
   if (p.etape === 'metier') return 'Quel métier ?';
   if (p.etape === 'choix') return 'Lequel ?';
   if (p.etape === 'projet') return "C'est pour quoi ?";
   if (p.etape === 'quantite') return 'Combien ?';
   if (p.etape === 'precision') return uniteCourante()?.key === 'horaire_jauge' ? 'Quelle jauge ?' : 'Combien de dates dans le mois ?';
+  if (p.depart === 'budget' && p.metierCle && jobCourant()) return jobCourant().nom;
   if (p.depart === 'budget' && p.famille) return E.labelFamille(p.famille);
   return entreeCourante()?.metier || jobCourant()?.nom || 'Résultat';
 }
@@ -322,7 +329,19 @@ function titre() {
 function choisirDepart(d) {
   state.parcours = parcoursVide();
   state.parcours.depart = d;
-  state.parcours.etape = d === 'metier' ? 'metier' : 'montant';
+  state.parcours.etape = d === 'metier' ? 'statut' : 'montant';
+  sauverForm();
+  render();
+}
+function choisirStatut(statut) {
+  const p = state.parcours;
+  p.statut = statut === 'artiste' ? 'artiste' : 'technicien';
+  if ((p.choix || []).some((c) => c.statut && !c.cle)) {
+    p.choix = [];
+    p.question = '';
+  }
+  p.etape = etapeManquante();
+  p.ouvert = p.etape === 'metier';
   sauverForm();
   render();
 }
@@ -335,6 +354,7 @@ function choisirMetier(cle) {
   p.question = '';
   p.roles = [];
   p.sauf = [];
+  p.statut = E.categorieStatut(job.categorie) === 'artiste' ? 'artiste' : 'technicien';
   p.famille = job.familles[0] || p.famille || '';
   p.recherche = job.nom;
   p.ouvert = false;
@@ -431,9 +451,11 @@ function dureeParcours(poste) {
 }
 function regleGrille() {
   const aHeure = unitesCourantes().some((u) => u.kind === 'heure' && !u.nonTrouve);
+  const cat = state.parcours.statut || statutCourant().categorie;
   return E.phraseSansHoraire({
     typeProjet: state.parcours.typeProjet,
     convention: state.parcours.convention,
+    categorie: cat,
     aHeure,
   });
 }
@@ -568,6 +590,7 @@ function htmlSolutions() {
     grade: p.grade,
     roles: p.roles,
     sauf: p.sauf,
+    statut: p.statut,
     reglages: state.reglages,
     posteExtra: posteExtraAffiner(),
   });
@@ -577,9 +600,11 @@ function htmlSolutions() {
   const qui = E.quiResume(p.metierCle ? '' : p.famille, p.metierCle ? (jobCourant()?.nom || opt.nom) : '');
   const projet = E.labelType(p.typeProjet);
   const totalAffiche = opt.possible ? opt.total : opt.budgetMinimum;
+  const lecture = opt.lecture ? `<p class="lecture">${esc(opt.lecture)}</p>` : '';
+  const marque = `<p class="stat">${esc(marqueStatut(opt.statut.categorie, opt.convention))}</p>`;
   const top = opt.possible
-    ? `${verdictOk(`${opt.nom} · ${opt.uniteLabel}`)}${htmlCouts(opt.employeur, totalAffiche, opt.brut, opt.net)}`
-    : `${verdictKo('Pas possible', `Minimum : coût employeur ${E.formatEuros(opt.employeur)}, coût total ${E.formatEuros(totalAffiche)} HT`)}${htmlCouts(opt.employeur, totalAffiche, opt.brut, opt.net)}`;
+    ? `${marque}${verdictOk(`${opt.nom} · ${opt.uniteLabel}`)}${htmlCouts(opt.employeur, totalAffiche, opt.brut, opt.net)}${lecture}`
+    : `${marque}${verdictKo('Pas possible', `Minimum : coût employeur ${E.formatEuros(opt.employeur)}, coût total ${E.formatEuros(totalAffiche)} HT`)}${htmlCouts(opt.employeur, totalAffiche, opt.brut, opt.net)}${lecture}`;
   const resume = htmlResume({
     qui, projet, duree: E.dureeResume(opt), mode: 'budget', possible: opt.possible,
     budgetEuros: euros.valeur,
@@ -594,15 +619,19 @@ function htmlSolutions() {
     const totalCarte = o.possible ? o.total : o.budgetMinimum;
     const ligne = `<p class="cout-ligne">Coût employeur ${esc(E.formatEuros(o.employeur))}</p><p class="cout-ligne">Coût total ${esc(E.formatEuros(totalCarte))} HT</p><p class="secondaire">Brut ${esc(E.formatEuros(o.brut))}, net ${esc(E.formatEuros(o.net))}</p>${o.possible ? '<p class="ok-txt">Possible</p>' : '<p class="ko-txt">Pas possible</p>'}`;
     const reduit = o.reduit?.texte ? `<p class="reduit">${esc(o.reduit.texte)}</p>` : '';
-    return `<article class="sol ${o.possible ? 'ok' : 'ko'}${o.recommande ? ' reco' : ''}">${o.recommande ? '<p class="tag">Recommandé</p>' : ''}<h3>${esc(o.nom)}</h3><p class="lbl">${esc(o.uniteLabel)} · ${esc(libelleStatut(o.statut))}</p>${ligne}${reduit}</article>`;
+    const lu = o.lecture ? `<p class="lecture">${esc(o.lecture)}</p>` : '';
+    return `<article class="sol ${o.possible ? 'ok' : 'ko'}${o.recommande ? ' reco' : ''}">${o.recommande ? '<p class="tag">Recommandé</p>' : ''}<h3>${esc(o.nom)}</h3><p class="lbl">${esc(marqueStatut(o.statut.categorie, o.convention))}</p><p class="lbl">${esc(o.uniteLabel)}</p>${ligne}${lu}${reduit}</article>`;
   }).join('');
   return `${top}${htmlReco(s.reco, s.note)}${resume}<div class="sols">${cards}</div>${htmlComparaison(s.intermediaires)}`;
 }
 function htmlDetail() {
   const c = DATA.conventions[state.parcours.convention];
   if (!c) return '';
+  const artiste = state.parcours.statut === 'artiste' || statutCourant().categorie === 'artiste';
   const meme = state.parcours.convention === '2642' && (state.parcours.typeProjet === 'clip' || state.parcours.typeProjet === 'edito')
-    ? ' Clip, édito / mode et série : même grille.'
+    ? (artiste
+      ? ' Annexe artistes-interprètes (ex-IDCC 1734), maintenue dans l’IDCC 2642. Ce n’est pas la grille techniciens.'
+      : ' Clip, édito / mode et série : même grille.')
     : '';
   return `<details><summary>Détail</summary><p class="lbl">${esc(c.nom)} (IDCC ${esc(c.idcc)}).${esc(meme)}</p></details>`;
 }
@@ -655,10 +684,16 @@ function htmlReglages() {
   return h;
 }
 
+function memeStatut(job) {
+  const statut = state.parcours.statut;
+  if (!statut) return true;
+  const cat = E.categorieStatut(job.categorie);
+  return statut === 'artiste' ? cat === 'artiste' : cat !== 'artiste';
+}
 function chercher(q) {
   const n = norm(q);
   if (!n) return [];
-  const hits = JOBS.filter((j) => norm(`${j.nom} ${j.familles.map((id) => E.labelFamille(id)).join(' ')}`).includes(n));
+  const hits = JOBS.filter((j) => memeStatut(j) && norm(`${j.nom} ${j.familles.map((id) => E.labelFamille(id)).join(' ')}`).includes(n));
   hits.sort((a, b) => (norm(a.nom).startsWith(n) ? 0 : 1) - (norm(b.nom).startsWith(n) ? 0 : 1) || (a.nom.includes(':') ? 1 : 0) - (b.nom.includes(':') ? 1 : 0) || a.nom.localeCompare(b.nom, 'fr'));
   return hits.slice(0, 8);
 }
@@ -713,7 +748,7 @@ function htmlSimuler() {
       const sous = [typeLabel, duree].filter(Boolean).join(' · ');
       return `<div class="ecran">${head}<h2 class="q">${esc(titre())}</h2>${sous ? `<p class="stat">${esc(sous)}</p>` : ''}<div id="chiffres">${htmlSolutions()}</div>${htmlAffiner({ sansCadre: true })}${htmlDetail()}</div>`;
     }
-    const sous = [typeLabel, libelleStatut(st)].filter(Boolean).join(' · ');
+    const sous = [typeLabel, marqueStatut(st.categorie, p.convention)].filter(Boolean).join(' · ');
     return `<div class="ecran">${head}<h2 class="nom">${esc(titre())}</h2><p class="stat">${esc(sous)}</p><div id="chiffres" class="figures">${htmlChiffres()}</div>${htmlAffiner()}${htmlDetail()}</div>`;
   }
   let corps = '';
@@ -721,6 +756,8 @@ function htmlSimuler() {
     corps = `<label class="lbl" for="f-montant">${p.depart === 'budget' ? 'Montant HT' : 'Brut'}</label><input id="f-montant" data-autofocus type="text" inputmode="decimal" autocomplete="off" value="${esc(p.montant)}" placeholder="250">`;
   } else if (p.etape === 'metier') {
     corps = `<label class="lbl" for="f-metier">Métier</label><input id="f-metier" data-autofocus type="search" autocomplete="off" role="combobox" aria-autocomplete="list" aria-controls="suggest" aria-expanded="${p.ouvert}" value="${esc(p.recherche)}" placeholder="photo, danseur, assistant"><div id="suggest" class="suggest"></div>`;
+  } else if (p.etape === 'statut') {
+    corps = `<div class="choix"><button type="button" class="choice" data-statut="artiste"><span class="pixel">Artiste</span><span class="hint">Grilles artistes-interprètes</span></button><button type="button" class="choice" data-statut="technicien"><span class="pixel">Technicien</span><span class="hint">Grilles techniciens</span></button></div>`;
   } else if (p.etape === 'choix') {
     corps = `<p class="lbl">${esc(p.question || '')}</p><div class="choix">${(p.choix || []).map((c) => `<button type="button" class="choice" data-metier="${esc(c.cle)}"${c.type ? ` data-projet="${esc(c.type)}"` : ''}><span class="pixel">${esc(c.court || c.nom)}</span><span class="hint">${esc(c.nom)}</span></button>`).join('')}</div>`;
   } else if (p.etape === 'projet') {
@@ -741,7 +778,7 @@ function htmlSimuler() {
       if (u?.key === 'cachet_representation') corps += `<label class="check"><input type="checkbox" data-k="exploitationContinue" ${p.exploitationContinue ? 'checked' : ''}>Exploitation continue</label>`;
     }
   }
-  if (p.etape === 'projet' || p.etape === 'choix') return `<div class="ecran">${head}<h2 class="q" id="q">${esc(titre())}</h2>${corps}</div>`;
+  if (p.etape === 'projet' || p.etape === 'choix' || p.etape === 'statut') return `<div class="ecran">${head}<h2 class="q" id="q">${esc(titre())}</h2>${corps}</div>`;
   const suite = `<p id="err" role="alert"></p><div class="bas"><button type="button" class="pixel-btn" data-next>Continuer</button></div>`;
   return `<div class="ecran">${head}<h2 class="q" id="q">${esc(titre())}</h2>${corps}${suite}</div>`;
 }
@@ -828,7 +865,7 @@ async function copierResume() {
   if (btn) btn.textContent = ok ? 'Copié' : 'Copier';
 }
 function onClick(ev) {
-  const b = ev.target.closest('[data-depart], [data-goto], [data-back], [data-next], [data-metier], [data-projet], [data-unite], [data-action]');
+  const b = ev.target.closest('[data-depart], [data-goto], [data-back], [data-next], [data-statut], [data-metier], [data-projet], [data-unite], [data-action]');
   if (!b) {
     if (state.parcours.ouvert && !ev.target.closest('#f-metier') && !ev.target.closest('#suggest')) {
       state.parcours.ouvert = false;
@@ -841,6 +878,7 @@ function onClick(ev) {
   if (b.dataset.goto) { state.parcours.etape = b.dataset.goto; sauverForm(); render(); return; }
   if (b.hasAttribute('data-back')) { precedent(); return; }
   if (b.hasAttribute('data-next')) { if (validerEtape()) avancer(); return; }
+  if (b.dataset.statut) { choisirStatut(b.dataset.statut); return; }
   if (b.dataset.metier) {
     if (b.dataset.projet) state.parcours.typeProjet = b.dataset.projet;
     choisirMetier(b.dataset.metier);
@@ -894,7 +932,7 @@ function onChange(ev) {
     sauverForm();
     const st = statutCourant();
     const el = $('.stat');
-    if (el) el.textContent = libelleStatut(st);
+    if (el) el.textContent = [E.labelType(state.parcours.typeProjet), marqueStatut(st.categorie, state.parcours.convention)].filter(Boolean).join(' · ');
     majChiffres();
     return;
   }
@@ -1051,6 +1089,12 @@ async function init() {
   if (fs?.parcours && (fs.parcours.depart || fs.parcours.etape === 'depart')) {
     const p = fs.parcours;
     state.parcours = { ...parcoursVide(), ...p, heures: { ...heuresVides(), ...(p.heures || {}) }, majoPct: { ...majoVides(), ...(p.majoPct || {}) }, ouvert: false };
+    if (!state.parcours.statut && state.parcours.metierCle) {
+      const job = JOBS.find((j) => j.cle === state.parcours.metierCle);
+      if (job) state.parcours.statut = E.categorieStatut(job.categorie) === 'artiste' ? 'artiste' : 'technicien';
+    } else if (!state.parcours.statut && state.parcours.famille) {
+      state.parcours.statut = state.parcours.famille === 'artistes' ? 'artiste' : 'technicien';
+    }
   }
   $('#avertissement-complet').textContent = E.AVERTISSEMENT;
   $('#lien-avertissement').addEventListener('click', () => {

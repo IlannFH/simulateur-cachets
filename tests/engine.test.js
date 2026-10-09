@@ -9,7 +9,9 @@ import {
   dureeApresChangementUnite, conserverSaisie,
   analyserPhrase, indexerMetiers, typesDisponibles, solutionsBudget, famillesDe, labelType,
   texteResume, bilanPoste, lignesCalcul, quiResume, dureeResume, comparerIntermediaires,
-  recoDepuisLigne, LIGNE_CLIP, LIGNE_DEMI_PIGE, phraseSansHoraire,
+  recoDepuisLigne, LIGNE_CLIP, LIGNE_DEMI_PIGE, LIGNE_DEMI_ARTISTE, LIGNE_ARTISTE_2642,
+  LIGNE_FRANCE_TRAVAIL_ARTISTE, LIGNE_FRANCE_TRAVAIL_TECH, phraseSansHoraire,
+  dureeAuBrut, valeurUnitaire,
 } from '../src/engine/index.js';
 
 const data = JSON.parse(readFileSync(new URL('../data/simulateur_data.json', import.meta.url), 'utf8'));
@@ -545,33 +547,61 @@ describe('Phrase libre', () => {
     expect(a.famille).toBe('machinerie');
   });
 
-  it('danseur + clip : cachet vidéomusique IDCC 2121, pas l’émission ni un technicien', () => {
+  it('danseur + clip : soliste ou corps de ballet, IDCC 2642, journée indivisible', () => {
     const a = analyserPhrase('250 € pour un danseur, 8 h, clip', jobs);
     expect(a.famille).toBe('artistes');
+    expect(a.statut).toBe('artiste');
     expect(a.typeProjet).toBe('clip');
-    expect(a.choix).toEqual([]);
-    const job = jobs.find((j) => j.cle === a.metierCle);
-    expect(job.nom).toBe('Danseur – vidéomusique / clip');
-    expect(job.variantes.map((v) => v.convention)).toEqual(['2121']);
-    expect(typesDisponibles(job.variantes).map((t) => t.id)).toEqual(['clip']);
-    const ligne = data.conventions['2121'].lignes[0];
-    expect(ligne.minimum_cachet).toBe(253.55);
-    expect(ligne.note).toMatch(/2\.2\.1/);
-    expect(ligne.note).toMatch(/pas la grille techniciens/i);
+    expect(a.metierCle).toBe('');
+    expect(a.choix.map((c) => c.court)).toEqual(['Soliste', 'Corps de ballet']);
+    expect(a.question).toMatch(/indivisible/);
+    expect(a.question).toMatch(/2642/);
     for (const p of ['danseuse clip', 'danse, clip', 'danseurs pour un clip', 'une danseuse, vidéoclip']) {
       const b = analyserPhrase(p, jobs);
-      expect(b.metierCle, p).toBe(a.metierCle);
+      expect(b.metierCle, p).toBe('');
+      expect(b.statut, p).toBe('artiste');
       expect(b.typeProjet, p).toBe('clip');
-      expect(b.choix, p).toEqual([]);
+      expect(b.choix.map((c) => c.court), p).toEqual(['Soliste', 'Corps de ballet']);
     }
+    const ballet = jobs.find((j) => /corps de ballet/.test(j.nom) && /émission chorégraphique/.test(j.nom));
+    const soliste = jobs.find((j) => /soliste/.test(j.nom) && /émission chorégraphique/.test(j.nom));
+    expect(ballet.variantes.map((v) => v.convention)).toEqual(['2642']);
+    expect(typesDisponibles(ballet.variantes).map((t) => t.id)).toEqual(['clip', 'tele']);
+    expect(data.conventions['2121'].lignes[0].note).toMatch(/phonographique/);
+    expect(data.conventions['2121'].lignes[0].note).not.toMatch(/c'est le cachet du danseur sur un clip/);
     const s = solutionsBudget(data, {
-      jobs, famille: a.famille, metierCle: a.metierCle, roles: a.roles, sauf: a.sauf,
+      jobs, famille: 'artistes', metierCle: ballet.cle, roles: ['corps de ballet'], statut: 'artiste',
       typeProjet: 'clip', budgetEuros: 250,
     });
-    expect(s.options.map((o) => o.nom)).toEqual(['Danseur – vidéomusique / clip']);
-    expect(s.options[0].convention).toBe('2121');
-    expect(s.options[0].brut).toBe(25355);
+    expect(s.options.map((o) => o.nom)).toEqual(['Danseur – émission chorégraphique, corps de ballet (≤ 6 h)']);
+    expect(s.options[0].convention).toBe('2642');
+    expect(s.options[0].brut).toBe(28923);
     expect(s.options[0].statut.categorie).toBe('artiste');
+    expect(s.options[0].lecture).toMatch(/indivisible/);
+    expect(s.options[0].lecture).toMatch(/Coût employeur/);
+    expect(s.options[0].lecture).not.toMatch(/4 h 30/);
+    expect(s.note).toBe(`Clip : ${LIGNE_ARTISTE_2642}`);
+    expect(s.note).not.toBe(LIGNE_CLIP);
+    const haut = solutionsBudget(data, {
+      jobs, famille: 'artistes', metierCle: soliste.cle, roles: ['soliste'], statut: 'artiste',
+      typeProjet: 'clip', budgetEuros: 250,
+    });
+    expect(haut.options.map((o) => o.nom)).toEqual(['Danseur – émission chorégraphique, soliste (≤ 6 h)']);
+    expect(haut.options[0].brut).toBe(43286);
+    expect(haut.options.every((o) => o.convention !== '2121' && o.statut.categorie === 'artiste')).toBe(true);
+  });
+
+  it('250 € clip sans métier demande artiste ou technicien', () => {
+    const a = analyserPhrase('250 € clip', jobs);
+    expect(a.famille).toBe('');
+    expect(a.statut).toBe('');
+    expect(a.metierCle).toBe('');
+    expect(a.question).toBe('Artiste ou technicien ?');
+    expect(a.choix.map((c) => c.statut)).toEqual(['artiste', 'technicien']);
+    const elec = analyserPhrase('250 € pour un élec, 8 h, clip', jobs);
+    expect(elec.statut).toBe('technicien');
+    expect(elec.choix).toEqual([]);
+    expect(elec.famille).toBe('elec');
   });
 
   it('une phrase ambiguë pose un choix au lieu de deviner', () => {
@@ -592,8 +622,12 @@ describe('Phrase libre', () => {
       const a = analyserPhrase(phrase, jobs);
       expect({ phrase, famille: a.famille, type: a.typeProjet, grade: a.grade, choix: a.choix.length }, phrase).toMatchObject(attendu);
     };
-    attendre('comédien clip', { famille: 'artistes', type: 'clip', grade: '', choix: 0 });
-    expect(jobs.find((j) => j.cle === analyserPhrase('comédienne, clip', jobs).metierCle).nom).toMatch(/Comédien – vidéomusique/);
+    attendre('comédien clip', { famille: 'artistes', type: 'clip', grade: '', choix: 1 });
+    expect(analyserPhrase('comédienne, clip', jobs).metierCle).toBe('');
+    expect(analyserPhrase('comédienne, clip', jobs).question).toMatch(/2121/);
+    expect(analyserPhrase('comédienne, clip', jobs).choix[0].nom).toMatch(/dramatique/);
+    const chore = analyserPhrase('chorégraphe, clip', jobs);
+    expect(chore.choix.every((c) => !/vidéomusique/.test(c.nom))).toBe(true);
     attendre('figurants, cinéma', { famille: 'artistes', type: 'film', choix: 0 });
     expect(analyserPhrase('figu, film', jobs).metierCle).toBe(analyserPhrase('figurante, film', jobs).metierCle);
     attendre('mannequins en pub', { famille: 'artistes', type: 'pub', choix: 0 });
@@ -662,7 +696,9 @@ describe('Métiers uniques et types de projet', () => {
     expect(types.map((t) => t.label)).toEqual(['Captation / spectacle']);
     expect(labelType('spectacle_sub')).toBe('Captation / spectacle');
     const danseTv = jobs.find((j) => /Danseur – émission/.test(j.nom));
-    expect(typesDisponibles(danseTv.variantes).map((t) => t.id)).toEqual(['tele']);
+    expect(typesDisponibles(danseTv.variantes).map((t) => t.id)).toEqual(['clip', 'tele']);
+    const phono = jobs.find((j) => j.nom === 'Danseur – vidéomusique / clip');
+    expect(typesDisponibles(phono.variantes)).toEqual([]);
   });
 });
 
@@ -684,6 +720,7 @@ describe('Solutions de budget', () => {
     expect(s.minimumHt).toBe(mins[0]);
     expect(s.note).toBe(LIGNE_CLIP);
     expect(s.note).not.toMatch(/indivisible/);
+    expect(s.options.some((o) => o.statut.categorie === 'artiste')).toBe(false);
   });
 
   it('un gros budget recommande le grade de base en journée 8 h, pas le chef', () => {
@@ -765,6 +802,9 @@ describe('Solutions de budget', () => {
     expect(data.conventions['3097_cinema'].majorations.journee_min_heures).toBe(7);
     expect(phraseSansHoraire({ typeProjet: 'pub', convention: '3097_pub', aHeure: false })).toMatch(/Pas de tarif horaire/);
     expect(phraseSansHoraire({ typeProjet: 'clip', convention: '2642', aHeure: true })).toBe('');
+    expect(phraseSansHoraire({ typeProjet: 'clip', convention: '2642', aHeure: false, categorie: 'artiste' })).not.toBe(LIGNE_CLIP);
+    expect(phraseSansHoraire({ typeProjet: 'clip', convention: '2642', aHeure: false, categorie: 'artiste' })).toMatch(/art\. 5\.1/);
+    expect(phraseSansHoraire({ typeProjet: 'clip', convention: '2642', aHeure: false, categorie: 'technicien' })).toBe(LIGNE_CLIP);
     const pub = solutionsBudget(data, { jobs, famille: 'elec', typeProjet: 'pub', budgetEuros: 5000, heures: 8, kind: 'heure' });
     expect(pub.note).toMatch(/Pas de tarif horaire ni de demi-journée/);
     expect(pub.note).not.toMatch(/IV\.2\.1/);
@@ -885,5 +925,90 @@ describe('Solutions de budget', () => {
       employeurCents: 62399, brutCents: 40000, netCents: 31207, totalCents: 62399,
     });
     expect(ok.phrase).toBe('Prends Électricien / éclairagiste, 1 jour 8 h.');
+  });
+
+  it('un taux horaire publié se convertit en heures, une journée indivisible non', () => {
+    const entree = listerPostes(data, '3090').find((p) => p.ligne.horaire_salle_200 === 14.91);
+    const taux = toCents(valeurUnitaire(entree, 'horaire_jauge', { jauge: '200' }).valeur);
+    expect(taux).toBe(toCents(14.91));
+    const brut = 4 * taux;
+    expect(brut).toBe(5964);
+    const texte = dureeAuBrut({
+      brutPlafondCents: brut, minimumCents: 8 * taux, employeurCents: 10000, totalCents: 12000,
+      tauxHoraireCents: taux, kind: 'heure',
+    });
+    expect(texte).toMatch(/^Coût employeur .+ coût total .+ HT\. Brut maximum .+ = 4 h \(minimum horaire/);
+    expect(texte).not.toMatch(/4 h \d/);
+    const demi = dureeAuBrut({
+      brutPlafondCents: 4 * taux + Math.round(taux / 2), minimumCents: taux, employeurCents: 1, totalCents: 1,
+      tauxHoraireCents: taux, kind: 'heure',
+    });
+    expect(demi).toMatch(/4 h 30 \(minimum horaire/);
+    expect(demi).not.toMatch(/4 h 30 min/);
+    const jour = dureeAuBrut({
+      brutPlafondCents: 10000, minimumCents: 28923, employeurCents: 15000, totalCents: 25000,
+      kind: 'jour', article: 'art. 5.1 et 5.14.4', heuresMax: 6,
+    });
+    expect(jour).toMatch(/journée indivisible/);
+    expect(jour).toMatch(/289,23 €/);
+    expect(jour).not.toMatch(/4 h 30/);
+  });
+
+  it('un service publié compte des services entiers, et les heures seulement si la durée est publiée', () => {
+    const ligne = data.conventions['3097_cinema'].lignes.find((l) => l.heures_service === 3);
+    expect(ligne.minimum_service).toBe(54.37);
+    const un = toCents(ligne.minimum_service);
+    const deux = dureeAuBrut({
+      brutPlafondCents: 2 * un, minimumCents: un, employeurCents: 1, totalCents: 1,
+      kind: 'service', serviceCents: un, heuresService: 3,
+    });
+    expect(deux).toMatch(/2 services de 3 h/);
+    const zero = dureeAuBrut({
+      brutPlafondCents: un - 1, minimumCents: un, employeurCents: 1, totalCents: 1,
+      kind: 'service', serviceCents: un, heuresService: 3,
+    });
+    expect(zero).toMatch(/ne couvre pas un service/);
+    expect(zero).not.toMatch(/\d+ h/);
+  });
+
+  it('France Travail : 12 h pour un cachet d’artiste, heures réelles pour un technicien, hors de la phrase courte', () => {
+    const danse = base('2642', 'corps de ballet', { unite: 'minimum_journee' });
+    const bArt = bilanPoste(data, danse, REGLAGES_DEFAUT);
+    const lignesArt = lignesCalcul(data, bArt, REGLAGES_DEFAUT, { typeProjet: 'clip', convention: '2642' });
+    expect(lignesArt.at(-1)).toMatch(/^Total HT/);
+    expect(lignesArt.at(-2)).toBe(LIGNE_FRANCE_TRAVAIL_ARTISTE);
+    expect(lignesArt.join('\n')).toContain(LIGNE_DEMI_ARTISTE);
+    expect(lignesArt.join('\n')).not.toContain(LIGNE_DEMI_PIGE);
+    const elec = base('2642', 'Électricien / éclairagiste', { unite: 'minimum_journee_8h', genre: 'Fiction / documentaire', heuresParJour: 8 });
+    const lignesTech = lignesCalcul(data, bilanPoste(data, elec, REGLAGES_DEFAUT), REGLAGES_DEFAUT, { typeProjet: 'clip', convention: '2642' });
+    expect(lignesTech.at(-2)).toBe(LIGNE_FRANCE_TRAVAIL_TECH);
+    expect(lignesTech).toContain(LIGNE_DEMI_PIGE);
+    const texte = texteResume({
+      qui: 'Danseur', projet: 'Clip', duree: '1 jour', mode: 'budget', possible: false, budgetEuros: 250,
+      minimumCents: 1, employeurCents: 1, brutCents: 28923, netCents: 1,
+    });
+    expect(texte).not.toMatch(/France Travail|annexe 10|annexe 8|Cotisations|crédits/);
+  });
+
+  it('les grilles artistes et techniciens ne se mélangent pas', () => {
+    const melanges = jobs.filter((j) => new Set(j.variantes.map((v) => categorieStatut(v.categorie))).size > 1).map((j) => j.nom);
+    expect(melanges).toEqual([]);
+    const hors = [];
+    for (const j of jobs) {
+      for (const v of j.variantes) {
+        if (categorieStatut(v.categorie) === 'artiste' && v.genre === 'Fiction / documentaire') hors.push(j.nom);
+        if (categorieStatut(v.categorie) !== 'artiste' && v.convention === '2121') hors.push(`${j.nom} en 2121`);
+      }
+    }
+    expect(hors).toEqual([]);
+    const tech = solutionsBudget(data, { jobs, famille: 'elec', typeProjet: 'clip', budgetEuros: 250, statut: 'technicien', heures: 8, kind: 'heure' });
+    expect(tech.options.every((o) => o.statut.categorie === 'technicien' && o.convention === '2642')).toBe(true);
+    const art = solutionsBudget(data, { jobs, famille: 'artistes', typeProjet: 'clip', budgetEuros: 250, statut: 'artiste' });
+    expect(art.options.length).toBeGreaterThan(0);
+    expect(art.options.every((o) => o.statut.categorie === 'artiste' && o.convention === '2642')).toBe(true);
+    expect(art.options.some((o) => /vidéomusique/.test(o.nom))).toBe(false);
+    expect(jobs.find((j) => j.nom === 'Styliste').categorie).toBe('Technicien');
+    expect(jobs.find((j) => j.nom === 'Figurant (< 30 personnes)').categorie).toBe('Artiste');
+    expect(jobs.find((j) => j.nom === 'Doublure lumière').categorie).toBe('Artiste');
   });
 });

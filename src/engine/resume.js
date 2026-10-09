@@ -54,14 +54,27 @@ const tauxTxt = (n) => `${String(n).replace('.', ',')} %`;
 
 export const LIGNE_CLIP = 'Clip : pas de tarif horaire ni de demi-journée pour les techniciens. Contrat ≤ 4 jours : minimum par jour = salaire semaine 39 h ÷ 4,5 (art. IV.2.1), même pour 4 h de travail.';
 
+export const LIGNE_ARTISTE_2642 = "Artiste : la journée n'est pas fractionnable (art. 5.1). Émission chorégraphique : 6 h de travail effectif au plus (art. 5.14.4). Le salaire horaire de base (journée ÷ 9) sert aux heures sup et à la nuit, pas à descendre sous le minimum journalier.";
+
 export const LIGNE_DEMI_PIGE = 'Demi-pige ? Pas prévue en tournage (clip, pub, fiction). Les services de 4 h existent seulement en spectacle vivant.';
+
+export const LIGNE_DEMI_ARTISTE = "Pas de demi-journée : le salaire journalier n'est pas fractionnable (art. 5.1), sauf essai, postsynchronisation et lecture dramatique de 4 h au plus (art. 3.1, 3.5.1 et 5.14.1.2).";
+
+export const LIGNE_FRANCE_TRAVAIL_ARTISTE = "France Travail, annexe 10 : un cachet déclaré compte 12 h, quelle que soit la durée portée sur l'AEM. On peut déclarer des heures et/ou des cachets (plafond 28 cachets par mois). Ça ne change pas le minimum conventionnel.";
+
+export const LIGNE_FRANCE_TRAVAIL_TECH = "France Travail, annexe 8 : on déclare les heures travaillées, pas un cachet forfait.";
 
 const REGLE_2642 = LIGNE_CLIP.replace(/^Clip : /, '');
 
-/** Grille sans taux horaire : la phrase exacte pour un clip, la même règle pour le reste de la 2642, une phrase plus courte ailleurs. */
-export function phraseSansHoraire({ typeProjet = '', convention = '', aHeure = false } = {}) {
+/** Grille sans taux horaire : techniciens et artistes n'ont pas la même phrase. */
+export function phraseSansHoraire({ typeProjet = '', convention = '', aHeure = false, categorie = '' } = {}) {
   if (aHeure) return '';
+  if (categorie === 'artiste' && convention === '2642') {
+    if (typeProjet === 'clip') return `Clip : ${LIGNE_ARTISTE_2642}`;
+    return LIGNE_ARTISTE_2642;
+  }
   if (convention === '2121') return '';
+  if (categorie === 'artiste') return '';
   if (typeProjet === 'clip') return LIGNE_CLIP;
   if (convention === '2642') {
     if (typeProjet === 'edito') return `Édito / mode : ${REGLE_2642}`;
@@ -74,7 +87,11 @@ export function phraseSansHoraire({ typeProjet = '', convention = '', aHeure = f
   return '';
 }
 
-export function ligneDemiPige({ typeProjet = '', convention = '' } = {}) {
+export function ligneDemiPige({ typeProjet = '', convention = '', categorie = '' } = {}) {
+  if (categorie === 'artiste') {
+    if (convention === '2642' || convention === '2121') return LIGNE_DEMI_ARTISTE;
+    return '';
+  }
   if (['clip', 'edito', 'pub', 'film', 'tele'].includes(typeProjet) || convention === '2642' || String(convention).startsWith('3097')) {
     return LIGNE_DEMI_PIGE;
   }
@@ -216,7 +233,11 @@ export function lignesCalcul(data, bilan, reglages = REGLAGES_DEFAUT, ctx = {}) 
   const grille = ctx.grille ? `grille ${ctx.grille}, ` : '';
   const out = [];
   out.push(`Minimum conventionnel : ${euros(L.min.minimumCents)} (${grille}${unite} × ${qte}).`);
-  const demi = ligneDemiPige({ typeProjet: ctx.typeProjet, convention: ctx.convention || L.poste?.convention });
+  const demi = ligneDemiPige({
+    typeProjet: ctx.typeProjet,
+    convention: ctx.convention || L.poste?.convention,
+    categorie: L.statut?.categorie || ctx.categorie || '',
+  });
   if (demi) out.push(demi);
   out.push(`Brut : ${euros(L.brutCents)}.`);
   out.push(`Cotisations patronales : ${euros(L.cot.patronal)}. Cotisations salariales : ${euros(L.cot.salarial)}.`);
@@ -235,6 +256,7 @@ export function lignesCalcul(data, bilan, reglages = REGLAGES_DEFAUT, ctx = {}) 
     out.push(`Ces ${formatFrNombre(tauxBulletin)} crédits de bulletin couvrent la paie, le bulletin, l'AEM, les congés spectacles et la DSN.`);
     out.push(phraseDpae(o, L));
   }
+  out.push(L.statut?.categorie === 'artiste' ? LIGNE_FRANCE_TRAVAIL_ARTISTE : LIGNE_FRANCE_TRAVAIL_TECH);
   out.push(`Total HT : ${euros(bilan.totalCents)}.`);
   return out;
 }
