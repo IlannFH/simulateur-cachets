@@ -2,6 +2,8 @@
 
 Site statique (HTML, CSS, JS en modules ES, sans backend) qui chiffre le coût d'un intermittent du spectacle selon sa convention collective : minimum conventionnel, majorations, cotisations, coût employeur, frais d'intermédiaire de paie et devis d'équipe exportable en CSV et en PDF.
 
+**En ligne :** https://ilannfh.github.io/simulateur-cachets/ (GitHub Pages, mis à jour à chaque `git push` sur `main`).
+
 ## Lancer en local
 
 Le site lit `data/simulateur_data.json` avec `fetch` : il faut un petit serveur. Un double-clic sur `index.html` ne suffit pas.
