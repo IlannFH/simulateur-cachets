@@ -411,14 +411,20 @@ function dureeParcours(poste) {
     heuresNominales: u?.heures || (u?.kind === 'jour' ? 8 : 0),
   });
 }
+function htmlReco(reco) {
+  if (!reco?.phrase) return '';
+  return `<aside class="ma-reco" id="ma-reco"><p class="tag">Ma reco</p><p>${esc(reco.phrase)}</p><p>${esc(reco.chiffres)}</p></aside>`;
+}
 function htmlResume(args, bilan) {
-  const texte = E.texteResume(args);
+  const { reco, ...reste } = args;
+  const visible = E.texteResume(reste);
+  const copie = reco ? E.texteResume({ ...reste, reco }) : visible;
   const lignes = bilan ? E.lignesCalcul(DATA, bilan, state.reglages, { grille: args.projet || '' }) : [];
   const open = state.parcours.calculOuvert ? 'open' : '';
   const detail = lignes.length
     ? `<details id="calcul" ${open}><summary>Comment c'est calculé</summary><div class="calcul">${lignes.map((l) => `<p>${esc(l)}</p>`).join('')}</div></details>`
     : '';
-  return `<p id="resume-texte" class="resume">${esc(texte)}</p><button type="button" class="pixel-btn" id="btn-copier" data-action="copier">Copier</button>${detail}`;
+  return `<p id="resume-texte" class="resume">${esc(visible)}</p><span id="resume-copie" hidden>${esc(copie)}</span><button type="button" class="pixel-btn" id="btn-copier" data-action="copier">Copier</button>${detail}`;
 }
 function htmlComparaison(liste) {
   if (!liste?.length) return '';
@@ -446,27 +452,44 @@ function htmlChiffres() {
     if (!L) return '';
     const sous = !!L.demande?.sousMinimum;
     const bilan = E.bilanPoste(DATA, sous ? { ...poste, demande: null } : poste, state.reglages);
+    const reco = E.recoDepuisLigne({
+      nom: qui, duree, sousMinimum: sous,
+      brutMinimumCents: L.min.minimumCents,
+      brutCents: bilan.ligne.brutCents,
+      netCents: bilan.ligne.cot.net,
+      totalCents: bilan.totalCents,
+    });
     let h = sous
       ? verdictKo('Pas possible', `Minimum nécessaire : ${E.formatEuros(L.min.minimumCents)}`)
       : verdictOk('');
+    h += htmlReco(reco);
     h += htmlResume({
       qui, projet, duree, mode: 'brut', possible: !sous,
       brutMinimumCents: L.min.minimumCents,
       brutCents: bilan.ligne.brutCents,
       netCents: bilan.ligne.cot.net,
       totalCents: bilan.totalCents,
+      reco: reco.texte,
     }, bilan);
     h += notesCalcul(sous ? bilan.ligne : L).map((t) => `<p class="note">${esc(t)}</p>`).join('');
     return h;
   }
   const bilan = E.bilanPoste(DATA, { ...poste, demande: null }, state.reglages);
   if (!bilan) return '';
+  const recoMetier = E.recoDepuisLigne({
+    nom: qui, duree, sousMinimum: false,
+    brutCents: bilan.ligne.brutCents,
+    netCents: bilan.ligne.cot.net,
+    totalCents: bilan.totalCents,
+  });
   let h = figure(E.formatEuros(bilan.ligne.min.minimumCents), 'Minimum');
+  h += htmlReco(recoMetier);
   h += htmlResume({
     qui, projet, duree, mode: 'metier', possible: true,
     brutCents: bilan.ligne.brutCents,
     netCents: bilan.ligne.cot.net,
     totalCents: bilan.totalCents,
+    reco: recoMetier.texte,
   }, bilan);
   h += notesCalcul(bilan.ligne).map((t) => `<p class="note">${esc(t)}</p>`).join('');
   return h;
@@ -517,6 +540,7 @@ function htmlSolutions() {
     brutCents: opt.brut,
     netCents: opt.net,
     totalCents: opt.total,
+    reco: s.reco?.texte,
   }, bilan);
   const cards = s.options.map((o) => {
     const ligne = o.possible
@@ -526,7 +550,7 @@ function htmlSolutions() {
     return `<article class="sol ${o.possible ? 'ok' : 'ko'}${o.recommande ? ' reco' : ''}">${o.recommande ? '<p class="tag">Recommandé</p>' : ''}<h3>${esc(o.nom)}</h3><p class="lbl">${esc(o.uniteLabel)} · ${esc(libelleStatut(o.statut))}</p>${ligne}${reduit}</article>`;
   }).join('');
   const note = s.note ? `<p class="note">${esc(s.note)}</p>` : '';
-  return `${top}${resume}${note}<div class="sols">${cards}</div>${htmlComparaison(s.intermediaires)}`;
+  return `${top}${htmlReco(s.reco)}${resume}${note}<div class="sols">${cards}</div>${htmlComparaison(s.intermediaires)}`;
 }
 function htmlDetail() {
   const c = DATA.conventions[state.parcours.convention];
@@ -730,7 +754,7 @@ function render() {
 }
 
 async function copierResume() {
-  const texte = $('#resume-texte')?.textContent || '';
+  const texte = $('#resume-copie')?.textContent || $('#resume-texte')?.textContent || '';
   const btn = $('#btn-copier');
   let ok = false;
   try {

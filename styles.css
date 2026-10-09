@@ -190,6 +190,23 @@ label.lbl, .lbl { font-family: var(--body); font-size: 22px; color: var(--muted)
 .phrase { display: flex; flex-direction: column; gap: 12px; }
 .ou { color: var(--muted); font-size: 26px; }
 .resume { font-size: 26px; line-height: 1.25; }
+.ma-reco {
+  border: 3px solid var(--amber);
+  background: var(--bg-2);
+  padding: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin: 14px 0;
+}
+.ma-reco .tag {
+  font-family: var(--pixel);
+  font-size: 11px;
+  line-height: 1.6;
+  color: var(--amber);
+  -webkit-font-smoothing: none;
+}
+.ma-reco p { font-size: 26px; line-height: 1.2; }
 .calcul { display: flex; flex-direction: column; gap: 6px; margin: 8px 0 4px; }
 .calcul p { font-size: 22px; }
 .cmp { display: flex; flex-direction: column; gap: 8px; }

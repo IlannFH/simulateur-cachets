@@ -9,6 +9,7 @@ import {
   dureeApresChangementUnite, conserverSaisie,
   analyserPhrase, indexerMetiers, typesDisponibles, solutionsBudget, famillesDe, labelType,
   texteResume, bilanPoste, lignesCalcul, quiResume, dureeResume, comparerIntermediaires,
+  recoDepuisLigne,
 } from '../src/engine/index.js';
 
 const data = JSON.parse(readFileSync(new URL('../data/simulateur_data.json', import.meta.url), 'utf8'));
@@ -686,5 +687,78 @@ describe('Solutions de budget', () => {
     expect(guso.avertissements.join(' ')).toMatch(/spectacle vivant/);
     const s = solutionsBudget(data, { ...baseOpts, budgetEuros: 250 });
     expect(s.intermediaires.find((x) => x.id === 'culturepay').fraisCents).toBe(1790);
+  });
+
+  it('250 € pour un élec en clip : une reco, le moins cher réel, sans heure inventée', () => {
+    const s = solutionsBudget(data, { ...baseOpts, budgetEuros: 250 });
+    expect(s.reco.id).toBe('direct');
+    expect(s.reco.total).toBe(34707);
+    expect(s.reco.brut).toBe(21076);
+    expect(s.reco.net).toBe(15967);
+    expect(s.reco.texte).toBe('Passe en direct et monte à 347,07 € HT. Brut 210,76 €, net 159,67 €, coût total 347,07 € HT.');
+    expect(s.reco.texte).not.toMatch(/heure|GUSO|#DIESE|CulturePay/);
+    const copie = texteResume({
+      qui: 'Électricien / éclairagiste', projet: 'Clip', duree: '1 jour 8 h',
+      mode: 'budget', possible: false, budgetEuros: 250, minimumCents: s.minimumHt,
+      reco: s.reco.texte,
+    });
+    expect(copie).toContain('Ma reco : Passe en direct et monte à 347,07 € HT.');
+    expect(copie).not.toMatch(/Cotisations|crédits/);
+  });
+
+  it('déjà en direct : on monte le budget, sans changer d’intermédiaire', () => {
+    const s = solutionsBudget(data, {
+      ...baseOpts, budgetEuros: 250,
+      reglages: { ...REGLAGES_DEFAUT, intermediaire: 'direct', formule: 'aucune' },
+    });
+    expect(s.reco.texte).toBe('Monte le budget à 347,07 € HT. Brut 210,76 €, net 159,67 €, coût total 347,07 € HT.');
+  });
+
+  it('un budget qui passe confirme l’option, sans dire de monter', () => {
+    const s = solutionsBudget(data, { ...baseOpts, budgetEuros: 2000 });
+    expect(s.reco.possible).toBe(true);
+    expect(s.reco.phrase).toBe('Prends Électricien / éclairagiste, 1 jour 8 h.');
+    expect(s.reco.texte).not.toMatch(/monte/i);
+    expect(s.reco.brut).toBe(s.options[0].brut);
+    expect(s.reco.total).toBe(s.options[0].total);
+  });
+
+  it('entre CulturePay et Movinmotion : le direct tient, on ne monte pas', () => {
+    const s = solutionsBudget(data, { ...baseOpts, budgetEuros: 370 });
+    expect(s.options[0].possible).toBe(false);
+    expect(s.reco.possible).toBe(true);
+    expect(s.reco.id).toBe('direct');
+    expect(s.reco.texte).toBe('Passe en direct. Brut 224,99 €, net 170,80 €, coût total 369,99 € HT.');
+  });
+
+  it('raccourcit seulement quand la grille publie l’heure', () => {
+    const regs = { ...REGLAGES_DEFAUT, intermediaire: 'direct', formule: 'aucune' };
+    const large = solutionsBudget(data, { jobs, famille: 'hmc', typeProjet: 'spectacle', heures: 8, kind: 'heure', budgetEuros: 5000, reglages: regs });
+    const heure = large.options.find((o) => o.kind === 'heure');
+    const r3 = convertirBudget(data, { ...heure.poste, quantite: 3, demande: null }, 100000, regs);
+    const s = solutionsBudget(data, {
+      jobs, famille: 'hmc', typeProjet: 'spectacle', heures: 8, kind: 'heure', reglages: regs,
+      budgetEuros: (r3.budgetMinimum + 1) / 100,
+    });
+    expect(s.reco.heures).toBe(3);
+    expect(s.reco.heures).toBeLessThan(8);
+    expect(s.reco.texte).toMatch(/^Passe à 3 h\. Brut .+ net .+ coût total .+ HT\.$/);
+    expect(s.reco.texte).not.toMatch(/monte/);
+    const clip = solutionsBudget(data, { ...baseOpts, budgetEuros: 250 });
+    expect(clip.reco.heures).toBeNull();
+    expect(clip.reco.texte).not.toMatch(/\d+ h/);
+  });
+
+  it('un brut sous le minimum dit de le monter, un métier confirme la ligne', () => {
+    const bas = recoDepuisLigne({
+      nom: 'Électricien / éclairagiste', duree: '1 jour 8 h', sousMinimum: true,
+      brutMinimumCents: 21076, brutCents: 21076, netCents: 15967, totalCents: 34707,
+    });
+    expect(bas.texte).toBe('Monte le brut à 210,76 €. Brut 210,76 €, net 159,67 €, coût total 347,07 € HT.');
+    const ok = recoDepuisLigne({
+      nom: 'Électricien / éclairagiste', duree: '1 jour 8 h', sousMinimum: false,
+      brutCents: 40000, netCents: 31207, totalCents: 62399,
+    });
+    expect(ok.phrase).toBe('Prends Électricien / éclairagiste, 1 jour 8 h.');
   });
 });

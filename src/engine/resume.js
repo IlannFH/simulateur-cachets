@@ -65,7 +65,7 @@ function nomCotisation(libelle) {
  * mode brut impossible : brut minimum, sans HT.
  * sinon : brut, net, coût total HT (frais compris).
  */
-export function texteResume({ qui, projet, duree, mode, possible, budgetEuros, minimumCents, brutMinimumCents, brutCents, netCents, totalCents }) {
+export function texteResume({ qui, projet, duree, mode, possible, budgetEuros, minimumCents, brutMinimumCents, brutCents, netCents, totalCents, reco }) {
   const tete = [qui, projet, duree].filter(Boolean).join(' · ');
   let suite;
   if (mode === 'budget' && possible === false) {
@@ -75,7 +75,17 @@ export function texteResume({ qui, projet, duree, mode, possible, budgetEuros, m
   } else {
     suite = `Brut ${euros(brutCents)}, net ${euros(netCents)}, coût total ${euros(totalCents)} HT.`;
   }
-  return tete ? `${tete} — ${suite}` : suite;
+  const base = tete ? `${tete} — ${suite}` : suite;
+  return reco ? `${base} Ma reco : ${reco}` : base;
+}
+
+/** Reco d'une ligne déjà chiffrée (brut ou métier), sans chercher un autre intermédiaire. */
+export function recoDepuisLigne({ nom, duree, sousMinimum, brutMinimumCents, brutCents, netCents, totalCents }) {
+  const chiffres = `Brut ${euros(brutCents)}, net ${euros(netCents)}, coût total ${euros(totalCents)} HT.`;
+  const phrase = sousMinimum
+    ? `Monte le brut à ${euros(brutMinimumCents)}.`
+    : `Prends ${nom}, ${duree}.`;
+  return { phrase, chiffres, texte: `${phrase} ${chiffres}` };
 }
 
 /** Ligne au brut demandé, plus l'abonnement et l'inscription. */
