@@ -142,78 +142,87 @@ describe('Intermédiaires (§ 9)', () => {
     expect(eur(g.ht)).toBe(53.7);
     expect(eur(fraisIntermediaire(data, 'culturepay', { contrats: 1 }).ht)).toBe(17.9);
   });
-  it('T16 : Movinmotion Basic, Pack 1, 1 mois → 62 crédits = 89,90 € HT', () => {
+  it('T16 : Movinmotion Basic, Pack 1, 1 mois → 68 crédits = 98,60 € HT', () => {
     const g = fraisGroupe([t1, t8, t11], { intermediaire: 'movinmotion', formule: 'basic', mois: 1 });
     const pack = packChoisi(data.intermediaires.options.find((o) => o.id === 'movinmotion'), REGLAGES_DEFAUT);
-    // 3 personnes × 14 crédits + Basic 20, au prix du Pack 1 (1,45 €)
-    expect(g.credits).toBe(62);
-    expect(eur(g.ht)).toBe(89.9);
+    // 3 personnes × (14 bulletin + 2 signature) + Basic 20, au prix du Pack 1 (1,45 €)
+    expect(g.credits).toBe(68);
+    expect(eur(g.ht)).toBe(98.6);
     expect(g.fixes).toHaveLength(1);
     expect(pack.id).toBe('pack1');
     expect(pack.prix_credit_ht).toBe(1.45);
     expect(g.fixes[0].libelle).toMatch(/20 crédits × 1,45 €/);
-    expect(g.lignes[0].frais.credits).toBe(14);
+    expect(g.lignes[0].frais.credits).toBe(16);
     expect(g.lignes[0].frais.details[0].libelle).toMatch(/1 bulletin × 14 crédits × 1,45 €/);
+    expect(g.lignes[0].frais.details[1].libelle).toMatch(/Signature électronique × 1 contrat × 2 crédits/);
   });
-  it('T16 bis : 3 mois → un bulletin par personne et par mois, abonnement × 3', () => {
+  it('T16 bis : 3 mois → un bulletin par personne et par mois, signature une fois, abonnement × 3', () => {
     const g = fraisGroupe([t1, t8, t11], { mois: 3 });
-    // 3 × 3 × 14 + 20 × 3 = 186 crédits × 1,45 €
-    expect(g.credits).toBe(186);
-    expect(eur(g.ht)).toBe(269.7);
-    expect(g.lignes.every((l) => l.frais.credits === 42)).toBe(true);
+    // 3 × (3 × 14 + 2) + 20 × 3 = 192 crédits × 1,45 €
+    expect(g.credits).toBe(192);
+    expect(eur(g.ht)).toBe(278.4);
+    expect(g.lignes.every((l) => l.frais.credits === 44)).toBe(true);
   });
-  it('1 électricien, 1 jour, Basic, Pack 1 → 34 crédits = 49,30 € HT', () => {
+  it('1 électricien, 1 jour, Basic, Pack 1 → 36 crédits = 52,20 € HT', () => {
     const elec = base('3097_pub', 'Électricien de prise de vues', { unite: 'minimum_journee_8h', heuresParJour: 8, quantite: 1 });
     const g = fraisGroupe([elec], { formule: 'basic', mois: 1, pack: 'pack1' });
-    expect(g.credits).toBe(34);
-    expect(eur(g.ht)).toBe(49.3);
-    expect(g.lignes[0].frais.credits).toBe(14);
+    expect(g.credits).toBe(36);
+    expect(eur(g.ht)).toBe(52.2);
+    expect(g.lignes[0].frais.credits).toBe(16);
     expect(eur(g.fixes[0].montant)).toBe(29);
   });
-  it('les jours ne multiplient pas le bulletin, les mois oui', () => {
+  it('les jours ne multiplient pas le bulletin, les mois oui, la signature reste par contrat', () => {
     const elec = base('3097_pub', 'Électricien de prise de vues', { unite: 'minimum_journee_8h', heuresParJour: 8, quantite: 5 });
     const unMois = fraisGroupe([elec], {});
     const deuxMois = fraisGroupe([elec], { mois: 2 });
-    expect(unMois.lignes[0].frais.credits).toBe(14);
-    expect(deuxMois.lignes[0].frais.credits).toBe(28);
-    expect(deuxMois.credits).toBe(68);
-    expect(eur(deuxMois.ht)).toBe(98.6);
+    expect(unMois.lignes[0].frais.credits).toBe(16);
+    expect(deuxMois.lignes[0].frais.credits).toBe(30);
+    expect(deuxMois.credits).toBe(70);
+    expect(eur(deuxMois.ht)).toBe(101.5);
   });
   it('une 2e édition dans le même mois coûte 14 crédits de plus', () => {
     const elec = base('3097_pub', 'Électricien de prise de vues', { unite: 'minimum_journee_8h', bulletins: 2 });
     const g = fraisGroupe([elec], { mois: 1, formule: 'basic' });
-    expect(g.lignes[0].frais.credits).toBe(28);
-    expect(g.credits).toBe(48);
-    expect(eur(g.ht)).toBe(69.6);
+    expect(g.lignes[0].frais.credits).toBe(30);
+    expect(g.credits).toBe(50);
+    expect(eur(g.ht)).toBe(72.5);
     expect(g.lignes[0].frais.details[0].libelle).toMatch(/2 bulletins × 14 crédits/);
   });
-  it('la signature électronique ajoute 2 crédits, au prix du pack', () => {
+  it('la signature électronique est comptée par défaut, et se retire', () => {
     const elec = base('3097_pub', 'Électricien de prise de vues', { unite: 'minimum_journee_8h' });
-    const g = fraisGroupe([elec], { signature: true, formule: 'basic' });
-    expect(g.credits).toBe(36);
-    expect(eur(g.ht)).toBe(52.2);
+    const avec = fraisGroupe([elec], { formule: 'basic' });
+    const sans = fraisGroupe([elec], { signature: false, formule: 'basic' });
+    expect(REGLAGES_DEFAUT.signature).toBe(true);
+    expect(avec.credits).toBe(36);
+    expect(eur(avec.ht)).toBe(52.2);
+    expect(sans.credits).toBe(34);
+    expect(eur(sans.ht)).toBe(49.3);
+    expect(sans.lignes[0].frais.details.some((d) => /signature/i.test(d.libelle))).toBe(false);
+    const hors = lignesCalcul(data, bilanPoste(data, elec, { ...REGLAGES_DEFAUT, signature: false }), { ...REGLAGES_DEFAUT, signature: false });
+    expect(hors.join('\n')).toMatch(/n'est pas comptée/);
+    expect(hors.join('\n')).toMatch(/aucun crédit en plus/);
   });
   it('l\'inscription suit le pack choisi, pas 1,30 €', () => {
     const elec = base('3097_pub', 'Électricien de prise de vues', { unite: 'minimum_journee_8h' });
     const g = fraisGroupe([elec], { formule: 'aucune', premiereInscription: true });
-    expect(g.credits).toBe(164);
-    expect(eur(g.ht)).toBe(237.8);
+    expect(g.credits).toBe(166);
+    expect(eur(g.ht)).toBe(240.7);
     expect(g.fixes[0].libelle).toMatch(/150 crédits × 1,45 €/);
     expect(g.fixes[0].libelle).not.toMatch(/1,30/);
   });
   it('Premium = 40 crédits par mois, au même prix de crédit', () => {
     const elec = base('3097_pub', 'Électricien de prise de vues', { unite: 'minimum_journee_8h' });
     const g = fraisGroupe([elec], { formule: 'premium', mois: 1 });
-    expect(g.credits).toBe(54);
-    expect(eur(g.ht)).toBe(78.3);
+    expect(g.credits).toBe(56);
+    expect(eur(g.ht)).toBe(81.2);
     expect(g.fixes[0].libelle).toMatch(/Premium × 1 mois × 40 crédits × 1,45 €/);
   });
   it('le Pack 2 change le prix du crédit, pas le nombre de crédits', () => {
     const elec = base('3097_pub', 'Électricien de prise de vues', { unite: 'minimum_journee_8h' });
     const g = fraisGroupe([elec], { pack: 'pack2', formule: 'basic', mois: 1 });
     const pack = packChoisi(data.intermediaires.options.find((o) => o.id === 'movinmotion'), { pack: 'pack2' });
-    expect(g.credits).toBe(34);
-    expect(eur(g.ht)).toBe(47.6);
+    expect(g.credits).toBe(36);
+    expect(eur(g.ht)).toBe(50.4);
     expect(pack.prix_credit_ht).toBe(1.4);
   });
   it('T17 : Smart sur 1 000 € de coût employeur → 65 € HT + TVA 13 €', () => {
@@ -472,10 +481,14 @@ describe('Comment c\'est calculé', () => {
     const lignes = lignesCalcul(data, b, regs, { grille: 'Pub' });
     const texte = texteResume({
       qui: '1er assistant opérateur', projet: 'Pub', duree: '1 jour 8 h',
-      mode: 'metier', possible: true, brutCents: b.ligne.brutCents, netCents: b.ligne.cot.net, totalCents: b.totalCents,
+      mode: 'metier', possible: true,
+      employeurCents: b.ligne.cot.coutEmployeur,
+      brutCents: b.ligne.brutCents, netCents: b.ligne.cot.net, totalCents: b.totalCents,
     });
     expect(lignes.at(-1)).toBe(`Total HT : ${texte.match(/coût total (.+) HT/)[1]}.`);
     expect(lignes.join('\n')).toMatch(/Ces 14 crédits de bulletin couvrent la paie, le bulletin, l'AEM, les congés spectacles et la DSN/);
+    expect(lignes.join('\n')).toMatch(/DPAE \(déclaration unique d'embauche\) : aucun crédit en plus, elle est comprise dans l'abonnement \(conditions financières Movinmotion Social, 18 décembre 2023\)/);
+    expect(lignes.join('\n')).toMatch(/La signature électronique coûte 2 crédits par contrat et est comptée/);
     expect(lignes.join('\n')).toMatch(/1,5 mois/);
     expect(texte).not.toMatch(/crédits de bulletin/);
     expect(texte).not.toMatch(/Cotisations/);
@@ -530,6 +543,85 @@ describe('Phrase libre', () => {
     expect(a.montant).toBe(null);
     expect(a.heures).toBe(8);
     expect(a.famille).toBe('machinerie');
+  });
+
+  it('danseur + clip : cachet vidéomusique IDCC 2121, pas l’émission ni un technicien', () => {
+    const a = analyserPhrase('250 € pour un danseur, 8 h, clip', jobs);
+    expect(a.famille).toBe('artistes');
+    expect(a.typeProjet).toBe('clip');
+    expect(a.choix).toEqual([]);
+    const job = jobs.find((j) => j.cle === a.metierCle);
+    expect(job.nom).toBe('Danseur – vidéomusique / clip');
+    expect(job.variantes.map((v) => v.convention)).toEqual(['2121']);
+    expect(typesDisponibles(job.variantes).map((t) => t.id)).toEqual(['clip']);
+    const ligne = data.conventions['2121'].lignes[0];
+    expect(ligne.minimum_cachet).toBe(253.55);
+    expect(ligne.note).toMatch(/2\.2\.1/);
+    expect(ligne.note).toMatch(/pas la grille techniciens/i);
+    for (const p of ['danseuse clip', 'danse, clip', 'danseurs pour un clip', 'une danseuse, vidéoclip']) {
+      const b = analyserPhrase(p, jobs);
+      expect(b.metierCle, p).toBe(a.metierCle);
+      expect(b.typeProjet, p).toBe('clip');
+      expect(b.choix, p).toEqual([]);
+    }
+    const s = solutionsBudget(data, {
+      jobs, famille: a.famille, metierCle: a.metierCle, roles: a.roles, sauf: a.sauf,
+      typeProjet: 'clip', budgetEuros: 250,
+    });
+    expect(s.options.map((o) => o.nom)).toEqual(['Danseur – vidéomusique / clip']);
+    expect(s.options[0].convention).toBe('2121');
+    expect(s.options[0].brut).toBe(25355);
+    expect(s.options[0].statut.categorie).toBe('artiste');
+  });
+
+  it('une phrase ambiguë pose un choix au lieu de deviner', () => {
+    const tele = analyserPhrase('danseur télé', jobs);
+    expect(tele.metierCle).toBe('');
+    expect(tele.choix.map((c) => c.court)).toEqual(['Soliste', 'Corps de ballet']);
+    expect(analyserPhrase('chorégraphe, clip', jobs).metierCle).toBe('');
+    expect(analyserPhrase('chorégraphe, clip', jobs).question).toMatch(/chorégraphe/);
+    expect(analyserPhrase('figurant clip', jobs).choix.map((c) => c.court)).toEqual(['Émission TV', 'Cinéma', 'Pub']);
+    expect(analyserPhrase('musicien, clip', jobs).question).toMatch(/enregistrement/);
+    expect(analyserPhrase('assistant réa, clip', jobs).choix.map((c) => c.court)).toEqual(['1er assistant', '2e assistant']);
+    expect(analyserPhrase('comédienne, film', jobs).choix.map((c) => c.court)).toEqual(['Long métrage', 'Court métrage']);
+    expect(analyserPhrase('un danseur, captation', jobs).choix.length).toBeGreaterThan(1);
+  });
+
+  it('reconnaît les métiers, genres, pluriels, fautes et abréviations', () => {
+    const attendre = (phrase, attendu) => {
+      const a = analyserPhrase(phrase, jobs);
+      expect({ phrase, famille: a.famille, type: a.typeProjet, grade: a.grade, choix: a.choix.length }, phrase).toMatchObject(attendu);
+    };
+    attendre('comédien clip', { famille: 'artistes', type: 'clip', grade: '', choix: 0 });
+    expect(jobs.find((j) => j.cle === analyserPhrase('comédienne, clip', jobs).metierCle).nom).toMatch(/Comédien – vidéomusique/);
+    attendre('figurants, cinéma', { famille: 'artistes', type: 'film', choix: 0 });
+    expect(analyserPhrase('figu, film', jobs).metierCle).toBe(analyserPhrase('figurante, film', jobs).metierCle);
+    attendre('mannequins en pub', { famille: 'artistes', type: 'pub', choix: 0 });
+    attendre('chef op, 8 h, clip', { famille: 'camera', type: 'clip', grade: 'chef', choix: 0 });
+    attendre('cadreurs, 2 jours, pub', { famille: 'camera', type: 'pub', grade: '', choix: 0 });
+    attendre('dop édito', { famille: 'camera', type: 'edito', grade: 'chef', choix: 0 });
+    attendre('perchmen, clip', { famille: 'son', type: 'clip', grade: 'assistant', choix: 0 });
+    attendre('ingé son, télé', { famille: 'son', type: 'tele', grade: 'chef', choix: 0 });
+    attendre('ingénieur du son, film', { famille: 'son', type: 'film', grade: 'chef', choix: 0 });
+    attendre('250 € pour un élec, 8 h, clip', { famille: 'elec', type: 'clip', grade: '', choix: 0 });
+    attendre('cheffes électriciennes, clip', { famille: 'elec', type: 'clip', grade: 'chef', choix: 0 });
+    attendre('electrecin, pub', { famille: 'elec', type: 'pub', choix: 0 });
+    attendre('machinos, film', { famille: 'machinerie', type: 'film', choix: 0 });
+    attendre('chef machino, télé', { famille: 'machinerie', type: 'tele', grade: 'chef', choix: 0 });
+    attendre('déco, édito', { famille: 'deco', type: 'edito', choix: 0 });
+    attendre('décoratrices, pub', { famille: 'deco', type: 'pub', choix: 0 });
+    attendre('maquilleuses, clip', { famille: 'hmc', type: 'clip', choix: 0 });
+    attendre('maquilleuze, 8 h, pub', { famille: 'hmc', type: 'pub', choix: 0 });
+    attendre('coiffeurs, télé', { famille: 'hmc', type: 'tele', choix: 0 });
+    attendre('costumières, film', { famille: 'hmc', type: 'film', choix: 0 });
+    attendre('stylistes, édito', { famille: 'hmc', type: 'edito', choix: 0 });
+    attendre('régisseurs, clip', { famille: 'regie', type: 'clip', choix: 0 });
+    attendre('1er assistant réa, pub', { famille: 'real', type: 'pub', grade: 'assistant', choix: 0 });
+    expect(jobs.find((j) => j.cle === analyserPhrase('1er assistant réa, pub', jobs).metierCle).nom).toBe('1er assistant réalisateur');
+    attendre('monteurs, télé', { famille: 'montage', type: 'tele', choix: 0 });
+    attendre('étalonneuse, clip', { famille: 'montage', type: 'clip', choix: 0 });
+    expect(analyserPhrase('chef opérateur du son, clip', jobs).famille).toBe('son');
+    expect(analyserPhrase('chef opérateur du son, clip', jobs).grade).toBe('chef');
   });
 });
 
@@ -636,17 +728,24 @@ describe('Solutions de budget', () => {
       possible: false,
       budgetEuros: 250,
       minimumCents: s.minimumHt,
+      employeurCents: opt.employeur,
+      brutCents: opt.brut,
+      netCents: opt.net,
     });
     expect(quiResume('elec', '')).toBe('Élec');
     expect(dureeResume(opt)).toBe('1 jour 8 h');
-    expect(texte).toBe(`Élec · Clip · 1 jour 8 h — Pas possible avec 250 € HT. Minimum : ${texte.split('Minimum : ')[1]}`);
-    expect(texte).toMatch(/^Élec · Clip · 1 jour 8 h — Pas possible avec 250 € HT\. Minimum : .+ HT\.$/);
+    expect(texte).toBe(`Élec · Clip · 1 jour 8 h — Pas possible avec 250 € HT. Minimum : coût employeur ${texte.split('coût employeur ')[1]}`);
+    expect(texte).toMatch(/^Élec · Clip · 1 jour 8 h — Pas possible avec 250 € HT\. Minimum : coût employeur .+ €, coût total .+ € HT\. Brut .+ €, net .+ €\.$/);
+    expect(texte).toContain('Minimum : coût employeur 347,07 €, coût total 399,27 € HT. Brut 210,76 €, net 159,67 €.');
     expect(s.options.every((o) => o.reduit == null)).toBe(true);
     const b = bilanPoste(data, opt.poste, REGLAGES_DEFAUT);
     expect(b.totalCents).toBe(opt.budgetMinimum);
     const lignes = lignesCalcul(data, b, REGLAGES_DEFAUT, { grille: 'Clip' });
     expect(lignes.at(-1)).toContain('Total HT');
     expect(lignes.join(' ')).toMatch(/14 crédits de bulletin/);
+    expect(lignes.join(' ')).toMatch(/DPAE \(déclaration unique d'embauche\) : aucun crédit en plus/);
+    expect(b.ligne.frais.details.some((d) => /dpae|embauche/i.test(d.libelle))).toBe(false);
+    expect(b.ligne.frais.credits).toBe(16);
     expect(lignes.join(' ')).toMatch(/Demi-pige \?/);
     expect(lignes.join(' ')).toContain(LIGNE_DEMI_PIGE);
     expect(texte).not.toMatch(/Cotisations|crédits|Demi-pige/);
@@ -688,7 +787,7 @@ describe('Solutions de budget', () => {
     const card = s.options.find((o) => o.cle === heure.cle && o.kind === 'heure');
     expect(card.reduit.heuresMax).toBeGreaterThan(0);
     expect(card.reduit.heuresMax).toBeLessThan(8);
-    expect(card.reduit.texte).toMatch(/^Pas 8 h mais \d+ h : possible, brut .+ net .+\.$/);
+    expect(card.reduit.texte).toMatch(/^Pas 8 h mais \d+ h : possible, coût employeur .+ coût total .+ HT\. Brut .+ net .+\.$/);
   });
 
   it('compare les frais : Movinmotion, CulturePay, tarif #DIESE non public', () => {
@@ -698,9 +797,9 @@ describe('Solutions de budget', () => {
     const cp = cmp.find((x) => x.id === 'culturepay');
     const diese = cmp.find((x) => x.id === 'diese');
     const guso = cmp.find((x) => x.id === 'guso');
-    expect(mm.credits).toBe(34);
-    expect(eur(mm.fraisCents)).toBe(49.3);
-    expect(mm.libelle).toMatch(/34 crédits/);
+    expect(mm.credits).toBe(36);
+    expect(eur(mm.fraisCents)).toBe(52.2);
+    expect(mm.libelle).toMatch(/36 crédits/);
     expect(eur(cp.fraisCents)).toBe(17.9);
     expect(diese.surDevis).toBe(true);
     expect(diese.libelle).toMatch(/non public/);
@@ -718,11 +817,13 @@ describe('Solutions de budget', () => {
     expect(s.reco.total).toBe(36497);
     expect(s.reco.brut).toBe(21076);
     expect(s.reco.net).toBe(15967);
-    expect(s.reco.texte).toBe('Passe par CulturePay et monte à 364,97 € HT. Brut 210,76 €, net 159,67 €, coût total 364,97 € HT.');
+    expect(s.reco.employeur).toBe(34707);
+    expect(s.reco.texte).toBe('Passe par CulturePay et monte à 364,97 € HT. Coût employeur 347,07 €, coût total 364,97 € HT. Brut 210,76 €, net 159,67 €.');
     expect(s.reco.texte).not.toMatch(/heure|GUSO|#DIESE|direct/i);
     const copie = texteResume({
       qui: 'Électricien / éclairagiste', projet: 'Clip', duree: '1 jour 8 h',
       mode: 'budget', possible: false, budgetEuros: 250, minimumCents: s.minimumHt,
+      employeurCents: s.options[0].employeur, brutCents: s.options[0].brut, netCents: s.options[0].net,
       reco: s.reco.texte,
     });
     expect(copie).toContain('Ma reco : Passe par CulturePay et monte à 364,97 € HT.');
@@ -734,7 +835,7 @@ describe('Solutions de budget', () => {
       ...baseOpts, budgetEuros: 250,
       reglages: { ...REGLAGES_DEFAUT, intermediaire: 'culturepay' },
     });
-    expect(s.reco.texte).toBe('Monte le budget à 364,97 € HT. Brut 210,76 €, net 159,67 €, coût total 364,97 € HT.');
+    expect(s.reco.texte).toBe('Monte le budget à 364,97 € HT. Coût employeur 347,07 €, coût total 364,97 € HT. Brut 210,76 €, net 159,67 €.');
   });
 
   it('un budget qui passe confirme l’option, sans dire de monter', () => {
@@ -751,7 +852,7 @@ describe('Solutions de budget', () => {
     expect(s.options[0].possible).toBe(false);
     expect(s.reco.possible).toBe(true);
     expect(s.reco.id).toBe('culturepay');
-    expect(s.reco.texte).toBe('Passe par CulturePay. Brut 213,83 €, net 161,98 €, coût total 370,00 € HT.');
+    expect(s.reco.texte).toBe('Passe par CulturePay. Coût employeur 352,10 €, coût total 370,00 € HT. Brut 213,83 €, net 161,98 €.');
   });
 
   it('raccourcit seulement quand la grille publie l’heure', () => {
@@ -766,7 +867,7 @@ describe('Solutions de budget', () => {
     expect(s.reco.heures).toBe(3);
     expect(s.reco.heures).toBeLessThan(8);
     expect(s.reco.id).not.toBe('direct');
-    expect(s.reco.texte).toMatch(/^Passe par Smart, à 3 h\. Brut .+ net .+ coût total .+ HT\.$/);
+    expect(s.reco.texte).toMatch(/^Passe par Smart, à 3 h\. Coût employeur .+ coût total .+ HT\. Brut .+ net .+\.$/);
     expect(s.reco.texte).not.toMatch(/monte|direct/i);
     const clip = solutionsBudget(data, { ...baseOpts, budgetEuros: 250 });
     expect(clip.reco.heures).toBeNull();
@@ -776,12 +877,12 @@ describe('Solutions de budget', () => {
   it('un brut sous le minimum dit de le monter, un métier confirme la ligne', () => {
     const bas = recoDepuisLigne({
       nom: 'Électricien / éclairagiste', duree: '1 jour 8 h', sousMinimum: true,
-      brutMinimumCents: 21076, brutCents: 21076, netCents: 15967, totalCents: 34707,
+      brutMinimumCents: 21076, employeurCents: 34707, brutCents: 21076, netCents: 15967, totalCents: 34707,
     });
-    expect(bas.texte).toBe('Monte le brut à 210,76 €. Brut 210,76 €, net 159,67 €, coût total 347,07 € HT.');
+    expect(bas.texte).toBe('Monte le brut à 210,76 €. Coût employeur 347,07 €, coût total 347,07 € HT. Brut 210,76 €, net 159,67 €.');
     const ok = recoDepuisLigne({
       nom: 'Électricien / éclairagiste', duree: '1 jour 8 h', sousMinimum: false,
-      brutCents: 40000, netCents: 31207, totalCents: 62399,
+      employeurCents: 62399, brutCents: 40000, netCents: 31207, totalCents: 62399,
     });
     expect(ok.phrase).toBe('Prends Électricien / éclairagiste, 1 jour 8 h.');
   });

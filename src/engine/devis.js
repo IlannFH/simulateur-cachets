@@ -4,14 +4,14 @@ import { calculerMinimum, comparerDemande } from './poste.js';
 import { calculerCotisations } from './cotisations.js';
 import { statutPourMetier } from './catalogue.js';
 
-const CONVENTIONS_AUDIOVISUELLES = ['3097_pub', '3097_cinema', '2642', '2412'];
+const CONVENTIONS_AUDIOVISUELLES = ['3097_pub', '3097_cinema', '2642', '2412', '2121'];
 
 export const REGLAGES_DEFAUT = {
   intermediaire: 'movinmotion',
   formule: 'basic', // abonnement Movinmotion : basic | premium | aucune
   mois: 1,
   premiereInscription: false,
-  signature: false,
+  signature: true, // 2 crédits / contrat : un contrat Movinmotion est signé
   pack: 'pack1', // Movinmotion : Pack 1 à 1,45 € HT le crédit
 };
 
@@ -123,7 +123,7 @@ export function fraisIntermediaire(data, optionId, ctx = {}) {
     else avertissements.push('Tarif sur devis : saisir un montant.');
   }
   if (o.id === 'guso') {
-    if (CONVENTIONS_AUDIOVISUELLES.includes(ctx.convention)) avertissements.push('GUSO réservé au spectacle vivant occasionnel : non utilisable pour une production audiovisuelle ou cinéma.');
+    if (CONVENTIONS_AUDIOVISUELLES.includes(ctx.convention)) avertissements.push('GUSO réservé au spectacle vivant occasionnel : non utilisable pour une production audiovisuelle, un clip ou le cinéma.');
     avertissements.push("GUSO interdit si le spectacle est l'activité principale de l'employeur.");
   }
   return { option: o, ht, tva, details, avertissements, surDevis, credits };
@@ -241,10 +241,13 @@ export function convertirBudget(data, poste, budgetEuros, reglages = REGLAGES_DE
   } else {
     avertissements.push({ niveau: 'info', texte: "Un technicien engagé en CDDU sur une fonction des annexes 8 et 10 est salarié : sa facture doit être remplacée par un bulletin de paie (à vérifier selon son statut)." });
   }
+  const retenu = possible ? meilleur : base;
   return {
     budgetCents, brutCents, possible, minimumCents, budgetMinimum, quantite,
     brutParUnite: quantite ? roundInt(brutCents / quantite) : brutCents,
     ligne: meilleur, reste: meilleur ? budgetCents - meilleur.coutTotal - fixesCents : budgetCents, fixesCents,
+    employeurCents: retenu.cot.coutEmployeur,
+    netCents: retenu.cot.net,
     avertissements,
   };
 }

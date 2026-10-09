@@ -61,6 +61,7 @@ const REGLE_2642 = LIGNE_CLIP.replace(/^Clip : /, '');
 /** Grille sans taux horaire : la phrase exacte pour un clip, la même règle pour le reste de la 2642, une phrase plus courte ailleurs. */
 export function phraseSansHoraire({ typeProjet = '', convention = '', aHeure = false } = {}) {
   if (aHeure) return '';
+  if (convention === '2121') return '';
   if (typeProjet === 'clip') return LIGNE_CLIP;
   if (convention === '2642') {
     if (typeProjet === 'edito') return `Édito / mode : ${REGLE_2642}`;
@@ -89,32 +90,52 @@ function nomCotisation(libelle) {
 }
 
 /**
- * Une phrase, ou deux lignes jointes par « — ».
- * mode budget impossible : « Pas possible avec 250 € HT. Minimum : … € HT. »
- * mode brut impossible : brut minimum, sans HT.
- * sinon : brut, net, coût total HT (frais compris).
+ * Les deux coûts d'abord (employeur, total HT), le brut et le net ensuite.
+ * mode budget impossible : « Pas possible avec 250 € HT. Minimum : coût employeur X €, coût total Y € HT. »
  */
-export function texteResume({ qui, projet, duree, mode, possible, budgetEuros, minimumCents, brutMinimumCents, brutCents, netCents, totalCents, reco }) {
-  const tete = [qui, projet, duree].filter(Boolean).join(' · ');
-  let suite;
+function corpsResume({ mode, possible, budgetEuros, minimumCents, employeurCents, brutCents, netCents, totalCents }) {
+  const secondaire = `Brut ${euros(brutCents)}, net ${euros(netCents)}.`;
   if (mode === 'budget' && possible === false) {
-    suite = `Pas possible avec ${eurosSaisi(budgetEuros)} HT. Minimum : ${euros(minimumCents)} HT.`;
-  } else if (mode === 'brut' && possible === false) {
-    suite = `Pas possible. Brut minimum : ${euros(brutMinimumCents)}.`;
-  } else {
-    suite = `Brut ${euros(brutCents)}, net ${euros(netCents)}, coût total ${euros(totalCents)} HT.`;
+    return {
+      suite: `Pas possible avec ${eurosSaisi(budgetEuros)} HT. Minimum : coût employeur ${euros(employeurCents)}, coût total ${euros(minimumCents)} HT.`,
+      secondaire,
+    };
   }
-  const base = tete ? `${tete} — ${suite}` : suite;
-  return reco ? `${base} Ma reco : ${reco}` : base;
+  if (mode === 'brut' && possible === false) {
+    return {
+      suite: `Pas possible. Minimum : coût employeur ${euros(employeurCents)}, coût total ${euros(totalCents)} HT.`,
+      secondaire,
+    };
+  }
+  return {
+    suite: `Coût employeur ${euros(employeurCents)}, coût total ${euros(totalCents)} HT.`,
+    secondaire,
+  };
+}
+
+export function blocsResume(args) {
+  const { suite, secondaire } = corpsResume(args);
+  const tete = [args.qui, args.projet, args.duree].filter(Boolean).join(' · ');
+  return {
+    suite: tete ? `${tete} — ${suite}` : suite,
+    secondaire,
+  };
+}
+
+export function texteResume(args) {
+  const { suite, secondaire } = blocsResume(args);
+  const base = [suite, secondaire].filter(Boolean).join(' ');
+  return args.reco ? `${base} Ma reco : ${args.reco}` : base;
 }
 
 /** Reco d'une ligne déjà chiffrée (brut ou métier), sans chercher un autre intermédiaire. */
-export function recoDepuisLigne({ nom, duree, sousMinimum, brutMinimumCents, brutCents, netCents, totalCents }) {
-  const chiffres = `Brut ${euros(brutCents)}, net ${euros(netCents)}, coût total ${euros(totalCents)} HT.`;
+export function recoDepuisLigne({ nom, duree, sousMinimum, brutMinimumCents, employeurCents, brutCents, netCents, totalCents }) {
+  const chiffres = `Coût employeur ${euros(employeurCents)}, coût total ${euros(totalCents)} HT.`;
+  const secondaire = `Brut ${euros(brutCents)}, net ${euros(netCents)}.`;
   const phrase = sousMinimum
     ? `Monte le brut à ${euros(brutMinimumCents)}.`
     : `Prends ${nom}, ${duree}.`;
-  return { phrase, chiffres, texte: `${phrase} ${chiffres}` };
+  return { phrase, chiffres, secondaire, texte: `${phrase} ${chiffres} ${secondaire}` };
 }
 
 /** Ligne au brut demandé, plus l'abonnement et l'inscription. */
@@ -139,6 +160,19 @@ function ligneCotisation(l) {
   if (l.salarial) parts.push(`salarial ${tauxTxt(l.tauxSalarial)} (${euros(l.salarial)})`);
   if (!parts.length) return null;
   return `${nomCotisation(l.libelle)} : ${parts.join(', ')}.`;
+}
+
+/**
+ * La DPAE (déclaration unique d'embauche) est dans l'abonnement, pas en crédits.
+ * Conditions financières Movinmotion Social, 18 décembre 2023.
+ */
+function phraseDpae(o, ligne) {
+  const sig = Number(o?.credits?.signature_contrat);
+  const comptee = (ligne.frais.details || []).some((d) => /signature/i.test(d.libelle));
+  const suite = sig
+    ? ` La signature électronique coûte ${formatFrNombre(sig)} crédits par contrat et ${comptee ? 'est comptée' : "n'est pas comptée"}.`
+    : '';
+  return `DPAE (déclaration unique d'embauche) : aucun crédit en plus, elle est comprise dans l'abonnement (conditions financières Movinmotion Social, 18 décembre 2023).${suite}`;
 }
 
 function ligneFrais(data, bilan, reglages) {
@@ -199,6 +233,7 @@ export function lignesCalcul(data, bilan, reglages = REGLAGES_DEFAUT, ctx = {}) 
   const aUnBulletin = (L.frais.details || []).some((d) => /bulletin/i.test(d.libelle));
   if (tauxBulletin && aUnBulletin) {
     out.push(`Ces ${formatFrNombre(tauxBulletin)} crédits de bulletin couvrent la paie, le bulletin, l'AEM, les congés spectacles et la DSN.`);
+    out.push(phraseDpae(o, L));
   }
   out.push(`Total HT : ${euros(bilan.totalCents)}.`);
   return out;
