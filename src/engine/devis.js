@@ -12,39 +12,104 @@ export const REGLAGES_DEFAUT = {
   mois: 1,
   prorata: false,
   premiereInscription: false,
-  valeurCredit: null, // null = valeur par défaut du JSON
   signature: false,
+  pack: 'pack1', // Movinmotion : Pack 1 à 1,45 € HT le crédit
 };
 
 export const optionIntermediaire = (data, id) => data.intermediaires.options.find((o) => o.id === id) || data.intermediaires.options[0];
 
+const enCredits = (o) => !!(o?.credits && o.packs?.length);
+
+/** Pack retenu : le choix, sinon le pack par défaut, sinon le premier. */
+export function packChoisi(option, reglages = {}) {
+  const packs = option?.packs || [];
+  if (!packs.length) return null;
+  const id = reglages?.pack || option.pack_defaut;
+  return packs.find((p) => p.id === id) || packs.find((p) => p.id === option.pack_defaut) || packs[0];
+}
+
+const prixCreditTxt = (cents) => (cents / 100).toFixed(2).replace('.', ',');
+
+/** Crédits, éventuellement fractionnaires (1,5 mois), arrondis au centième. */
+const creditsArrondis = (n) => roundInt(Number(n) * 100) / 100;
+
+const quantiteMot = (n, singulier, pluriel) => `${formatFrNombre(n)} ${Math.abs(n) > 1 ? pluriel : singulier}`;
+
+/** Mois couverts par un bulletin : au moins 1, y compris si la durée saisie est nulle. */
+const moisBulletins = (mois) => {
+  const n = Number(mois);
+  if (!Number.isFinite(n)) return 1;
+  return Math.max(1, n);
+};
+
+/**
+ * Bulletins d'une personne : un par mois couvert, davantage si une édition
+ * supplémentaire est saisie. Jamais multiplié par les jours ou les cachets.
+ */
+function nombreBulletins(mois, saisis) {
+  const couverts = moisBulletins(mois);
+  const n = Number(saisis);
+  const demande = Number.isFinite(n) && n > 0 ? n : couverts;
+  return Math.max(couverts, demande);
+}
+
 /**
  * Frais d'intermédiaire d'une ligne (hors abonnement).
- * ctx : { coutEmployeurCents, convention, bulletins, contrats, signature, fraisManuel }
+ * ctx : { coutEmployeurCents, convention, bulletins, contrats, signature, fraisManuel, mois, pack }
  */
-export function fraisIntermediaire(data, optionId, ctx) {
+export function fraisIntermediaire(data, optionId, ctx = {}) {
   const o = optionIntermediaire(data, optionId);
-  const bulletins = Math.max(0, Number(ctx.bulletins ?? 1));
   const contrats = Math.max(0, Number(ctx.contrats ?? 1));
   const details = [];
   const avertissements = [];
   let ht = 0;
   let tva = 0;
   let surDevis = false;
+  let credits = null;
 
   if (o.prix_par_bulletin_ht === null || o.prix_par_contrat_ht === null || o.pourcentage === null) surDevis = true;
-  if (o.prix_par_bulletin_ht) {
-    const m = mul(toCents(o.prix_par_bulletin_ht), bulletins);
-    ht += m; details.push({ libelle: `${bulletins} bulletin(s) × ${formatEuros(toCents(o.prix_par_bulletin_ht))}`, montant: m });
+
+  if (enCredits(o)) {
+    credits = 0;
+    const pack = packChoisi(o, ctx);
+    const prix = toCents(pack.prix_credit_ht);
+    const prixTxt = prixCreditTxt(prix);
+    const nBull = nombreBulletins(ctx.mois, ctx.bulletins);
+    const taux = Number(o.credits.bulletin) || 0;
+    const tauxReed = Number(o.credits.reedition_bulletin ?? taux) || 0;
+    const couverts = moisBulletins(ctx.mois);
+    const nBase = tauxReed === taux ? nBull : Math.min(nBull, couverts);
+    const nExtra = tauxReed === taux ? 0 : Math.max(0, nBull - couverts);
+    const ajouter = (quantite, tauxUnite, libelle) => {
+      if (!(quantite > 0) || !(tauxUnite > 0)) return;
+      const c = creditsArrondis(quantite * tauxUnite);
+      const m = mul(prix, c);
+      credits = creditsArrondis(credits + c);
+      ht += m;
+      details.push({ libelle, montant: m, credits: c });
+    };
+    ajouter(nBase, taux, `${quantiteMot(nBase, 'bulletin', 'bulletins')} × ${formatFrNombre(taux)} crédits × ${prixTxt} €`);
+    ajouter(nExtra, tauxReed, `${quantiteMot(nExtra, 'édition supplémentaire', 'éditions supplémentaires')} × ${formatFrNombre(tauxReed)} crédits × ${prixTxt} €`);
+    if (ctx.signature && o.credits.signature_contrat) {
+      const parContrat = Number(o.credits.signature_contrat);
+      ajouter(contrats, parContrat, `Signature électronique × ${quantiteMot(contrats, 'contrat', 'contrats')} × ${formatFrNombre(parContrat)} crédits × ${prixTxt} €`);
+    }
+  } else {
+    const bulletins = Math.max(0, Number(ctx.bulletins ?? 1));
+    if (o.prix_par_bulletin_ht) {
+      const m = mul(toCents(o.prix_par_bulletin_ht), bulletins);
+      ht += m; details.push({ libelle: `${bulletins} bulletin(s) × ${formatEuros(toCents(o.prix_par_bulletin_ht))}`, montant: m });
+    }
+    if (o.prix_par_contrat_ht) {
+      const m = mul(toCents(o.prix_par_contrat_ht), contrats);
+      ht += m; details.push({ libelle: `${contrats} contrat(s) × ${formatEuros(toCents(o.prix_par_contrat_ht))}`, montant: m });
+    }
+    if (ctx.signature && o.signature_electronique_contrat_ht) {
+      const m = mul(toCents(o.signature_electronique_contrat_ht), contrats);
+      ht += m; details.push({ libelle: `Signature électronique × ${contrats}`, montant: m });
+    }
   }
-  if (o.prix_par_contrat_ht) {
-    const m = mul(toCents(o.prix_par_contrat_ht), contrats);
-    ht += m; details.push({ libelle: `${contrats} contrat(s) × ${formatEuros(toCents(o.prix_par_contrat_ht))}`, montant: m });
-  }
-  if (ctx.signature && o.signature_electronique_contrat_ht) {
-    const m = mul(toCents(o.signature_electronique_contrat_ht), contrats);
-    ht += m; details.push({ libelle: `Signature électronique × ${contrats}`, montant: m });
-  }
+
   if (o.pourcentage) {
     const m = pctOf(ctx.coutEmployeurCents, o.pourcentage);
     ht += m; details.push({ libelle: `${String(o.pourcentage).replace('.', ',')} % du coût employeur`, montant: m });
@@ -59,24 +124,44 @@ export function fraisIntermediaire(data, optionId, ctx) {
     if (CONVENTIONS_AUDIOVISUELLES.includes(ctx.convention)) avertissements.push('GUSO réservé au spectacle vivant occasionnel : non utilisable pour une production audiovisuelle ou cinéma.');
     avertissements.push("GUSO interdit si le spectacle est l'activité principale de l'employeur.");
   }
-  return { option: o, ht, tva, details, avertissements, surDevis };
+  return { option: o, ht, tva, details, avertissements, surDevis, credits };
 }
 
-/** Abonnement et frais de dossier d'une option, pour le devis entier. */
+/** Abonnement et frais d'inscription d'une option, pour le devis entier. */
 export function fraisFixes(data, optionId, reglages) {
   const o = optionIntermediaire(data, optionId);
   const lignes = [];
   const mois = Math.max(0, Number(reglages.mois ?? 1));
+  if (enCredits(o)) {
+    const pack = packChoisi(o, reglages);
+    const prix = toCents(pack.prix_credit_ht);
+    const prixTxt = prixCreditTxt(prix);
+    const parMois = o.credits.abonnement?.[reglages.formule];
+    if (parMois) {
+      const c = creditsArrondis(Number(parMois) * mois);
+      const nom = reglages.formule === 'premium' ? 'Premium' : 'Basic';
+      lignes.push({
+        libelle: `Abonnement ${nom} × ${formatFrNombre(mois)} mois × ${formatFrNombre(parMois)} crédits × ${prixTxt} €`,
+        montant: mul(prix, c),
+        credits: c,
+      });
+    }
+    if (reglages.premiereInscription && o.credits.inscription) {
+      const c = creditsArrondis(o.credits.inscription);
+      lignes.push({
+        libelle: `Inscription : ${formatFrNombre(c)} crédits × ${prixTxt} €`,
+        montant: mul(prix, c),
+        credits: c,
+      });
+    }
+    return lignes;
+  }
   const ab = o.abonnement_mensuel_ht;
   if (ab && typeof ab === 'object') {
     const prix = ab[reglages.formule];
     if (prix) lignes.push({ libelle: `Abonnement ${o.nom.split(' (')[0]} ${reglages.formule === 'premium' ? 'Premium' : 'Basic'} × ${formatFrNombre(mois)} mois`, montant: mul(toCents(prix), mois) });
   } else if (typeof ab === 'number' && ab > 0) {
     lignes.push({ libelle: `Abonnement ${o.nom} × ${formatFrNombre(mois)} mois`, montant: mul(toCents(ab), mois) });
-  }
-  if (reglages.premiereInscription && o.frais_dossier_credits) {
-    const v = reglages.valeurCredit ?? o.valeur_credit_ht?.defaut;
-    lignes.push({ libelle: `Frais de dossier : ${o.frais_dossier_credits} crédits × ${String(v).replace('.', ',')} €`, montant: mul(toCents(v), o.frais_dossier_credits) });
   }
   return lignes;
 }
@@ -95,6 +180,7 @@ export function calculerLigne(data, poste, reglages = REGLAGES_DEFAUT) {
   const frais = fraisIntermediaire(data, intermediaire, {
     coutEmployeurCents: cot.coutEmployeur, convention: poste.convention,
     bulletins: poste.bulletins, contrats: poste.contrats, signature: reglages.signature, fraisManuel: poste.fraisManuel,
+    mois: reglages.mois, pack: reglages.pack,
   });
   return { poste, min, demande, brutCents, statut, jours, cot, intermediaire, frais, coutTotal: cot.coutEmployeur + frais.ht };
 }
@@ -142,7 +228,8 @@ export function convertirBudget(data, poste, budgetEuros, reglages = REGLAGES_DE
     avertissements.push({ niveau: 'attention', texte: `${base.cot.nonTrouves} cotisation(s) non trouvée(s) comptée(s) à 0 € : le brut réellement possible est un peu plus bas.` });
   }
   const opt = optionIntermediaire(data, base.intermediaire);
-  if (opt.abonnement_mensuel_ht && typeof opt.abonnement_mensuel_ht === 'object' && reglages.formule !== 'aucune') {
+  const abonnementActif = (enCredits(opt) ? opt.credits.abonnement : (typeof opt.abonnement_mensuel_ht === 'object' ? opt.abonnement_mensuel_ht : null));
+  if (abonnementActif && reglages.formule !== 'aucune') {
     avertissements.push({ niveau: 'info', texte: "L'abonnement mensuel de l'intermédiaire n'est pas déduit : il est compté une fois au total du devis." });
   }
   if (base.frais.surDevis && (poste.fraisManuel === null || poste.fraisManuel === undefined || poste.fraisManuel === '')) {
@@ -196,7 +283,13 @@ export function calculerDevis(data, postes, reglages = REGLAGES_DEFAUT) {
   };
   t.frais = t.fraisLignes + t.fixes;
   t.coutTotal = t.coutEmployeur + t.frais;
-  return { lignes, fixes, totaux: t };
+  const suitCredits = lignes.some((l) => l.frais.credits != null) || fixes.some((f) => f.credits != null);
+  t.credits = suitCredits
+    ? creditsArrondis(lignes.reduce((s, l) => s + (l.frais.credits || 0), 0) + fixes.reduce((s, f) => s + (f.credits || 0), 0))
+    : 0;
+  const optCredit = optionsUtilisees.map((id) => optionIntermediaire(data, id)).find(enCredits) || null;
+  const pack = optCredit ? packChoisi(optCredit, reglages) : null;
+  return { lignes, fixes, totaux: t, pack, mention: pack ? 'Prix HT, TVA en plus.' : '' };
 }
 
 /**
@@ -206,6 +299,10 @@ export function calculerDevis(data, postes, reglages = REGLAGES_DEFAUT) {
  */
 export function lignesRecapDevis(devis) {
   const t = devis.totaux;
+  const detailFrais = (devis.lignes || []).flatMap((l) => (l.frais?.details || []).map((d) => {
+    const nom = l.min?.entree?.metier;
+    return [nom ? `${nom} — ${d.libelle}` : d.libelle, d.montant];
+  }));
   const detail = [
     ['Sous-total artistes', t.artistes],
     ['Sous-total techniciens', t.techniciens],
@@ -214,6 +311,7 @@ export function lignesRecapDevis(devis) {
     ['Total cotisations patronales', t.patronal],
     ['Coût employeur', t.coutEmployeur],
     ["Frais d'intermédiaire par ligne", t.fraisLignes],
+    ...detailFrais,
     ...devis.fixes.map((f) => [f.libelle, f.montant]),
     ["Total frais d'intermédiaire HT", t.frais],
   ];
