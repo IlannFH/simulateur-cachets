@@ -120,7 +120,7 @@ const nomCourt = (nom) => String(nom || '').split(' (')[0];
  * #DIESE n'a pas de tarif public. Les cotisations ne changent pas, sauf le pourcentage Smart.
  */
 export function comparerIntermediaires(data, poste, reglages = REGLAGES_DEFAUT) {
-  return data.intermediaires.options.map((o) => {
+  return data.intermediaires.options.filter((o) => o.id !== 'direct').map((o) => {
     const r = { ...reglages, intermediaire: o.id };
     const ligne = calculerLigne(data, { ...poste, intermediaire: o.id }, r);
     const fixes = fraisFixes(data, o.id, r);
@@ -294,9 +294,12 @@ function inutilisable(comparaison, resultat) {
 }
 
 function nomService(data, id) {
-  if (id === 'direct') return 'en direct';
   const o = data.intermediaires.options.find((x) => x.id === id);
   return nomCourt(o?.nom || id);
+}
+
+function tarifPublic(x) {
+  return x.id !== 'direct' && !x.surDevis && x.fraisCents != null && !(x.avertissements || []).some((a) => /GUSO/.test(a));
 }
 
 function joindre(parts) {
@@ -314,14 +317,17 @@ function phraseDe(action, c) {
 /**
  * Une seule suite concrète : un métier de la famille, un intermédiaire au tarif public,
  * une durée plus courte seulement si la grille publie l'heure, sinon le budget exact.
- * GUSO bloqué et tarif sur devis (#DIESE) ne sont pas proposés : on ne chiffre pas une option interdite ou inconnue.
+ * La paie interne (sans intermédiaire), GUSO bloqué et le tarif sur devis (#DIESE) ne sont pas proposés.
  */
 export function maReco(data, { options, reglages, budgetEuros, demande }) {
   if (!options?.length) return null;
   const courant = options.find((o) => o.recommande) || options[0];
   const regs0 = reglages || REGLAGES_DEFAUT;
   const budget = Number(budgetEuros);
-  if (courant.possible) {
+  const ids = comparerIntermediaires(data, { ...courant.poste, demande: null }, regs0)
+    .filter(tarifPublic)
+    .map((x) => x.id);
+  if (courant.possible && ids.includes(regs0.intermediaire)) {
     return phraseDe(`prends ${courant.nom}, ${dureeResume(courant)}`, {
       id: regs0.intermediaire,
       cle: courant.cle,
@@ -333,9 +339,6 @@ export function maReco(data, { options, reglages, budgetEuros, demande }) {
       heures: null,
     });
   }
-  const ids = comparerIntermediaires(data, { ...courant.poste, demande: null }, regs0)
-    .filter((x) => !x.surDevis && x.fraisCents != null && !(x.avertissements || []).some((a) => /GUSO/.test(a)))
-    .map((x) => x.id);
   const vus = new Set();
   const candidats = [];
   for (const o of options) {
@@ -424,10 +427,9 @@ function actionDe(c, courant, reglages, demande) {
   if (autreMetier) parts.push(`prends ${c.nom}`);
   if (autreService && moinsDheures) {
     const n = formatFrNombre(c.heures);
-    const via = c.id === 'direct' ? 'passe en direct' : `passe par ${c.serviceNom}`;
-    parts.push(`${via}, à ${n} h`);
+    parts.push(`passe par ${c.serviceNom}, à ${n} h`);
   } else if (autreService) {
-    parts.push(c.id === 'direct' ? 'passe en direct' : `passe par ${c.serviceNom}`);
+    parts.push(`passe par ${c.serviceNom}`);
   } else if (moinsDheures) {
     parts.push(`passe à ${formatFrNombre(c.heures)} h`);
   }
