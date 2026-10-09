@@ -473,6 +473,8 @@ function posteExtraAffiner() {
     ouvrier: p.ouvrier,
     heures: Object.fromEntries(Object.entries(p.heures).map(([k, v]) => [k, E.validerHeuresMajo(v).valeur || 0])),
     majoPct: Object.fromEntries(Object.entries(p.majoPct).map(([k, v]) => [k, v === '' || v == null ? '' : num(v)])),
+    bulletins: num(p.bulletins) ?? 1,
+    contrats: num(p.contrats) ?? 1,
   };
 }
 function htmlSolutions() {
@@ -652,26 +654,34 @@ function htmlDevis() {
   const D = E.calculerDevis(DATA, state.devis, state.reglages);
   const r = state.reglages;
   const o = E.optionIntermediaire(DATA, r.intermediaire);
-  const ab = o.abonnement_mensuel_ht && typeof o.abonnement_mensuel_ht === 'object';
+  const credit = !!(o.credits && o.packs?.length);
+  const ab = credit ? o.credits.abonnement : (o.abonnement_mensuel_ht && typeof o.abonnement_mensuel_ht === 'object' ? o.abonnement_mensuel_ht : null);
+  const pack = credit ? E.packChoisi(o, r) : null;
   let reglages = `<label class="lbl" for="projet-nom">Projet</label><input id="projet-nom" type="text" autocomplete="off" value="${esc(state.projet)}" placeholder="Nom">`;
   reglages += `<label class="lbl" for="r-intermediaire">Intermédiaire</label><select id="r-intermediaire" data-r="intermediaire">${DATA.intermediaires.options.map((x) => `<option value="${x.id}" ${x.id === r.intermediaire ? 'selected' : ''}>${esc(x.nom.split(' (')[0])}</option>`).join('')}</select>`;
+  if (credit) {
+    reglages += `<label class="lbl" for="r-pack">Pack de crédits</label><select id="r-pack" data-r="pack">${o.packs.map((p) => `<option value="${esc(p.id)}" ${p.id === pack.id ? 'selected' : ''}>${esc(p.nom)} · ${esc(E.formatFrNombre(p.credits))} crédits · ${esc(E.formatDecimal(E.toCents(p.prix_credit_ht)))} €</option>`).join('')}</select><p class="lbl">Prix HT, TVA en plus.</p>`;
+  }
   reglages += `<label class="lbl" for="r-mois">Mois</label><input id="r-mois" type="text" inputmode="decimal" data-r="mois" value="${esc(E.formatFrNombre(Number(r.mois)))}"><p id="err-mois" class="note"></p>`;
   let plus = '';
   if (ab) {
     plus += `<label class="lbl" for="r-formule">Abonnement</label><select id="r-formule" data-r="formule"><option value="basic" ${r.formule === 'basic' ? 'selected' : ''}>Basic</option><option value="premium" ${r.formule === 'premium' ? 'selected' : ''}>Premium</option><option value="aucune" ${r.formule === 'aucune' ? 'selected' : ''}>Aucun</option></select>`;
   }
-  if (o.signature_electronique_contrat_ht) plus += `<label class="check"><input type="checkbox" data-r="signature" ${r.signature ? 'checked' : ''}>Signature électronique</label>`;
+  if (credit && o.credits.inscription) plus += `<label class="check"><input type="checkbox" data-r="premiereInscription" ${r.premiereInscription ? 'checked' : ''}>Première inscription (${esc(E.formatFrNombre(o.credits.inscription))} crédits)</label>`;
+  if (o.credits?.signature_contrat || o.signature_electronique_contrat_ht) plus += `<label class="check"><input type="checkbox" data-r="signature" ${r.signature ? 'checked' : ''}>Signature électronique</label>`;
   plus += `<label class="check"><input type="checkbox" data-r="prorata" ${r.prorata ? 'checked' : ''}>Répartir l'abonnement</label>`;
   const lignes = D.lignes.map((L, i) => {
     const id = state.devis[i].uid;
     const type = E.labelPourPoste(state.devis[i]);
-    return `<article class="ligne"><h3>${esc(L.min.entree.metier)}</h3><p class="lbl">${esc([type, libelleStatut(L.statut), `${L.min.unite.label} × ${E.formatFrNombre(L.min.quantite)}`].filter(Boolean).join(' · '))}</p><p class="n">${esc(E.formatEuros(L.coutTotal + (L.partFixes || 0)))}</p><p class="actions"><button type="button" class="lien" data-action="modifier" data-uid="${esc(id)}">Modifier</button><button type="button" class="lien" data-action="dupliquer" data-uid="${esc(id)}">Dupliquer</button><button type="button" class="lien" data-action="supprimer" data-uid="${esc(id)}">Supprimer</button></p></article>`;
+    const fraisTxt = (L.frais.details || []).map((d) => d.libelle).join(' · ');
+    return `<article class="ligne"><h3>${esc(L.min.entree.metier)}</h3><p class="lbl">${esc([type, libelleStatut(L.statut), `${L.min.unite.label} × ${E.formatFrNombre(L.min.quantite)}`].filter(Boolean).join(' · '))}</p>${fraisTxt ? `<p class="lbl">${esc(fraisTxt)}</p>` : ''}<p class="n">${esc(E.formatEuros(L.coutTotal + (L.partFixes || 0)))}</p><p class="actions"><button type="button" class="lien" data-action="modifier" data-uid="${esc(id)}">Modifier</button><button type="button" class="lien" data-action="dupliquer" data-uid="${esc(id)}">Dupliquer</button><button type="button" class="lien" data-action="supprimer" data-uid="${esc(id)}">Supprimer</button></p></article>`;
   }).join('');
   const vide = D.lignes.length ? '' : `<p class="lbl">Aucune ligne.</p><button type="button" class="pixel-btn" data-action="exemple">Exemple</button>`;
   const recap = E.lignesRecapDevis(D);
   let totaux = '';
   if (D.lignes.length) {
-    totaux = `<div class="figures total">${recap.visibles.map(([lib, c]) => figure(E.formatEuros(c), lib)).join('')}<p class="figure"><span class="n">${esc(E.formatEuros(D.totaux.coutTotal))}</span><span class="lbl">Total</span></p></div><details><summary>Détail</summary><div class="figures">${recap.detail.map(([lib, c]) => figure(E.formatEuros(c), lib)).join('')}</div></details>`;
+    const noteCredit = D.totaux.credits ? `<p class="lbl">${esc(E.formatFrNombre(D.totaux.credits))} crédits. ${esc(D.mention || '')}</p>` : '';
+    totaux = `<div class="figures total">${recap.visibles.map(([lib, c]) => figure(E.formatEuros(c), lib)).join('')}<p class="figure"><span class="n">${esc(E.formatEuros(D.totaux.coutTotal))}</span><span class="lbl">Total</span></p></div>${noteCredit}<details><summary>Détail</summary><div class="figures">${recap.detail.map(([lib, c]) => figure(E.formatEuros(c), lib)).join('')}</div></details>`;
     totaux += `<div class="export"><button type="button" class="pixel-btn" data-action="export-menu">Exporter</button>${state.exportOuvert ? '<div class="pop"><button type="button" class="ghost" data-action="pdf">PDF</button><button type="button" class="ghost" data-action="csv">CSV</button></div>' : ''}<p id="export-statut" class="lbl" role="status"></p></div>`;
     totaux += state.confirmVide
       ? `<button type="button" class="lien" data-action="vider-oui">Oui, vider</button> <button type="button" class="lien" data-action="vider-non">Annuler</button>`
@@ -978,7 +988,8 @@ function exporterPDF() {
   const donnees = E.formatDateFr(DATA._meta.genere_le);
   const recap = E.lignesRecapDevis(D);
   const eur = (c) => E.formatEuros(c);
-  $('#print-view').innerHTML = `<div class="pv-head"><h1>Devis</h1><p>${esc(date)}<br>Données du ${esc(donnees)}</p></div>${state.projet ? `<p><strong>${esc(state.projet)}</strong></p>` : ''}<table><thead><tr><th>Métier</th><th>Unité</th><th class="r">Brut</th><th class="r">Coût empl.</th><th class="r">Frais HT</th><th class="r">Coût total</th></tr></thead><tbody>${D.lignes.map((L) => `<tr><td>${esc(L.min.entree.metier)}<br>${esc(libelleStatut(L.statut))}</td><td>${esc(L.min.unite.label)} × ${esc(E.formatFrNombre(L.min.quantite))}</td><td class="r">${esc(eur(L.brutCents))}</td><td class="r">${esc(eur(L.cot.coutEmployeur))}</td><td class="r">${esc(eur(L.frais.ht))}</td><td class="r">${esc(eur(L.coutTotal))}</td></tr>`).join('')}</tbody></table><div class="pv-totaux">${recap.detail.map(([lib, c]) => `<p>${esc(lib)} ${esc(eur(c))}</p>`).join('')}</div><p class="pv-avert">${esc(E.AVERTISSEMENT)}</p>`;
+  const noteCredit = [D.pack ? `${D.pack.nom} · ${E.formatDecimal(E.toCents(D.pack.prix_credit_ht))} € HT / crédit` : '', D.totaux.credits ? `${E.formatFrNombre(D.totaux.credits)} crédits` : '', D.mention || ''].filter(Boolean).map((s) => `<p>${esc(s)}</p>`).join('');
+  $('#print-view').innerHTML = `<div class="pv-head"><h1>Devis</h1><p>${esc(date)}<br>Données du ${esc(donnees)}</p></div>${state.projet ? `<p><strong>${esc(state.projet)}</strong></p>` : ''}<table><thead><tr><th>Métier</th><th>Unité</th><th class="r">Brut</th><th class="r">Coût empl.</th><th class="r">Frais HT</th><th class="r">Coût total</th></tr></thead><tbody>${D.lignes.map((L) => `<tr><td>${esc(L.min.entree.metier)}<br>${esc(libelleStatut(L.statut))}</td><td>${esc(L.min.unite.label)} × ${esc(E.formatFrNombre(L.min.quantite))}</td><td class="r">${esc(eur(L.brutCents))}</td><td class="r">${esc(eur(L.cot.coutEmployeur))}</td><td class="r">${esc(eur(L.frais.ht))}</td><td class="r">${esc(eur(L.coutTotal))}</td></tr>`).join('')}</tbody></table><div class="pv-totaux">${recap.detail.map(([lib, c]) => `<p>${esc(lib)} ${esc(eur(c))}</p>`).join('')}${noteCredit}</div><p class="pv-avert">${esc(E.AVERTISSEMENT)}</p>`;
   state.exportOuvert = false;
   if (window.jspdf?.jsPDF) { genererPDF(D, [...srcs].filter(Boolean), date, donnees, recap); return; }
   window.print();
@@ -1009,6 +1020,11 @@ function genererPDF(D, srcs, date, donnees, recap) {
     columnStyles: { 1: { halign: 'right' } },
   });
   let y = doc.lastAutoTable.finalY + 8;
+  const creditLignes = [
+    D.pack ? `${D.pack.nom} · ${E.formatDecimal(E.toCents(D.pack.prix_credit_ht))} € HT / crédit` : '',
+    D.totaux.credits ? `${E.formatFrNombre(D.totaux.credits)} crédits` : '',
+    D.mention || '',
+  ].filter(Boolean);
   const H = doc.internal.pageSize.getHeight();
   const ligne = (s, size) => {
     doc.setFont('helvetica', 'normal'); doc.setFontSize(size);
@@ -1017,6 +1033,8 @@ function genererPDF(D, srcs, date, donnees, recap) {
       doc.text(l, M, y); y += size * 0.45;
     }
   };
+  creditLignes.forEach((s) => ligne(s, 9));
+  if (creditLignes.length) y += 2;
   srcs.forEach((s) => ligne(s, 7));
   y += 3; ligne(E.AVERTISSEMENT, 7.5);
   telecharger(nomFichier('pdf'), doc.output('blob'), 'application/pdf');
@@ -1127,6 +1145,11 @@ async function init() {
   DATA = E.appliquerSurcharges(RAW, state.surcharges);
   indexer();
   state.reglages = { ...E.REGLAGES_DEFAUT, ...lsGet(LS.reglages, {}) };
+  delete state.reglages.valeurCredit;
+  const optReglages = E.optionIntermediaire(DATA, state.reglages.intermediaire);
+  if (optReglages.packs?.length && !optReglages.packs.some((p) => p.id === state.reglages.pack)) {
+    state.reglages.pack = optReglages.pack_defaut || optReglages.packs[0].id;
+  }
   const mois = E.validerMois(state.reglages.mois);
   state.reglages.mois = mois.ok ? mois.valeur : 1;
   state.projet = lsGet(LS.projet, '') || '';

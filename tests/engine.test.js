@@ -129,15 +129,78 @@ describe('Intermédiaires et devis (§ 9)', () => {
     const d = calculerDevis(data, [t1, t8, t11], { ...REGLAGES_DEFAUT, intermediaire: 'culturepay' });
     expect(eur(d.totaux.frais)).toBe(53.7);
   });
-  it('T16 : Movinmotion Basic 1 mois → 71,30 € HT', () => {
+  it('T16 : Movinmotion Basic, Pack 1, 1 mois → 62 crédits = 89,90 € HT', () => {
     const d = calculerDevis(data, [t1, t8, t11], { ...REGLAGES_DEFAUT, intermediaire: 'movinmotion', formule: 'basic', mois: 1 });
-    expect(eur(d.totaux.frais)).toBe(71.3);
-    // L'abonnement n'est compté qu'une fois
+    // 3 personnes × 14 crédits + Basic 20, au prix du Pack 1 (1,45 €)
+    expect(d.totaux.credits).toBe(62);
+    expect(eur(d.totaux.frais)).toBe(89.9);
     expect(d.fixes).toHaveLength(1);
+    expect(d.pack.id).toBe('pack1');
+    expect(d.pack.prix_credit_ht).toBe(1.45);
+    expect(d.mention).toBe('Prix HT, TVA en plus.');
+    expect(d.fixes[0].libelle).toMatch(/20 crédits × 1,45 €/);
+    expect(d.lignes[0].frais.credits).toBe(14);
+    expect(d.lignes[0].frais.details[0].libelle).toMatch(/1 bulletin × 14 crédits × 1,45 €/);
   });
-  it('T16 bis : 3 mois de projet → abonnement × 3', () => {
+  it('T16 bis : 3 mois → un bulletin par personne et par mois, abonnement × 3', () => {
     const d = calculerDevis(data, [t1, t8, t11], { ...REGLAGES_DEFAUT, mois: 3 });
-    expect(eur(d.totaux.frais)).toBe(48.3 + 69);
+    // 3 × 3 × 14 + 20 × 3 = 186 crédits × 1,45 €
+    expect(d.totaux.credits).toBe(186);
+    expect(eur(d.totaux.frais)).toBe(269.7);
+    expect(d.lignes.every((l) => l.frais.credits === 42)).toBe(true);
+  });
+  it('1 électricien, 1 jour, Basic, Pack 1 → 34 crédits = 49,30 € HT', () => {
+    const elec = base('3097_pub', 'Électricien de prise de vues', { unite: 'minimum_journee_8h', heuresParJour: 8, quantite: 1 });
+    const d = calculerDevis(data, [elec], { ...REGLAGES_DEFAUT, formule: 'basic', mois: 1, pack: 'pack1' });
+    expect(d.totaux.credits).toBe(34);
+    expect(eur(d.totaux.frais)).toBe(49.3);
+    expect(d.lignes[0].frais.credits).toBe(14);
+    expect(eur(d.fixes[0].montant)).toBe(29);
+  });
+  it('les jours ne multiplient pas le bulletin, les mois oui', () => {
+    const elec = base('3097_pub', 'Électricien de prise de vues', { unite: 'minimum_journee_8h', heuresParJour: 8, quantite: 5 });
+    const unMois = calculerDevis(data, [elec], REGLAGES_DEFAUT);
+    const deuxMois = calculerDevis(data, [elec], { ...REGLAGES_DEFAUT, mois: 2 });
+    expect(unMois.lignes[0].frais.credits).toBe(14);
+    expect(deuxMois.lignes[0].frais.credits).toBe(28);
+    expect(deuxMois.totaux.credits).toBe(68);
+    expect(eur(deuxMois.totaux.frais)).toBe(98.6);
+  });
+  it('une 2e édition dans le même mois coûte 14 crédits de plus', () => {
+    const elec = base('3097_pub', 'Électricien de prise de vues', { unite: 'minimum_journee_8h', bulletins: 2 });
+    const d = calculerDevis(data, [elec], { ...REGLAGES_DEFAUT, mois: 1, formule: 'basic' });
+    expect(d.lignes[0].frais.credits).toBe(28);
+    expect(d.totaux.credits).toBe(48);
+    expect(eur(d.totaux.frais)).toBe(69.6);
+    expect(d.lignes[0].frais.details[0].libelle).toMatch(/2 bulletins × 14 crédits/);
+  });
+  it('la signature électronique ajoute 2 crédits, au prix du pack', () => {
+    const elec = base('3097_pub', 'Électricien de prise de vues', { unite: 'minimum_journee_8h' });
+    const d = calculerDevis(data, [elec], { ...REGLAGES_DEFAUT, signature: true, formule: 'basic' });
+    expect(d.totaux.credits).toBe(36);
+    expect(eur(d.totaux.frais)).toBe(52.2);
+  });
+  it('l\'inscription suit le pack choisi, pas 1,30 €', () => {
+    const elec = base('3097_pub', 'Électricien de prise de vues', { unite: 'minimum_journee_8h' });
+    const d = calculerDevis(data, [elec], { ...REGLAGES_DEFAUT, formule: 'aucune', premiereInscription: true, valeurCredit: 1.3 });
+    expect(d.totaux.credits).toBe(164);
+    expect(eur(d.totaux.frais)).toBe(237.8);
+    expect(d.fixes[0].libelle).toMatch(/150 crédits × 1,45 €/);
+    expect(d.fixes[0].libelle).not.toMatch(/1,30/);
+  });
+  it('Premium = 40 crédits par mois, au même prix de crédit', () => {
+    const elec = base('3097_pub', 'Électricien de prise de vues', { unite: 'minimum_journee_8h' });
+    const d = calculerDevis(data, [elec], { ...REGLAGES_DEFAUT, formule: 'premium', mois: 1 });
+    expect(d.totaux.credits).toBe(54);
+    expect(eur(d.totaux.frais)).toBe(78.3);
+    expect(d.fixes[0].libelle).toMatch(/Premium × 1 mois × 40 crédits × 1,45 €/);
+  });
+  it('le Pack 2 change le prix du crédit, pas le nombre de crédits', () => {
+    const elec = base('3097_pub', 'Électricien de prise de vues', { unite: 'minimum_journee_8h' });
+    const d = calculerDevis(data, [elec], { ...REGLAGES_DEFAUT, pack: 'pack2', formule: 'basic', mois: 1 });
+    expect(d.totaux.credits).toBe(34);
+    expect(eur(d.totaux.frais)).toBe(47.6);
+    expect(d.pack.prix_credit_ht).toBe(1.4);
   });
   it('T17 : Smart sur 1 000 € de coût employeur → 65 € HT + TVA 13 €', () => {
     const f = fraisIntermediaire(data, 'smart', { coutEmployeurCents: 100000, convention: '1285' });
@@ -171,6 +234,9 @@ describe('Intermédiaires et devis (§ 9)', () => {
     const csv = devisCSV(d);
     expect(csv.charCodeAt(0)).toBe(0xfeff);
     expect(csv).toContain((t.coutTotal / 100).toFixed(2).replace('.', ','));
+    expect(csv).toContain('14 crédits × 1,45 €');
+    expect(csv).toContain('Pack de crédits');
+    expect(csv).toContain('Prix HT, TVA en plus.');
     expect(csv.trim().split('\r\n').pop()).toMatch(/^"?Simulation indicative/);
   });
   it('une surcharge locale du taux AT/MP change le résultat sans toucher au code', () => {
@@ -300,6 +366,8 @@ describe('Saisie, bornes et formats', () => {
     const lignes = fraisFixes(data, 'movinmotion', { ...REGLAGES_DEFAUT, mois: 1.5, formule: 'basic' });
     expect(lignes[0].libelle).toContain('1,5 mois');
     expect(lignes[0].libelle).not.toMatch(/1\.5/);
+    expect(lignes[0].credits).toBe(30);
+    expect(eur(lignes[0].montant)).toBe(43.5);
     expect(formatFrNombre(1.5)).toBe('1,5');
   });
   it('changer d’unité garde une durée saisie et met à jour la durée nominale', () => {

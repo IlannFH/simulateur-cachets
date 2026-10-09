@@ -1,5 +1,5 @@
 // Export CSV (Excel FR : UTF-8 avec BOM, « ; », virgule décimale) et surcharges locales des données.
-import { formatDecimal } from './money.js';
+import { formatDecimal, formatFrNombre } from './money.js';
 import { lignesRecapDevis } from './devis.js';
 
 export const AVERTISSEMENT = "Simulation indicative, ce n'est pas un conseil de paie. Les minima et les taux proviennent des grilles et des barèmes publiés (sources et dates d'effet indiquées pour chaque chiffre) et peuvent avoir changé. Les taux URSSAF des techniciens, le taux AT/MP, les réductions de cotisations et les abattements sont à vérifier auprès de votre gestionnaire de paie (Movinmotion ou autre) ou de votre expert-comptable. Le minimum conventionnel ne remplace pas la lecture de la convention collective ni des avenants en vigueur.";
@@ -36,6 +36,11 @@ export function devisCSV(devis, meta = {}) {
   };
   out.push('');
   for (const [lib, c] of lignesRecapDevis(devis).detail) out.push(total(lib, c));
+  if (devis.pack) {
+    out.push(row(['Pack de crédits', `${devis.pack.nom} · ${devis.pack.credits} crédits · ${Number(devis.pack.prix_credit_ht).toFixed(2).replace('.', ',')} € HT`]));
+  }
+  if (devis.totaux.credits) out.push(row(['Crédits consommés', formatFrNombre(devis.totaux.credits)]));
+  if (devis.mention) out.push(row([devis.mention]));
   out.push('');
   out.push(row([AVERTISSEMENT]));
   return '﻿' + out.join('\r\n') + '\r\n';

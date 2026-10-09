@@ -56,7 +56,7 @@ Le fichier `data/` est une copie de `simulateur_data.json`, complétée par quel
 | `cotisations.parametres_calcul` | T2 1 540 €/j, vieillesse artiste 360 €/j, FNAL × 1,115, CSG 98,25 %, 151,67 h, prorata /30 | assiettes plafonnées |
 | `csg_crds.ventilation` | 6,8 % déductible + 2,9 % non déductible | net et bulletin |
 | `3097_cinema.majorations.heures_au_dela_10h_total` | 2,0 | « +100 % plus +100 % spécifique » |
-| `movinmotion.frais_dossier_credits`, `valeur_credit_ht` | 150 crédits, 1,15 à 1,45 € | frais de première inscription |
+| `movinmotion.credits`, `movinmotion.packs` | bulletin 14, Basic 20, Premium 40, signature 2, inscription 150 ; Pack 1 à 4, défaut Pack 1 à 1,45 € HT | frais Movinmotion, crédits × prix du pack |
 
 ## Convertisseur budget HT → cachet
 

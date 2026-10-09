@@ -130,8 +130,8 @@ export function solutionsBudget(data, opts = {}) {
         typeProjet: opts.typeProjet || '',
         famille: opts.famille || '',
         jours: extra.jours,
-        bulletins: 1,
-        contrats: 1,
+        bulletins: Number(extra.bulletins) > 0 ? Number(extra.bulletins) : 1,
+        contrats: Number(extra.contrats) > 0 ? Number(extra.contrats) : 1,
       };
       const r = convertirBudget(data, poste, budget, reglages);
       if (!r) continue;
