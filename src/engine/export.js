@@ -1,5 +1,6 @@
 // Export CSV (Excel FR : UTF-8 avec BOM, « ; », virgule décimale) et surcharges locales des données.
 import { formatDecimal } from './money.js';
+import { lignesRecapDevis } from './devis.js';
 
 export const AVERTISSEMENT = "Simulation indicative, ce n'est pas un conseil de paie. Les minima et les taux proviennent des grilles et des barèmes publiés (sources et dates d'effet indiquées pour chaque chiffre) et peuvent avoir changé. Les taux URSSAF des techniciens, le taux AT/MP, les réductions de cotisations et les abattements sont à vérifier auprès de votre gestionnaire de paie (Movinmotion ou autre) ou de votre expert-comptable. Le minimum conventionnel ne remplace pas la lecture de la convention collective ni des avenants en vigueur.";
 
@@ -10,7 +11,7 @@ const cell = (v) => {
 const row = (cols) => cols.map(cell).join(';');
 const dec = (c) => (c === null || c === undefined ? '' : formatDecimal(c));
 
-export const COLONNES_CSV = ['Convention', 'IDCC', 'Métier', 'Statut', 'Unité', 'Quantité', 'Heures majorées (détail)', 'Minimum', 'Ma demande', 'Écart (€)', 'Écart (%)', 'Brut retenu', 'Cotisations patronales', 'Cotisations salariales', 'Coût employeur', 'Intermédiaire', "Frais d'intermédiaire HT", 'Coût total', "Date d'effet", 'Source'];
+export const COLONNES_CSV = ['Convention', 'IDCC', 'Métier', 'Statut', 'Unité', 'Quantité', 'Heures majorées (détail)', 'Minimum', 'Montant brut proposé', 'Écart (€)', 'Écart (%)', 'Brut retenu', 'Cotisations patronales', 'Cotisations salariales', 'Coût employeur', 'Intermédiaire', "Frais d'intermédiaire HT", 'Coût total', "Date d'effet", 'Source'];
 
 /** Construit le texte CSV (avec BOM) du devis. */
 export function devisCSV(devis, meta = {}) {
@@ -29,45 +30,51 @@ export function devisCSV(devis, meta = {}) {
       l.frais.option.nom, dec(l.frais.ht), dec(l.coutTotal), m.ligne.date_effet || '', m.ligne.source || '',
     ]));
   }
-  const t = devis.totaux;
   const total = (lib, c) => {
     const r = new Array(COLONNES_CSV.length).fill('');
     r[0] = lib; r[17] = dec(c); return row(r);
   };
   out.push('');
-  out.push(total('Sous-total artistes (coût total)', t.artistes));
-  out.push(total('Sous-total techniciens (coût total)', t.techniciens));
-  out.push(total('Total brut', t.brut));
-  out.push(total('Total cotisations patronales', t.patronal));
-  out.push(total('Total cotisations salariales', t.salarial));
-  out.push(total('Total coût employeur', t.coutEmployeur));
-  for (const f of devis.fixes) out.push(total(`Intermédiaire : ${f.libelle}`, f.montant));
-  out.push(total("Total frais d'intermédiaire HT", t.frais));
-  if (t.tva) out.push(total('TVA sur frais (non comprise)', t.tva));
-  out.push(total("Coût total de l'équipe", t.coutTotal));
+  for (const [lib, c] of lignesRecapDevis(devis).detail) out.push(total(lib, c));
   out.push('');
   out.push(row([AVERTISSEMENT]));
   return '﻿' + out.join('\r\n') + '\r\n';
 }
 
-/** Applique les surcharges locales (taux, tarifs, paramètres) à une copie des données. */
+/** Nombre utilisable, ou null si vide, illisible ou non fini. */
+const nombreFini = (v) => {
+  if (v === null || v === undefined || v === '') return null;
+  const n = Number(v);
+  return Number.isFinite(n) ? n : null;
+};
+
+/** Applique les surcharges locales (taux, tarifs, paramètres) à une copie des données. Une valeur illisible est ignorée : l'ancienne valeur du JSON reste. */
 export function appliquerSurcharges(data, s = {}) {
   const d = structuredClone(data);
   for (const [code, v] of Object.entries(s.cotisations || {})) {
     const l = d.cotisations.lignes.find((x) => x.code === code);
-    if (!l) continue;
-    if (v.patronal !== undefined) l.patronal = v.patronal;
-    if (v.salarial !== undefined) l.salarial = v.salarial;
+    if (!l || !v || typeof v !== 'object') continue;
+    const pat = nombreFini(v.patronal);
+    const sal = nombreFini(v.salarial);
+    if (pat !== null) l.patronal = pat;
+    if (sal !== null) l.salarial = sal;
   }
-  for (const [k, v] of Object.entries(s.parametres || {})) d.cotisations.parametres_calcul[k] = v;
-  if (s.smic !== undefined) d.cotisations.smic_horaire_brut.valeur = s.smic;
-  if (s.plafondT1 !== undefined) d.cotisations.plafonds_2026.plafond_journalier_intermittent_cadre_T1 = s.plafondT1;
+  for (const [k, v] of Object.entries(s.parametres || {})) {
+    const n = nombreFini(v);
+    if (n !== null) d.cotisations.parametres_calcul[k] = n;
+  }
+  const smic = nombreFini(s.smic);
+  if (smic !== null && smic > 0) d.cotisations.smic_horaire_brut.valeur = smic;
+  const p1 = nombreFini(s.plafondT1);
+  if (p1 !== null && p1 > 0) d.cotisations.plafonds_2026.plafond_journalier_intermittent_cadre_T1 = p1;
   for (const [id, v] of Object.entries(s.intermediaires || {})) {
     const o = d.intermediaires.options.find((x) => x.id === id);
     if (!o) continue;
     for (const [k, val] of Object.entries(v)) {
-      if (k.startsWith('abonnement.')) o.abonnement_mensuel_ht[k.split('.')[1]] = val;
-      else o[k] = val;
+      const n = nombreFini(val);
+      if (n === null) continue;
+      if (k.startsWith('abonnement.')) o.abonnement_mensuel_ht[k.split('.')[1]] = n;
+      else o[k] = n;
     }
   }
   return d;

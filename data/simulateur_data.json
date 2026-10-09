@@ -1834,7 +1834,8 @@
   "smic_horaire_brut": {
    "valeur": 12.31,
    "date_effet": "01/06/2026",
-   "source": "https://www.juristique.org/conventionnel/salaires-production-cinematographique-titres-2-2026",
+   "source": "https://www.insee.fr/fr/statistiques/1375188",
+   "reference": "Arrêté du 22 mai 2026 relatif au relèvement du SMIC, Journal officiel du 24 mai 2026",
    "verifie": true
   },
   "lignes": [
@@ -2104,14 +2105,24 @@
     "source": "https://www.artcena.fr/precis-juridique/etudes/paie-et-cotisations/cotisations-et-contributions-sociales"
    },
    {
-    "code": "urssaf_vieillesse_technicien",
-    "libelle": "URSSAF vieillesse plafonnée + déplafonnée – technicien",
-    "patronal": null,
-    "salarial": null,
+    "code": "urssaf_vieillesse_plaf_technicien",
+    "libelle": "URSSAF vieillesse plafonnée – technicien (plafond SS journalier)",
+    "patronal": 8.55,
+    "salarial": 6.9,
     "applique_a": "technicien",
     "verifie": false,
-    "note": "Non trouvé dans les sources consultées (Audiens indique seulement déplafonnée patronale 2,11 % en 2026)",
-    "source": "https://www.audiens.org/files/live/sites/siteAudiens/files/06_medias/entreprise/Webconferences/Web-conf-Audiens-Nouveautes-reglementaires-2026.pdf"
+    "note": "Taux plein 2026 : 8,55 % patronal / 6,90 % salarial sur la part sous le plafond journalier de la sécurité sociale. Le plafond appliqué aux techniciens est à confirmer par un gestionnaire de paie (un cachet peut relever du plafond de 360 €, et non des 220 € journaliers).",
+    "source": "https://www.urssaf.fr/accueil/outils-documentation/taux-baremes/taux-cotisations-secteur-prive.html"
+   },
+   {
+    "code": "urssaf_vieillesse_deplaf_technicien",
+    "libelle": "URSSAF vieillesse déplafonnée – technicien",
+    "patronal": 2.11,
+    "salarial": 0.4,
+    "applique_a": "technicien",
+    "verifie": false,
+    "note": "Taux plein 2026 : 2,11 % patronal / 0,40 % salarial sur la totalité du brut. Les taux artiste du simulateur sont 70 % de ces taux.",
+    "source": "https://www.urssaf.fr/accueil/outils-documentation/taux-baremes/taux-cotisations-secteur-prive.html"
    },
    {
     "code": "urssaf_fnal_technicien",
@@ -2149,9 +2160,10 @@
    "note": "Réduction générale dégressive unique (RGDU) 2026 et abattement pour frais professionnels : NON modélisés par défaut (option désactivée, à vérifier)."
   },
   "parametres_calcul": {
-   "_note": "Paramètres de calcul ajoutés pour le simulateur (éditables dans la page Paramètres).",
+   "_note": "Paramètres de calcul ajoutés pour le simulateur (éditables dans la page Paramètres). plafond_ss_journalier : arrêté du 22 décembre 2025 (JO du 23 décembre 2025), valeur journalière 220 €. Le plafond appliqué aux techniciens est à confirmer par un gestionnaire de paie.",
    "plafond_journalier_T2": 1540,
    "plafond_vieillesse_artiste_jour": 360,
+   "plafond_ss_journalier": 220,
    "fnal_majoration_assiette": 1.115,
    "csg_assiette_pct": 98.25,
    "heures_mensuelles": 151.67,

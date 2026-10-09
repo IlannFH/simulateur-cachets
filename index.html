@@ -4,6 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <title>Simulateur cachets intermittents</title>
+  <link rel="icon" href="data:,">
   <meta name="description" content="Minimum conventionnel, cotisations, coût employeur et devis d'équipe pour les intermittents du spectacle (France, 2026).">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -16,12 +17,11 @@
     <div class="wrap header-inner">
       <div>
         <p class="eyebrow">Intermittents du spectacle · France</p>
-        <h1>Simulateur cachets intermittents</h1>
-        <p class="subtitle">Données du <span id="data-date">…</span> · <a href="#sources">Sources</a></p>
+        <h1>Simulateur cachets</h1>
       </div>
       <nav class="tabs" aria-label="Sections">
         <a href="#simulateur" data-view="simulateur">Simulateur</a>
-        <a href="#sources" data-view="sources">Sources et paramètres</a>
+        <a href="#sources" data-view="sources">Sources</a>
       </nav>
     </div>
   </header>
@@ -29,39 +29,33 @@
   <main id="main" class="wrap">
     <div id="load-error" class="banner banner-red" hidden></div>
 
-    <section id="view-simulateur" data-view-panel="simulateur">
-      <div class="layout">
-        <form id="poste-form" class="card form-card" novalidate aria-labelledby="form-title">
-          <h2 id="form-title">Ajouter un poste</h2>
-          <div id="form-body"></div>
-        </form>
-        <aside id="panel" class="panel" aria-labelledby="panel-title">
-          <h2 id="panel-title" class="visually-hidden">Calcul du poste</h2>
-          <div id="panel-body"></div>
-        </aside>
-      </div>
+    <section id="view-simulateur" class="flux" data-view-panel="simulateur">
+      <div id="projet-bar" class="projet-bar"></div>
+
+      <form id="poste-form" class="card form-card" novalidate aria-labelledby="form-title">
+        <h2 id="form-title">Ajouter un poste</h2>
+        <div id="essentiels"></div>
+        <div id="resultat"></div>
+        <div id="ajuster"></div>
+        <div class="actions actions-sticky" id="actions-poste"></div>
+      </form>
 
       <section id="devis" class="devis" aria-labelledby="devis-title">
-        <div class="devis-head">
-          <h2 id="devis-title">Devis d'équipe</h2>
-          <label class="field field-inline projet">
-            <span>Nom du projet</span>
-            <input id="projet" type="text" autocomplete="off" placeholder="Ex. Campagne SS27">
-          </label>
-        </div>
-        <div id="devis-reglages" class="reglages"></div>
+        <h2 id="devis-title">Devis</h2>
         <div id="devis-body"></div>
       </section>
     </section>
 
     <section id="view-sources" data-view-panel="sources" hidden>
+      <p id="sources-erreur" class="banner banner-red" hidden></p>
       <div id="sources-body"></div>
     </section>
   </main>
 
   <footer class="site-footer">
     <div class="wrap">
-      <p id="avertissement" class="avertissement"></p>
+      <p class="avertissement">Simulation indicative, ce n'est pas un conseil de paie. <button type="button" class="btn-link" id="lien-avertissement">Lire l'avertissement</button></p>
+      <p id="avertissement-complet" class="avertissement-complet" hidden></p>
     </div>
   </footer>
 
