@@ -164,6 +164,10 @@ label.lbl, .lbl { font-family: var(--body); font-size: 22px; color: var(--muted)
   -webkit-font-smoothing: none;
 }
 .figures { display: flex; flex-direction: column; gap: 18px; }
+.cout-pair { display: flex; flex-direction: column; gap: 12px; margin-top: 12px; }
+.secondaire { font-family: var(--body); font-size: 22px; line-height: 1.25; color: var(--muted); }
+.cout-ligne { font-size: 26px; line-height: 1.15; color: var(--fg); }
+.ma-reco .secondaire { font-size: 22px; }
 .stat { font-size: 26px; color: var(--muted); }
 .verdict {
   padding: 16px;

@@ -20,6 +20,7 @@ function parcoursVide() {
   return {
     depart: null, etape: 'depart', montant: '', convention: '', posteId: null, recherche: '',
     phrase: '', famille: '', typeProjet: '', grade: '', kindDemande: '', metierCle: '',
+    roles: [], sauf: [], choix: [], question: '',
     heuresDemandees: '', joursDemandes: '', cachetsDemandes: '',
     genre: '', grille: '2025', jauge: '200', unite: null, quantite: '1', representations: '',
     exploitationContinue: false, ouvrier: false, heuresParJour: '', heuresSemaine: '', joursProrata: '',
@@ -134,6 +135,7 @@ function lierPoste() {
 function etapeManquante() {
   const p = state.parcours;
   if ((p.depart === 'budget' || p.depart === 'brut') && erreurMontant()) return 'montant';
+  if (p.choix?.length && !p.metierCle) return 'choix';
   if (!p.metierCle && (p.depart !== 'budget' || !p.famille)) return 'metier';
   if (typesCourants().length > 1 && !p.typeProjet) return 'projet';
   if (!p.typeProjet && typesCourants().length === 1) p.typeProjet = typesCourants()[0].id;
@@ -153,7 +155,11 @@ function appliquerPhrase() {
   p.montant = a.montant != null ? String(a.montant).replace('.', ',') : '';
   p.depart = a.brut ? 'brut' : (a.montant != null ? 'budget' : 'metier');
   p.famille = a.famille || '';
-  p.metierCle = a.metierCle || '';
+  p.metierCle = a.choix?.length ? '' : (a.metierCle || '');
+  p.roles = a.roles || [];
+  p.sauf = a.sauf || [];
+  p.choix = a.choix || [];
+  p.question = a.question || '';
   p.grade = a.grade || '';
   p.kindDemande = a.kind || '';
   p.heuresDemandees = a.heures != null ? String(a.heures) : '';
@@ -164,6 +170,13 @@ function appliquerPhrase() {
   p.cadreTouche = false;
   p.cadre = null;
   state.parcours = p;
+  if (p.choix.length) {
+    p.etape = 'choix';
+    p.ouvert = false;
+    sauverForm();
+    render();
+    return;
+  }
   const types = typesCourants();
   if (p.typeProjet && !types.some((t) => t.id === p.typeProjet)) p.typeProjet = '';
   if (!p.typeProjet && types.length === 1) p.typeProjet = types[0].id;
@@ -298,6 +311,7 @@ function titre() {
   const p = state.parcours;
   if (p.etape === 'montant') return p.depart === 'budget' ? 'Quel budget HT ?' : 'Quel brut ?';
   if (p.etape === 'metier') return 'Quel métier ?';
+  if (p.etape === 'choix') return 'Lequel ?';
   if (p.etape === 'projet') return "C'est pour quoi ?";
   if (p.etape === 'quantite') return 'Combien ?';
   if (p.etape === 'precision') return uniteCourante()?.key === 'horaire_jauge' ? 'Quelle jauge ?' : 'Combien de dates dans le mois ?';
@@ -317,6 +331,10 @@ function choisirMetier(cle) {
   if (!job) return;
   const p = state.parcours;
   p.metierCle = cle;
+  p.choix = [];
+  p.question = '';
+  p.roles = [];
+  p.sauf = [];
   p.famille = job.familles[0] || p.famille || '';
   p.recherche = job.nom;
   p.ouvert = false;
@@ -419,18 +437,21 @@ function regleGrille() {
     aHeure,
   });
 }
+function htmlCouts(employeur, total, brut, net) {
+  return `<div class="cout-pair">${figure(E.formatEuros(employeur), 'Coût employeur')}${figure(E.formatEuros(total), 'Coût total HT')}</div><p class="secondaire">Brut ${esc(E.formatEuros(brut))}, net ${esc(E.formatEuros(net))}.</p>`;
+}
 function htmlReco(reco, regle) {
   if (!reco?.phrase && !regle) return '';
   const corps = reco?.phrase
-    ? `<p class="tag">Ma reco</p><p>${esc(reco.phrase)}</p><p>${esc(reco.chiffres)}</p>`
+    ? `<p class="tag">Ma reco</p><p>${esc(reco.phrase)}</p><p>${esc(reco.chiffres)}</p>${reco.secondaire ? `<p class="secondaire">${esc(reco.secondaire)}</p>` : ''}`
     : '';
   const ligne = regle ? `<p class="reco-regle">${esc(regle)}</p>` : '';
   return `<aside class="ma-reco" id="ma-reco">${corps}${ligne}</aside>`;
 }
 function htmlResume(args, bilan) {
   const { reco, ...reste } = args;
-  const visible = E.texteResume(reste);
-  const copie = reco ? E.texteResume({ ...reste, reco }) : visible;
+  const blocs = E.blocsResume(reste);
+  const copie = E.texteResume({ ...reste, reco });
   const lignes = bilan ? E.lignesCalcul(DATA, bilan, state.reglages, {
     grille: args.projet || '',
     typeProjet: state.parcours.typeProjet,
@@ -440,7 +461,7 @@ function htmlResume(args, bilan) {
   const detail = lignes.length
     ? `<details id="calcul" ${open}><summary>Comment c'est calculé</summary><div class="calcul">${lignes.map((l) => `<p>${esc(l)}</p>`).join('')}</div></details>`
     : '';
-  return `<p id="resume-texte" class="resume">${esc(visible)}</p><span id="resume-copie" hidden>${esc(copie)}</span><button type="button" class="pixel-btn" id="btn-copier" data-action="copier">Copier</button>${detail}`;
+  return `<p id="resume-texte" class="resume"><span class="resume-suite">${esc(blocs.suite)}</span> <span class="secondaire">${esc(blocs.secondaire)}</span></p><span id="resume-copie" hidden>${esc(copie)}</span><button type="button" class="pixel-btn" id="btn-copier" data-action="copier">Copier</button>${detail}`;
 }
 function htmlComparaison(liste) {
   if (!liste?.length) return '';
@@ -468,20 +489,24 @@ function htmlChiffres() {
     if (!L) return '';
     const sous = !!L.demande?.sousMinimum;
     const bilan = E.bilanPoste(DATA, sous ? { ...poste, demande: null } : poste, state.reglages);
+    const employeur = bilan.ligne.cot.coutEmployeur;
     const reco = E.recoDepuisLigne({
       nom: qui, duree, sousMinimum: sous,
       brutMinimumCents: L.min.minimumCents,
+      employeurCents: employeur,
       brutCents: bilan.ligne.brutCents,
       netCents: bilan.ligne.cot.net,
       totalCents: bilan.totalCents,
     });
     let h = sous
-      ? verdictKo('Pas possible', `Minimum nécessaire : ${E.formatEuros(L.min.minimumCents)}`)
+      ? verdictKo('Pas possible', `Minimum : coût employeur ${E.formatEuros(employeur)}, coût total ${E.formatEuros(bilan.totalCents)} HT`)
       : verdictOk('');
+    h += htmlCouts(employeur, bilan.totalCents, bilan.ligne.brutCents, bilan.ligne.cot.net);
     h += htmlReco(reco, regleGrille());
     h += htmlResume({
       qui, projet, duree, mode: 'brut', possible: !sous,
       brutMinimumCents: L.min.minimumCents,
+      employeurCents: employeur,
       brutCents: bilan.ligne.brutCents,
       netCents: bilan.ligne.cot.net,
       totalCents: bilan.totalCents,
@@ -492,16 +517,19 @@ function htmlChiffres() {
   }
   const bilan = E.bilanPoste(DATA, { ...poste, demande: null }, state.reglages);
   if (!bilan) return '';
+  const employeurMetier = bilan.ligne.cot.coutEmployeur;
   const recoMetier = E.recoDepuisLigne({
     nom: qui, duree, sousMinimum: false,
+    employeurCents: employeurMetier,
     brutCents: bilan.ligne.brutCents,
     netCents: bilan.ligne.cot.net,
     totalCents: bilan.totalCents,
   });
-  let h = figure(E.formatEuros(bilan.ligne.min.minimumCents), 'Minimum');
+  let h = htmlCouts(employeurMetier, bilan.totalCents, bilan.ligne.brutCents, bilan.ligne.cot.net);
   h += htmlReco(recoMetier, regleGrille());
   h += htmlResume({
     qui, projet, duree, mode: 'metier', possible: true,
+    employeurCents: employeurMetier,
     brutCents: bilan.ligne.brutCents,
     netCents: bilan.ligne.cot.net,
     totalCents: bilan.totalCents,
@@ -538,6 +566,8 @@ function htmlSolutions() {
     cachets: p.cachetsDemandes ? E.parseInput(p.cachetsDemandes) : null,
     kind: p.kindDemande,
     grade: p.grade,
+    roles: p.roles,
+    sauf: p.sauf,
     reglages: state.reglages,
     posteExtra: posteExtraAffiner(),
   });
@@ -546,22 +576,23 @@ function htmlSolutions() {
   const bilan = E.bilanPoste(DATA, opt.poste, state.reglages);
   const qui = E.quiResume(p.metierCle ? '' : p.famille, p.metierCle ? (jobCourant()?.nom || opt.nom) : '');
   const projet = E.labelType(p.typeProjet);
+  const totalAffiche = opt.possible ? opt.total : opt.budgetMinimum;
   const top = opt.possible
-    ? verdictOk(`${opt.nom} · ${opt.uniteLabel}`)
-    : verdictKo('Pas possible', `Minimum nécessaire : ${E.formatEuros(s.minimumHt)} HT`);
+    ? `${verdictOk(`${opt.nom} · ${opt.uniteLabel}`)}${htmlCouts(opt.employeur, totalAffiche, opt.brut, opt.net)}`
+    : `${verdictKo('Pas possible', `Minimum : coût employeur ${E.formatEuros(opt.employeur)}, coût total ${E.formatEuros(totalAffiche)} HT`)}${htmlCouts(opt.employeur, totalAffiche, opt.brut, opt.net)}`;
   const resume = htmlResume({
     qui, projet, duree: E.dureeResume(opt), mode: 'budget', possible: opt.possible,
     budgetEuros: euros.valeur,
     minimumCents: opt.budgetMinimum,
+    employeurCents: opt.employeur,
     brutCents: opt.brut,
     netCents: opt.net,
     totalCents: opt.total,
     reco: s.reco?.texte,
   }, bilan);
   const cards = s.options.map((o) => {
-    const ligne = o.possible
-      ? `<p class="ok-txt">Possible : brut ${esc(E.formatEuros(o.brut))}, net ${esc(E.formatEuros(o.net))}</p>`
-      : `<p class="ko-txt">Pas possible, minimum ${esc(E.formatEuros(o.budgetMinimum))}</p>`;
+    const totalCarte = o.possible ? o.total : o.budgetMinimum;
+    const ligne = `<p class="cout-ligne">Coût employeur ${esc(E.formatEuros(o.employeur))}</p><p class="cout-ligne">Coût total ${esc(E.formatEuros(totalCarte))} HT</p><p class="secondaire">Brut ${esc(E.formatEuros(o.brut))}, net ${esc(E.formatEuros(o.net))}</p>${o.possible ? '<p class="ok-txt">Possible</p>' : '<p class="ko-txt">Pas possible</p>'}`;
     const reduit = o.reduit?.texte ? `<p class="reduit">${esc(o.reduit.texte)}</p>` : '';
     return `<article class="sol ${o.possible ? 'ok' : 'ko'}${o.recommande ? ' reco' : ''}">${o.recommande ? '<p class="tag">Recommandé</p>' : ''}<h3>${esc(o.nom)}</h3><p class="lbl">${esc(o.uniteLabel)} · ${esc(libelleStatut(o.statut))}</p>${ligne}${reduit}</article>`;
   }).join('');
@@ -570,7 +601,7 @@ function htmlSolutions() {
 function htmlDetail() {
   const c = DATA.conventions[state.parcours.convention];
   if (!c) return '';
-  const meme = state.parcours.typeProjet === 'clip' || state.parcours.typeProjet === 'edito'
+  const meme = state.parcours.convention === '2642' && (state.parcours.typeProjet === 'clip' || state.parcours.typeProjet === 'edito')
     ? ' Clip, édito / mode et série : même grille.'
     : '';
   return `<details><summary>Détail</summary><p class="lbl">${esc(c.nom)} (IDCC ${esc(c.idcc)}).${esc(meme)}</p></details>`;
@@ -689,6 +720,8 @@ function htmlSimuler() {
     corps = `<label class="lbl" for="f-montant">${p.depart === 'budget' ? 'Montant HT' : 'Brut'}</label><input id="f-montant" data-autofocus type="text" inputmode="decimal" autocomplete="off" value="${esc(p.montant)}" placeholder="250">`;
   } else if (p.etape === 'metier') {
     corps = `<label class="lbl" for="f-metier">Métier</label><input id="f-metier" data-autofocus type="search" autocomplete="off" role="combobox" aria-autocomplete="list" aria-controls="suggest" aria-expanded="${p.ouvert}" value="${esc(p.recherche)}" placeholder="photo, danseur, assistant"><div id="suggest" class="suggest"></div>`;
+  } else if (p.etape === 'choix') {
+    corps = `<p class="lbl">${esc(p.question || '')}</p><div class="choix">${(p.choix || []).map((c) => `<button type="button" class="choice" data-metier="${esc(c.cle)}"${c.type ? ` data-projet="${esc(c.type)}"` : ''}><span class="pixel">${esc(c.court || c.nom)}</span><span class="hint">${esc(c.nom)}</span></button>`).join('')}</div>`;
   } else if (p.etape === 'projet') {
     const types = typesCourants();
     corps = `<div class="choix">${types.map((t) => `<button type="button" class="choice" data-projet="${esc(t.id)}"><span class="pixel">${esc(t.label)}</span></button>`).join('')}</div>`;
@@ -707,7 +740,7 @@ function htmlSimuler() {
       if (u?.key === 'cachet_representation') corps += `<label class="check"><input type="checkbox" data-k="exploitationContinue" ${p.exploitationContinue ? 'checked' : ''}>Exploitation continue</label>`;
     }
   }
-  if (p.etape === 'projet') return `<div class="ecran">${head}<h2 class="q" id="q">${esc(titre())}</h2>${corps}</div>`;
+  if (p.etape === 'projet' || p.etape === 'choix') return `<div class="ecran">${head}<h2 class="q" id="q">${esc(titre())}</h2>${corps}</div>`;
   const suite = `<p id="err" role="alert"></p><div class="bas"><button type="button" class="pixel-btn" data-next>Continuer</button></div>`;
   return `<div class="ecran">${head}<h2 class="q" id="q">${esc(titre())}</h2>${corps}${suite}</div>`;
 }
@@ -806,7 +839,11 @@ function onClick(ev) {
   if (b.dataset.goto) { state.parcours.etape = b.dataset.goto; sauverForm(); render(); return; }
   if (b.hasAttribute('data-back')) { precedent(); return; }
   if (b.hasAttribute('data-next')) { if (validerEtape()) avancer(); return; }
-  if (b.dataset.metier) { choisirMetier(b.dataset.metier); return; }
+  if (b.dataset.metier) {
+    if (b.dataset.projet) state.parcours.typeProjet = b.dataset.projet;
+    choisirMetier(b.dataset.metier);
+    return;
+  }
   if (b.dataset.projet) { choisirProjet(b.dataset.projet); return; }
   if (b.dataset.unite) { changerUnite(b.dataset.unite); return; }
   const a = b.dataset.action;

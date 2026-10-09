@@ -16,6 +16,7 @@
    "AV18": "https://www.uspa.fr/storage/wsm_medias/240416-avenant-18-signe.pdf",
    "LMA_AV": "https://lma-asso.fr/salaires-et-conventions",
    "SNTPCT_DEMI_PIGE": "https://sntpct.fr/2026/07/03/une-disposition-conventionnelle-qui-doit-sappliquer-telle-quelle-est-ecrite-et-pas-autrement/",
+   "NAO_2121_2025": "https://www.snam-cgt.org/wp-content/uploads/2025/10/2025-Accord-NAO-Edition-Phonographique-28-janvier-2025.pdf",
    "CCNEAC": "https://www.sceneensemble.com/wp-content/uploads/2026/08/accord-nao-2026-def.pdf",
    "CCNEAC_EXT": "https://presse.tripalio.fr/arrete-dextension-dun-avenant-a-un-accord-dans-la-ccn-des-entreprises-artistiques-et-culturelles/",
    "SVP_2025": "https://www.juristique.org/wp-content/uploads/2026/02/avenant-du-21-juillet-2025-salaires-2026-spectacle-vivant.pdf",
@@ -1417,6 +1418,34 @@
      "date_effet": "—",
      "minimum_journee": null,
      "note": "Non trouvé dans la grille 2642."
+    }
+   ]
+  },
+  "2121": {
+   "nom": "Édition phonographique – annexe IX, vidéomusiques / clips",
+   "idcc": "2121",
+   "date_effet": "Accord du 28/01/2025 (NAO), salaires artistes et techniciens de l'annexe IX au 01/03/2025.",
+   "majorations": {
+    "note": "Le cachet de tournage n'a pas de taux horaire : il couvre un jour, 10 h de travail effectif au plus (art. 2.2.1)."
+   },
+   "lignes": [
+    {
+     "categorie": "Artiste",
+     "departement": "Artistes",
+     "metier": "Danseur – vidéomusique / clip",
+     "source": "https://www.snam-cgt.org/wp-content/uploads/2025/10/2025-Accord-NAO-Edition-Phonographique-28-janvier-2025.pdf",
+     "date_effet": "01/03/2025",
+     "minimum_cachet": 253.55,
+     "note": "Art. 2.2.1 du titre II du chapitre 3 de l'annexe IX (IDCC 2121) : 253,55 € brut par jour de tournage d'une vidéomusique, 10 h de travail effectif au plus, versé en cachet. Le titre II vise l'artiste engagé pour un vidéoclip dont l'interprétation n'est pas une fixation sonore : c'est le cachet du danseur sur un clip. Ce n'est pas la grille techniciens IDCC 2642 (vidéomusiques = fiction, avenant 19), ni le danseur d'émission chorégraphique (télé)."
+    },
+    {
+     "categorie": "Artiste",
+     "departement": "Artistes",
+     "metier": "Comédien – vidéomusique / clip",
+     "source": "https://www.snam-cgt.org/wp-content/uploads/2025/10/2025-Accord-NAO-Edition-Phonographique-28-janvier-2025.pdf",
+     "date_effet": "01/03/2025",
+     "minimum_cachet": 253.55,
+     "note": "Même article 2.2.1 : le titre II couvre aussi les artistes dramatiques engagés pour une vidéomusique. Même minimum journalier que le danseur, 253,55 €."
     }
    ]
   },

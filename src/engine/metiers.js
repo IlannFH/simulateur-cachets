@@ -4,7 +4,7 @@ import { listerPostes } from './catalogue.js';
 
 const sansAccent = (s) => String(s || '').normalize('NFD').replace(/\p{M}/gu, '').toLowerCase();
 
-export const CONVENTIONS_ACTIVES = ['3097_pub', '3097_cinema', '2642', '1285', '3090'];
+export const CONVENTIONS_ACTIVES = ['3097_pub', '3097_cinema', '2642', '2121', '1285', '3090'];
 
 /** Libellés courts des familles. L'identifiant sert au parseur et au classement. */
 export const FAMILLES = [
@@ -42,7 +42,7 @@ const REGLES_FAMILLE = [
  * Les lignes 2642 sans genre (artistes d'émission) ne collent qu'à Télé.
  */
 export const TYPES_PROJET = [
-  { id: 'clip', label: 'Clip', convention: '2642', genre: 'Fiction / documentaire' },
+  { id: 'clip', label: 'Clip', convention: '2642', genre: 'Fiction / documentaire', aussi: [{ convention: '2121', genre: '' }] },
   { id: 'edito', label: 'Édito / mode', convention: '2642', genre: 'Fiction / documentaire' },
   { id: 'pub', label: 'Pub', convention: '3097_pub', genre: '' },
   { id: 'film', label: 'Film / fiction', convention: '3097_cinema', genre: '' },
@@ -105,12 +105,19 @@ function scoreAnnee(metier) {
   return 2;
 }
 
+function memeGrille(variante, cible, type) {
+  if (variante.convention !== cible.convention) return false;
+  if (!cible.genre) return !variante.genre;
+  if (variante.genre) return variante.genre === cible.genre;
+  return type.id === 'tele';
+}
+
 /** Une variante correspond à un type si la convention (et le genre, pour l'audiovisuel) collent. */
 export function correspondType(variante, type) {
-  if (!variante || !type || variante.convention !== type.convention) return false;
-  if (!type.genre) return !variante.genre;
-  if (variante.genre) return variante.genre === type.genre;
-  return type.id === 'tele';
+  if (!variante || !type) return false;
+  if (variante.projets?.length) return variante.projets.includes(type.id);
+  const cibles = [{ convention: type.convention, genre: type.genre || '' }, ...(type.aussi || [])];
+  return cibles.some((c) => memeGrille(variante, c, type));
 }
 
 /**
@@ -134,6 +141,7 @@ export function labelPourPoste(poste = {}) {
   if (poste.typeProjet) return labelType(poste.typeProjet);
   if (poste.convention === '3097_pub') return 'Pub';
   if (poste.convention === '3097_cinema') return 'Film / fiction';
+  if (poste.convention === '2121') return 'Clip';
   if (poste.convention === '2642' && poste.genre === 'Flux (émissions TV)') return 'Télé';
   if (poste.convention === '2642') return 'Clip';
   if (poste.convention === '1285' || poste.convention === '3090') return 'Captation / spectacle';
@@ -161,6 +169,7 @@ export function indexerMetiers(data) {
         grade: gradeDe(p.metier),
         categorie: p.categorie,
         metier: p.metier,
+        projets: p.ligne?.projets || null,
       };
       let job = jobs.get(cle);
       if (!job) {

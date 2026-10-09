@@ -106,10 +106,12 @@ function reduitHeures(data, entree, conv, posteModele, reglages, budget, demande
   }
   if (max >= demandees) return { heuresMax: max, demandees, texte: '' };
   const net = meilleur.ligne?.cot?.net ?? 0;
+  const employeur = meilleur.ligne?.cot?.coutEmployeur ?? 0;
+  const total = (meilleur.ligne?.coutTotal ?? 0) + (meilleur.fixesCents || 0);
   return {
     heuresMax: max,
     demandees,
-    texte: `Pas ${formatFrNombre(demandees)} h mais ${formatFrNombre(max)} h : possible, brut ${euros(meilleur.brutCents)}, net ${euros(net)}.`,
+    texte: `Pas ${formatFrNombre(demandees)} h mais ${formatFrNombre(max)} h : possible, coût employeur ${euros(employeur)}, coût total ${euros(total)} HT. Brut ${euros(meilleur.brutCents)}, net ${euros(net)}.`,
   };
 }
 
@@ -189,9 +191,17 @@ export function solutionsBudget(data, opts = {}) {
   };
   const extra = opts.posteExtra || {};
   const membres = [];
+  const plier = (xs) => (xs || []).map((r) => String(r).normalize('NFD').replace(/\p{M}/gu, '').toLowerCase()).filter(Boolean);
+  const roles = plier(opts.roles);
+  const sauf = plier(opts.sauf);
   for (const job of jobs) {
     if (opts.famille && !job.familles.includes(opts.famille)) continue;
     if (!opts.famille && job.cle !== opts.metierCle) continue;
+    if (roles.length || sauf.length) {
+      const nom = job.nom.normalize('NFD').replace(/\p{M}/gu, '').toLowerCase();
+      if (roles.length && !roles.some((r) => nom.includes(r))) continue;
+      if (sauf.some((r) => nom.includes(r))) continue;
+    }
     for (const v of job.variantes) {
       if (type && !correspondType(v, type)) continue;
       membres.push({ ...v, nom: job.nom, cle: job.cle });
@@ -270,7 +280,8 @@ export function solutionsBudget(data, opts = {}) {
         possible: r.possible,
         budgetMinimum: r.budgetMinimum,
         brut: r.possible ? r.brutCents : r.minimumCents,
-        net: r.ligne?.cot?.net ?? null,
+        net: r.netCents ?? null,
+        employeur: r.employeurCents ?? null,
         total: r.possible && r.ligne ? r.ligne.coutTotal + r.fixesCents : r.budgetMinimum,
         reduit,
         statut: { categorie: st.categorie, cadre: st.cadre },
@@ -317,8 +328,9 @@ function joindre(parts) {
 
 function phraseDe(action, c) {
   const phrase = `${action.charAt(0).toUpperCase()}${action.slice(1)}.`;
-  const chiffres = `Brut ${euros(c.brut)}, net ${euros(c.net)}, coût total ${euros(c.total)} HT.`;
-  return { ...c, phrase, chiffres, texte: `${phrase} ${chiffres}` };
+  const chiffres = `Coût employeur ${euros(c.employeur)}, coût total ${euros(c.total)} HT.`;
+  const secondaire = `Brut ${euros(c.brut)}, net ${euros(c.net)}.`;
+  return { ...c, phrase, chiffres, secondaire, texte: `${phrase} ${chiffres} ${secondaire}` };
 }
 
 /**
@@ -341,6 +353,7 @@ export function maReco(data, { options, reglages, budgetEuros, demande }) {
       nom: courant.nom,
       brut: courant.brut,
       net: courant.net,
+      employeur: courant.employeur,
       total: courant.total,
       possible: true,
       heures: null,
@@ -372,6 +385,7 @@ export function maReco(data, { options, reglages, budgetEuros, demande }) {
         serviceNom: nomService(data, id),
         brut: possible ? r.brutCents : ligneMin.brutCents,
         net: possible ? r.ligne.cot.net : ligneMin.cot.net,
+        employeur: possible ? r.ligne.cot.coutEmployeur : ligneMin.cot.coutEmployeur,
         total: possible ? r.ligne.coutTotal + r.fixesCents : ligneMin.coutTotal + fixesCents,
         heures: null,
       });
@@ -411,6 +425,7 @@ export function maReco(data, { options, reglages, budgetEuros, demande }) {
         serviceNom: nomService(data, id),
         brut: r.brutCents,
         net: r.ligne.cot.net,
+        employeur: r.ligne.cot.coutEmployeur,
         total: r.ligne.coutTotal + r.fixesCents,
         heures: red.heuresMax,
         demandees: cible,
