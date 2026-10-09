@@ -2207,7 +2207,7 @@
      "https://www.movinmotion.com/social/tarifs/",
      "https://storage.googleapis.com/documentation.storage.movinmotion.com/movinmotion-social-conditions-financieres.pdf"
     ],
-    "note": "Tout est en crédits prépayés, prix HT, TVA en plus. Un bulletin intermittent coûte 14 crédits par personne et par mois (pas par jour ni par cachet) : bulletin, AEM et déclaration Congés Spectacles. Une 2e édition du même bulletin dans le mois coûte encore 14 crédits. La signature électronique d'un contrat coûte 2 crédits. L'abonnement est de 20 crédits par mois en Basic et 40 en Premium. L'inscription coûte 150 crédits, une seule fois. Le prix d'un crédit est celui du pack choisi. Pack 1 (1,45 € HT) est le pack par défaut."
+    "note": "Tout est en crédits prépayés, prix HT, TVA en plus. Un bulletin intermittent coûte 14 crédits par personne et par mois (pas par jour ni par cachet). Ces 14 crédits couvrent la paie, le bulletin, l'AEM, les congés spectacles et la DSN. Une 2e édition du même bulletin dans le mois coûte encore 14 crédits. La signature électronique d'un contrat coûte 2 crédits. L'abonnement est de 20 crédits par mois en Basic et 40 en Premium. L'inscription coûte 150 crédits, une seule fois. Le prix d'un crédit est celui du pack choisi. Pack 1 (1,45 € HT) est le pack par défaut."
    },
    {
     "id": "culturepay",
@@ -2217,9 +2217,10 @@
     "pourcentage": 0,
     "source": [
      "https://www.culturepay.fr/",
+     "https://www.culturepay.fr/offre",
      "https://aide.culturepay.fr/hc/fr/articles/9191990361757-Comment-payer-CulturePay"
     ],
-    "note": "Prix unique par contrat, sans abonnement ni frais d'inscription, signature électronique incluse."
+    "note": "Prix revérifié le 09/10/2026 : 17,90 € HT par contrat, sans abonnement ni frais d'inscription, signature électronique incluse."
    },
    {
     "id": "guso",

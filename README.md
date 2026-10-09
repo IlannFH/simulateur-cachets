@@ -1,6 +1,6 @@
 # Simulateur cachets intermittents
 
-Site statique (HTML, CSS, JS en modules ES, sans backend) qui chiffre le coût d'un intermittent du spectacle selon sa convention collective : minimum conventionnel, majorations, cotisations, coût employeur, frais d'intermédiaire de paie et devis d'équipe exportable en CSV et en PDF.
+Site statique (HTML, CSS, JS en modules ES, sans backend) qui chiffre le coût d'un intermittent du spectacle selon sa convention collective : minimum conventionnel, majorations, cotisations, coût employeur et frais d'intermédiaire de paie. Le résultat tient en une phrase, avec le détail du calcul juste en dessous.
 
 **En ligne :** https://ilannfh.github.io/simulateur-cachets/ (GitHub Pages, mis à jour à chaque `git push` sur `main`).
 
@@ -21,20 +21,22 @@ npm install
 npm test
 ```
 
-Les tests (`tests/engine.test.js`, Vitest) couvrent les cas T1 à T20 du cahier des charges, dont l'exemple officiel Audiens 2026 (T14), ainsi que les totaux du devis, le CSV et les surcharges de paramètres.
+Les tests (`tests/engine.test.js`, Vitest) couvrent les cas T1 à T20 du cahier des charges, dont l'exemple officiel Audiens 2026 (T14), les frais d'intermédiaire, la phrase de résultat et les surcharges de paramètres.
 
 ## Structure
 
 ```
-index.html, styles.css         page unique et feuille d'impression (PDF)
+index.html, styles.css         page unique, thème sombre ou clair
 data/simulateur_data.json      seule source des chiffres
 src/engine/                    moteur pur, sans DOM
   money.js                     centimes entiers, arrondis, formats fr-FR
   catalogue.js                 unités, filtres (genre, grille), paliers 1285
   poste.js                     minimum, plancher SMIC, majorations
   cotisations.js               cotisations ligne par ligne
-  devis.js                     intermédiaires, abonnement, totaux
-  export.js                    CSV et surcharges locales
+  devis.js                     intermédiaires, abonnement, budget
+  resume.js                    phrase courte et détail du calcul
+  solutions.js                 familles, heures réduites, comparaison d'intermédiaires
+  export.js                    surcharges locales
 src/ui/app.js                  interface
 tests/engine.test.js           tests unitaires
 ```
@@ -60,7 +62,7 @@ Le fichier `data/` est une copie de `simulateur_data.json`, complétée par quel
 
 ## Convertisseur budget HT → cachet
 
-À l'étape 6, l'option « J'ai un budget HT » part d'un montant facturé, ou d'une enveloppe, et calcule le cachet brut maximal pour le métier choisi. Le budget doit couvrir le brut, les cotisations patronales et les frais de l'intermédiaire. L'abonnement mensuel n'est pas déduit, puisqu'il est compté une fois au total du devis. Le calcul cherche, au centime près, le plus grand brut qui tient dans le budget.
+L'option « J'ai un budget HT » part d'un montant facturé, ou d'une enveloppe, et calcule le cachet brut maximal pour le métier choisi. Le budget couvre le brut, les cotisations patronales et les frais d'intermédiaire, abonnement compris. Le calcul cherche, au centime près, le plus grand brut qui tient dans le budget.
 
 Si ce brut est inférieur au minimum conventionnel, un avertissement bloquant affiche le budget nécessaire et le montant qui manque. D'autres avertissements apparaissent selon les cas : cotisation non trouvée, minimum remplacé par le SMIC, GUSO non autorisé, présomption de salariat de l'artiste.
 

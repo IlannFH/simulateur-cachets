@@ -2,17 +2,14 @@
 import * as E from '../engine/index.js';
 
 const LS = {
-  devis: 'simcachets.devis.v1',
   reglages: 'simcachets.reglages.v1',
   surcharges: 'simcachets.surcharges.v1',
   form: 'simcachets.form.v1',
-  projet: 'simcachets.projet.v1',
+  theme: 'simcachets.theme.v1',
 };
 const $ = (s, r = document) => r.querySelector(s);
 const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 const norm = (s) => String(s || '').toLowerCase().normalize('NFD').replace(/\p{M}/gu, '');
-const uid = () => Math.random().toString(36).slice(2, 10);
-const sourcesDe = (s) => (Array.isArray(s) ? s : s ? [s] : []);
 const lien = (url, label) => (url ? `<a href="${esc(url)}" target="_blank" rel="noopener">${esc(label || url)}</a>` : '');
 const lsGet = (k, d) => { try { const v = localStorage.getItem(k); return v ? JSON.parse(v) : d; } catch { return d; } };
 const lsSet = (k, v) => { try { localStorage.setItem(k, JSON.stringify(v)); } catch { /* quota */ } };
@@ -28,7 +25,7 @@ function parcoursVide() {
     exploitationContinue: false, ouvrier: false, heuresParJour: '', heuresSemaine: '', joursProrata: '',
     heures: heuresVides(), majoPct: majoVides(), cadre: null, cadreTouche: false,
     jours: '', bulletins: '1', contrats: '1', intermediaire: '', fraisManuel: '',
-    avance: false, abattementPct: '', rgduPct: '', affinerOuvert: false, highlight: 0, ouvert: false,
+    avance: false, abattementPct: '', rgduPct: '', affinerOuvert: false, calculOuvert: false, highlight: 0, ouvert: false,
   };
 }
 
@@ -38,13 +35,8 @@ let JOBS = [];
 let sourcesDessine = false;
 const state = {
   parcours: parcoursVide(),
-  devis: [],
   reglages: { ...E.REGLAGES_DEFAUT },
   surcharges: {},
-  projet: '',
-  editUid: null,
-  exportOuvert: false,
-  confirmVide: false,
 };
 
 function setPath(obj, path, v) {
@@ -57,16 +49,13 @@ function indexer() {
   JOBS = E.indexerMetiers(DATA);
 }
 function vue() {
-  const h = location.hash;
-  if (h === '#sources') return 'sources';
-  if (h === '#devis') return 'devis';
-  return 'simuler';
+  return location.hash === '#sources' ? 'sources' : 'simuler';
 }
 function sauverForm() {
   const p = { ...state.parcours, ouvert: false };
-  lsSet(LS.form, { parcours: p, editUid: state.editUid });
+  lsSet(LS.form, { parcours: p });
 }
-function sauverDevis() { lsSet(LS.devis, state.devis); lsSet(LS.reglages, state.reglages); }
+function sauverReglages() { lsSet(LS.reglages, state.reglages); }
 
 function entreeCourante() {
   const p = state.parcours;
@@ -85,12 +74,6 @@ function statutCourant(e = entreeCourante()) {
   if (!e) return { categorie: 'technicien', cadre: false, cadreEditable: true };
   const souhait = state.parcours.cadreTouche ? { cadre: !!state.parcours.cadre } : {};
   return E.statutPourMetier(e, souhait);
-}
-function figerStatut(poste) {
-  const e = E.trouverPoste(DATA, poste.convention, poste.posteId, { genre: poste.genre, grille: poste.grille });
-  if (!e) return poste;
-  const st = E.statutPourMetier(e, poste.statut);
-  return { ...poste, statut: { categorie: st.categorie, cadre: st.cadre } };
 }
 const libelleStatut = (s) => `${s.categorie === 'artiste' ? 'Artiste' : 'Technicien'} · ${s.cadre ? 'cadre' : 'non-cadre'}`;
 
@@ -180,13 +163,13 @@ function appliquerPhrase() {
   p.recherche = jobCourant()?.nom || a.indice || '';
   p.cadreTouche = false;
   p.cadre = null;
+  state.parcours = p;
   const types = typesCourants();
   if (p.typeProjet && !types.some((t) => t.id === p.typeProjet)) p.typeProjet = '';
   if (!p.typeProjet && types.length === 1) p.typeProjet = types[0].id;
   lierPoste();
   p.etape = etapeManquante();
   p.ouvert = p.etape === 'metier';
-  state.editUid = null;
   sauverForm();
   render();
 }
@@ -275,7 +258,7 @@ function posteDepuisParcours() {
     typeProjet: p.typeProjet || '',
     famille: p.famille || '',
     jours: num(p.jours), bulletins: num(p.bulletins) ?? 1, contrats: num(p.contrats) ?? 1,
-    intermediaire: p.intermediaire || '', fraisManuel: num(p.fraisManuel),
+    intermediaire: '', fraisManuel: num(p.fraisManuel),
     abattementPct: p.avance ? num(p.abattementPct) : null,
     rgduPct: p.avance ? num(p.rgduPct) : null,
   };
@@ -326,7 +309,6 @@ function choisirDepart(d) {
   state.parcours = parcoursVide();
   state.parcours.depart = d;
   state.parcours.etape = d === 'metier' ? 'metier' : 'montant';
-  state.editUid = null;
   sauverForm();
   render();
 }
@@ -387,7 +369,6 @@ function precedent() {
 }
 function recommencer() {
   state.parcours = parcoursVide();
-  state.editUid = null;
   sauverForm();
   if (location.hash && location.hash !== '#simuler') location.hash = '#simuler';
   else render();
@@ -422,6 +403,32 @@ function notesCalcul(L) {
   for (const a of L.min.avertissements || []) if (/non chiffrée/i.test(a)) out.push(a);
   return out;
 }
+function dureeParcours(poste) {
+  const u = uniteCourante();
+  return E.dureeResume({
+    kind: u?.kind,
+    quantite: poste?.quantite,
+    heuresNominales: u?.heures || (u?.kind === 'jour' ? 8 : 0),
+  });
+}
+function htmlResume(args, bilan) {
+  const texte = E.texteResume(args);
+  const lignes = bilan ? E.lignesCalcul(DATA, bilan, state.reglages, { grille: args.projet || '' }) : [];
+  const open = state.parcours.calculOuvert ? 'open' : '';
+  const detail = lignes.length
+    ? `<details id="calcul" ${open}><summary>Comment c'est calculé</summary><div class="calcul">${lignes.map((l) => `<p>${esc(l)}</p>`).join('')}</div></details>`
+    : '';
+  return `<p id="resume-texte" class="resume">${esc(texte)}</p><button type="button" class="pixel-btn" id="btn-copier" data-action="copier">Copier</button>${detail}`;
+}
+function htmlComparaison(liste) {
+  if (!liste?.length) return '';
+  const rows = liste.map((x) => {
+    const choisi = x.id === state.reglages.intermediaire ? ' · choisi' : '';
+    return `<li>${esc(x.nom)} : ${esc(x.libelle)}${esc(choisi)}</li>`;
+  }).join('');
+  const warns = [...new Set(liste.flatMap((x) => x.avertissements || []))].map((t) => `<p class="note">${esc(t)}</p>`).join('');
+  return `<section class="cmp"><h3>Intermédiaires</h3><ul>${rows}</ul>${warns}</section>`;
+}
 function htmlChiffres() {
   const aff = Object.values(erreursAffiner());
   if ((state.parcours.depart === 'budget' || state.parcours.depart === 'brut') && erreurMontant()) aff.unshift(erreurMontant());
@@ -431,37 +438,37 @@ function htmlChiffres() {
   const poste = posteDepuisParcours();
   if (!poste) return '';
   const p = state.parcours;
-  if (p.depart === 'budget') {
-    const euros = E.validerBrut(p.montant, { label: 'budget' }).valeur;
-    const r = E.convertirBudget(DATA, { ...poste, demande: null }, euros, state.reglages);
-    let h = r.possible
-      ? verdictOk('')
-      : verdictKo('Pas possible', `Minimum nécessaire : ${E.formatEuros(r.budgetMinimum)} HT`);
-    if (r.ligne) {
-      h += figure(E.formatEuros(r.brutCents), 'Brut');
-      h += figure(E.formatEuros(r.ligne.cot.net), 'Net');
-    }
-    const bloque = (r.avertissements || []).filter((a) => a.niveau === 'bloquant' && /GUSO|dépassent déjà/i.test(a.texte));
-    h += bloque.map((a) => `<p class="note">${esc(a.texte)}</p>`).join('');
-    if (r.ligne) h += notesCalcul(r.ligne).map((t) => `<p class="note">${esc(t)}</p>`).join('');
-    return h;
-  }
-  const L = E.calculerLigne(DATA, p.depart === 'brut' ? poste : { ...poste, demande: null }, state.reglages);
-  if (!L) return '';
-  let h = '';
+  const qui = jobCourant()?.nom || entreeCourante()?.metier || '';
+  const projet = E.labelType(p.typeProjet);
+  const duree = dureeParcours(poste);
   if (p.depart === 'brut') {
-    h += L.demande?.sousMinimum
+    const L = E.calculerLigne(DATA, poste, state.reglages);
+    if (!L) return '';
+    const sous = !!L.demande?.sousMinimum;
+    const bilan = E.bilanPoste(DATA, sous ? { ...poste, demande: null } : poste, state.reglages);
+    let h = sous
       ? verdictKo('Pas possible', `Minimum nécessaire : ${E.formatEuros(L.min.minimumCents)}`)
       : verdictOk('');
-    h += figure(E.formatEuros(L.cot.coutEmployeur), 'Coût employeur');
-    h += figure(E.formatEuros(L.cot.net), 'Net');
-  } else {
-    h += figure(E.formatEuros(L.min.minimumCents), 'Minimum');
-    h += figure(E.formatEuros(L.cot.coutEmployeur), 'Coût employeur');
-    h += figure(E.formatEuros(L.coutTotal), 'Coût total');
-    h += figure(E.formatEuros(L.cot.net), 'Net');
+    h += htmlResume({
+      qui, projet, duree, mode: 'brut', possible: !sous,
+      brutMinimumCents: L.min.minimumCents,
+      brutCents: bilan.ligne.brutCents,
+      netCents: bilan.ligne.cot.net,
+      totalCents: bilan.totalCents,
+    }, bilan);
+    h += notesCalcul(sous ? bilan.ligne : L).map((t) => `<p class="note">${esc(t)}</p>`).join('');
+    return h;
   }
-  h += notesCalcul(L).map((t) => `<p class="note">${esc(t)}</p>`).join('');
+  const bilan = E.bilanPoste(DATA, { ...poste, demande: null }, state.reglages);
+  if (!bilan) return '';
+  let h = figure(E.formatEuros(bilan.ligne.min.minimumCents), 'Minimum');
+  h += htmlResume({
+    qui, projet, duree, mode: 'metier', possible: true,
+    brutCents: bilan.ligne.brutCents,
+    netCents: bilan.ligne.cot.net,
+    totalCents: bilan.totalCents,
+  }, bilan);
+  h += notesCalcul(bilan.ligne).map((t) => `<p class="note">${esc(t)}</p>`).join('');
   return h;
 }
 function posteExtraAffiner() {
@@ -495,19 +502,31 @@ function htmlSolutions() {
     reglages: state.reglages,
     posteExtra: posteExtraAffiner(),
   });
-  state.solutions = s;
   if (!s.options.length) return '<p class="note">Aucun barème pour ce métier et ce projet.</p>';
-  const top = s.possible
-    ? verdictOk(`${s.options[0].nom} · ${s.options[0].uniteLabel}`)
+  const opt = s.options[0];
+  const bilan = E.bilanPoste(DATA, opt.poste, state.reglages);
+  const qui = E.quiResume(p.metierCle ? '' : p.famille, p.metierCle ? (jobCourant()?.nom || opt.nom) : '');
+  const projet = E.labelType(p.typeProjet);
+  const top = opt.possible
+    ? verdictOk(`${opt.nom} · ${opt.uniteLabel}`)
     : verdictKo('Pas possible', `Minimum nécessaire : ${E.formatEuros(s.minimumHt)} HT`);
-  const cards = s.options.map((o, i) => {
+  const resume = htmlResume({
+    qui, projet, duree: E.dureeResume(opt), mode: 'budget', possible: opt.possible,
+    budgetEuros: euros.valeur,
+    minimumCents: opt.budgetMinimum,
+    brutCents: opt.brut,
+    netCents: opt.net,
+    totalCents: opt.total,
+  }, bilan);
+  const cards = s.options.map((o) => {
     const ligne = o.possible
       ? `<p class="ok-txt">Possible : brut ${esc(E.formatEuros(o.brut))}, net ${esc(E.formatEuros(o.net))}</p>`
       : `<p class="ko-txt">Pas possible, minimum ${esc(E.formatEuros(o.budgetMinimum))}</p>`;
-    return `<article class="sol ${o.possible ? 'ok' : 'ko'}${o.recommande ? ' reco' : ''}">${o.recommande ? '<p class="tag">Recommandé</p>' : ''}<h3>${esc(o.nom)}</h3><p class="lbl">${esc(o.uniteLabel)} · ${esc(libelleStatut(o.statut))}</p>${ligne}<button type="button" class="pixel-btn" data-action="ajouter-sol" data-i="${i}">Ajouter au devis</button></article>`;
+    const reduit = o.reduit?.texte ? `<p class="reduit">${esc(o.reduit.texte)}</p>` : '';
+    return `<article class="sol ${o.possible ? 'ok' : 'ko'}${o.recommande ? ' reco' : ''}">${o.recommande ? '<p class="tag">Recommandé</p>' : ''}<h3>${esc(o.nom)}</h3><p class="lbl">${esc(o.uniteLabel)} · ${esc(libelleStatut(o.statut))}</p>${ligne}${reduit}</article>`;
   }).join('');
   const note = s.note ? `<p class="note">${esc(s.note)}</p>` : '';
-  return `${top}${note}<div class="sols">${cards}</div>`;
+  return `${top}${resume}${note}<div class="sols">${cards}</div>${htmlComparaison(s.intermediaires)}`;
 }
 function htmlDetail() {
   const c = DATA.conventions[state.parcours.convention];
@@ -538,27 +557,30 @@ function htmlAffiner(opts = {}) {
   if (u?.kind === 'semaine') h += champ('f-hsem', 'heuresSemaine', 'Heures dans la semaine', p.heuresSemaine);
   if (p.convention === '2642') h += `<label class="check"><input type="checkbox" data-k="ouvrier" ${p.ouvrier ? 'checked' : ''}>Électricien, machiniste ou déco</label>`;
   if (!opts.sansCadre && st.cadreEditable) h += `<label class="check"><input type="checkbox" data-k="cadre" ${st.cadre ? 'checked' : ''}>Cadre</label>`;
-  h += `<label class="lbl" for="f-inter">Intermédiaire de la ligne</label><select id="f-inter" data-k="intermediaire"><option value="">Comme le devis</option>${DATA.intermediaires.options.map((o) => `<option value="${o.id}" ${p.intermediaire === o.id ? 'selected' : ''}>${esc(o.nom.split(' (')[0])}</option>`).join('')}</select>`;
+  h += htmlReglages();
   h += champ('f-jours', 'jours', 'Jours pour les plafonds', p.jours);
   h += champ('f-bulletins', 'bulletins', 'Bulletins', p.bulletins);
   h += champ('f-contrats', 'contrats', 'Contrats', p.contrats);
   h += `</div></details>`;
   return h;
 }
-function htmlCotis() {
-  const poste = posteDepuisParcours();
-  if (!poste) return '';
-  let L = null;
-  if (state.parcours.depart === 'budget') {
-    const euros = E.validerBrut(state.parcours.montant, { label: 'budget' }).valeur;
-    L = E.convertirBudget(DATA, { ...poste, demande: null }, euros, state.reglages)?.ligne || null;
-  } else L = E.calculerLigne(DATA, poste, state.reglages);
-  if (!L) return '';
-  let rows = '';
-  for (const l of L.cot.lignes) {
-    rows += `<tr><td>${esc(l.libelle)}</td><td class="r">${l.nonTrouve ? '—' : esc(E.formatEuros(l.patronal))}</td><td class="r">${esc(E.formatEuros(l.salarial))}</td></tr>`;
+function htmlReglages() {
+  const r = state.reglages;
+  const o = E.optionIntermediaire(DATA, r.intermediaire);
+  const credit = !!(o.credits && o.packs?.length);
+  const ab = credit ? o.credits.abonnement : (o.abonnement_mensuel_ht && typeof o.abonnement_mensuel_ht === 'object' ? o.abonnement_mensuel_ht : null);
+  const pack = credit ? E.packChoisi(o, r) : null;
+  let h = `<label class="lbl" for="r-intermediaire">Intermédiaire</label><select id="r-intermediaire" data-r="intermediaire">${DATA.intermediaires.options.map((x) => `<option value="${x.id}" ${x.id === r.intermediaire ? 'selected' : ''}>${esc(x.nom.split(' (')[0])}</option>`).join('')}</select>`;
+  if (credit) {
+    h += `<label class="lbl" for="r-pack">Pack de crédits</label><select id="r-pack" data-r="pack">${o.packs.map((pk) => `<option value="${esc(pk.id)}" ${pk.id === pack.id ? 'selected' : ''}>${esc(pk.nom)} · ${esc(E.formatFrNombre(pk.credits))} crédits · ${esc(E.formatDecimal(E.toCents(pk.prix_credit_ht)))} €</option>`).join('')}</select><p class="lbl">Prix HT, TVA en plus.</p>`;
   }
-  return `<details><summary>Cotisations</summary><div class="table-wrap"><table><thead><tr><th>Cotisation</th><th class="r">Patronal</th><th class="r">Salarial</th></tr></thead><tbody>${rows}</tbody></table></div><p class="lbl">Le plafond vieillesse des techniciens est à confirmer par un gestionnaire de paie.</p></details>`;
+  if (ab) {
+    h += `<label class="lbl" for="r-formule">Abonnement</label><select id="r-formule" data-r="formule"><option value="basic" ${r.formule === 'basic' ? 'selected' : ''}>Basic</option><option value="premium" ${r.formule === 'premium' ? 'selected' : ''}>Premium</option><option value="aucune" ${r.formule === 'aucune' ? 'selected' : ''}>Aucun</option></select>`;
+  }
+  h += `<label class="lbl" for="r-mois">Mois</label><input id="r-mois" type="text" inputmode="decimal" data-r="mois" value="${esc(E.formatFrNombre(Number(r.mois)))}"><p id="err-mois" class="note"></p>`;
+  if (credit && o.credits.inscription) h += `<label class="check"><input type="checkbox" data-r="premiereInscription" ${r.premiereInscription ? 'checked' : ''}>Première inscription (${esc(E.formatFrNombre(o.credits.inscription))} crédits)</label>`;
+  if (o.credits?.signature_contrat || o.signature_electronique_contrat_ht) h += `<label class="check"><input type="checkbox" data-r="signature" ${r.signature ? 'checked' : ''}>Signature électronique</label>`;
+  return h;
 }
 
 function chercher(q) {
@@ -592,12 +614,13 @@ function htmlSimuler() {
   if (p.etape === 'depart' || !p.depart) {
     return `<div class="ecran">
       <form id="phrase" class="phrase">
-        <label class="lbl" for="f-phrase">Décris le besoin</label>
-        <input id="f-phrase" data-autofocus type="text" autocomplete="off" value="${esc(p.phrase)}" placeholder="Ex. 250 € pour un élec, 8 h, clip">
+        <h2 class="q" id="q-besoin">Écris ton besoin</h2>
+        <input id="f-phrase" aria-labelledby="q-besoin" data-autofocus type="text" autocomplete="off" value="${esc(p.phrase)}" placeholder="Ex. 250 € pour un élec, 8 h, clip">
         <button type="submit" class="pixel-btn">Voir</button>
         <p id="err-phrase" role="alert"></p>
       </form>
-      <h2 class="q">Tu pars de quoi ?</h2>
+      <p class="ou">ou</p>
+      <h2 class="q">Je me laisse guider</h2>
       <div class="choix">
       <button type="button" class="choice" data-depart="budget"><span class="pixel">J'ai un budget</span><span class="hint">un montant HT</span></button>
       <button type="button" class="choice" data-depart="metier"><span class="pixel">Je connais le métier</span><span class="hint">le minimum</span></button>
@@ -618,9 +641,8 @@ function htmlSimuler() {
       const sous = [typeLabel, duree].filter(Boolean).join(' · ');
       return `<div class="ecran">${head}<h2 class="q">${esc(titre())}</h2>${sous ? `<p class="stat">${esc(sous)}</p>` : ''}<div id="chiffres">${htmlSolutions()}</div>${htmlAffiner({ sansCadre: true })}${htmlDetail()}</div>`;
     }
-    const ok = !!posteDepuisParcours();
     const sous = [typeLabel, libelleStatut(st)].filter(Boolean).join(' · ');
-    return `<div class="ecran">${head}<h2 class="nom">${esc(titre())}</h2><p class="stat">${esc(sous)}</p><div id="chiffres" class="figures">${htmlChiffres()}</div>${htmlAffiner()}${htmlDetail()}${htmlCotis()}<div class="bas"><button type="button" class="pixel-btn" id="btn-ajouter" data-action="ajouter" ${ok ? '' : 'disabled'}>${state.editUid ? 'Enregistrer' : 'Ajouter au devis'}</button></div></div>`;
+    return `<div class="ecran">${head}<h2 class="nom">${esc(titre())}</h2><p class="stat">${esc(sous)}</p><div id="chiffres" class="figures">${htmlChiffres()}</div>${htmlAffiner()}${htmlDetail()}</div>`;
   }
   let corps = '';
   if (p.etape === 'montant') {
@@ -650,151 +672,9 @@ function htmlSimuler() {
   return `<div class="ecran">${head}<h2 class="q" id="q">${esc(titre())}</h2>${corps}${suite}</div>`;
 }
 
-function htmlDevis() {
-  const D = E.calculerDevis(DATA, state.devis, state.reglages);
-  const r = state.reglages;
-  const o = E.optionIntermediaire(DATA, r.intermediaire);
-  const credit = !!(o.credits && o.packs?.length);
-  const ab = credit ? o.credits.abonnement : (o.abonnement_mensuel_ht && typeof o.abonnement_mensuel_ht === 'object' ? o.abonnement_mensuel_ht : null);
-  const pack = credit ? E.packChoisi(o, r) : null;
-  let reglages = `<label class="lbl" for="projet-nom">Projet</label><input id="projet-nom" type="text" autocomplete="off" value="${esc(state.projet)}" placeholder="Nom">`;
-  reglages += `<label class="lbl" for="r-intermediaire">Intermédiaire</label><select id="r-intermediaire" data-r="intermediaire">${DATA.intermediaires.options.map((x) => `<option value="${x.id}" ${x.id === r.intermediaire ? 'selected' : ''}>${esc(x.nom.split(' (')[0])}</option>`).join('')}</select>`;
-  if (credit) {
-    reglages += `<label class="lbl" for="r-pack">Pack de crédits</label><select id="r-pack" data-r="pack">${o.packs.map((p) => `<option value="${esc(p.id)}" ${p.id === pack.id ? 'selected' : ''}>${esc(p.nom)} · ${esc(E.formatFrNombre(p.credits))} crédits · ${esc(E.formatDecimal(E.toCents(p.prix_credit_ht)))} €</option>`).join('')}</select><p class="lbl">Prix HT, TVA en plus.</p>`;
-  }
-  reglages += `<label class="lbl" for="r-mois">Mois</label><input id="r-mois" type="text" inputmode="decimal" data-r="mois" value="${esc(E.formatFrNombre(Number(r.mois)))}"><p id="err-mois" class="note"></p>`;
-  let plus = '';
-  if (ab) {
-    plus += `<label class="lbl" for="r-formule">Abonnement</label><select id="r-formule" data-r="formule"><option value="basic" ${r.formule === 'basic' ? 'selected' : ''}>Basic</option><option value="premium" ${r.formule === 'premium' ? 'selected' : ''}>Premium</option><option value="aucune" ${r.formule === 'aucune' ? 'selected' : ''}>Aucun</option></select>`;
-  }
-  if (credit && o.credits.inscription) plus += `<label class="check"><input type="checkbox" data-r="premiereInscription" ${r.premiereInscription ? 'checked' : ''}>Première inscription (${esc(E.formatFrNombre(o.credits.inscription))} crédits)</label>`;
-  if (o.credits?.signature_contrat || o.signature_electronique_contrat_ht) plus += `<label class="check"><input type="checkbox" data-r="signature" ${r.signature ? 'checked' : ''}>Signature électronique</label>`;
-  plus += `<label class="check"><input type="checkbox" data-r="prorata" ${r.prorata ? 'checked' : ''}>Répartir l'abonnement</label>`;
-  const lignes = D.lignes.map((L, i) => {
-    const id = state.devis[i].uid;
-    const type = E.labelPourPoste(state.devis[i]);
-    const fraisTxt = (L.frais.details || []).map((d) => d.libelle).join(' · ');
-    return `<article class="ligne"><h3>${esc(L.min.entree.metier)}</h3><p class="lbl">${esc([type, libelleStatut(L.statut), `${L.min.unite.label} × ${E.formatFrNombre(L.min.quantite)}`].filter(Boolean).join(' · '))}</p>${fraisTxt ? `<p class="lbl">${esc(fraisTxt)}</p>` : ''}<p class="n">${esc(E.formatEuros(L.coutTotal + (L.partFixes || 0)))}</p><p class="actions"><button type="button" class="lien" data-action="modifier" data-uid="${esc(id)}">Modifier</button><button type="button" class="lien" data-action="dupliquer" data-uid="${esc(id)}">Dupliquer</button><button type="button" class="lien" data-action="supprimer" data-uid="${esc(id)}">Supprimer</button></p></article>`;
-  }).join('');
-  const vide = D.lignes.length ? '' : `<p class="lbl">Aucune ligne.</p><button type="button" class="pixel-btn" data-action="exemple">Exemple</button>`;
-  const recap = E.lignesRecapDevis(D);
-  let totaux = '';
-  if (D.lignes.length) {
-    const noteCredit = D.totaux.credits ? `<p class="lbl">${esc(E.formatFrNombre(D.totaux.credits))} crédits. ${esc(D.mention || '')}</p>` : '';
-    totaux = `<div class="figures total">${recap.visibles.map(([lib, c]) => figure(E.formatEuros(c), lib)).join('')}<p class="figure"><span class="n">${esc(E.formatEuros(D.totaux.coutTotal))}</span><span class="lbl">Total</span></p></div>${noteCredit}<details><summary>Détail</summary><div class="figures">${recap.detail.map(([lib, c]) => figure(E.formatEuros(c), lib)).join('')}</div></details>`;
-    totaux += `<div class="export"><button type="button" class="pixel-btn" data-action="export-menu">Exporter</button>${state.exportOuvert ? '<div class="pop"><button type="button" class="ghost" data-action="pdf">PDF</button><button type="button" class="ghost" data-action="csv">CSV</button></div>' : ''}<p id="export-statut" class="lbl" role="status"></p></div>`;
-    totaux += state.confirmVide
-      ? `<button type="button" class="lien" data-action="vider-oui">Oui, vider</button> <button type="button" class="lien" data-action="vider-non">Annuler</button>`
-      : `<button type="button" class="lien" data-action="vider">Vider</button>`;
-  }
-  return `<div class="ecran"><h2 class="q">Devis</h2><div class="bloc">${reglages}</div><details><summary>Réglages</summary><div class="bloc">${plus}</div></details>${vide}${lignes}${totaux}</div>`;
-}
-
-function ajouterSolution(i) {
-  const opt = state.solutions?.options?.[i];
-  if (!opt) return;
-  const poste = figerStatut({ ...opt.poste, typeProjet: state.parcours.typeProjet, famille: state.parcours.famille });
-  const ligne = { ...poste, uid: uid(), _parcours: structuredClone({ ...state.parcours, ouvert: false }) };
-  state.devis.push(ligne);
-  state.editUid = null;
-  state.parcours = parcoursVide();
-  sauverDevis();
-  sauverForm();
-  if (location.hash !== '#devis') location.hash = '#devis';
-  else render();
-}
-function ajouterAuDevis() {
-  if (!posteDepuisParcours()) { majChiffres(); return; }
-  const poste = figerStatut(posteDepuisParcours());
-  const ligne = { ...poste, uid: state.editUid || uid(), _parcours: structuredClone({ ...state.parcours, ouvert: false }) };
-  if (state.editUid) {
-    const i = state.devis.findIndex((x) => x.uid === state.editUid);
-    if (i >= 0) state.devis[i] = ligne;
-    else state.devis.push(ligne);
-  } else state.devis.push(ligne);
-  state.editUid = null;
-  state.parcours = parcoursVide();
-  sauverDevis();
-  sauverForm();
-  if (location.hash !== '#devis') location.hash = '#devis';
-  else render();
-}
-function parcoursDepuisPoste(poste) {
-  const p = parcoursVide();
-  p.depart = poste.demande?.montant ? 'brut' : 'metier';
-  p.etape = 'resultat';
-  p.montant = poste.demande?.montant != null ? String(poste.demande.montant) : '';
-  p.convention = poste.convention || '';
-  p.posteId = poste.posteId || null;
-  p.unite = poste.unite || null;
-  p.quantite = String(poste.quantite ?? 1);
-  p.grille = poste.grille || '2025';
-  p.jauge = poste.jauge || '200';
-  p.genre = poste.genre || '';
-  p.cadre = typeof poste.statut?.cadre === 'boolean' ? poste.statut.cadre : null;
-  p.cadreTouche = typeof poste.statut?.cadre === 'boolean';
-  p.representations = poste.representations != null ? String(poste.representations) : '';
-  p.exploitationContinue = !!poste.exploitationContinue;
-  p.ouvrier = !!poste.ouvrier;
-  p.heuresParJour = poste.heuresParJour != null ? String(poste.heuresParJour) : '';
-  p.bulletins = String(poste.bulletins ?? 1);
-  p.contrats = String(poste.contrats ?? 1);
-  p.intermediaire = poste.intermediaire || '';
-  const e = E.trouverPoste(DATA, p.convention, p.posteId, p);
-  p.recherche = e?.metier || '';
-  return p;
-}
-function modifierLigne(id) {
-  const ligne = state.devis.find((x) => x.uid === id);
-  if (!ligne) return;
-  const saved = ligne._parcours;
-  if (saved?.depart) {
-    state.parcours = {
-      ...parcoursVide(), ...structuredClone(saved),
-      heures: { ...heuresVides(), ...(saved.heures || {}) },
-      majoPct: { ...majoVides(), ...(saved.majoPct || {}) },
-      etape: 'resultat', ouvert: false,
-    };
-  } else state.parcours = parcoursDepuisPoste(ligne);
-  state.editUid = id;
-  sauverForm();
-  if (location.hash !== '#simuler') location.hash = '#simuler';
-  else render();
-}
-function dupliquer(id) {
-  const i = state.devis.findIndex((x) => x.uid === id);
-  if (i < 0) return;
-  const copy = figerStatut(structuredClone(state.devis[i]));
-  copy.uid = uid();
-  state.devis.splice(i + 1, 0, copy);
-  sauverDevis();
-  render();
-}
-function chargerExemple() {
-  const mk = (conv, frag, qte) => {
-    const e = E.listerPostes(DATA, conv).find((x) => x.metier.includes(frag));
-    const u = E.unitesDisponibles(e, DATA.conventions[conv])[0];
-    const st = E.statutPourMetier(e, {});
-    const q = qte || (u.kind === 'heure' ? 8 : 1);
-    return {
-      convention: conv, posteId: e.id, unite: u.key, quantite: q, grille: /NAO 2026/.test(e.metier) ? '2026' : '2025',
-      jauge: '200', representations: q, heures: { nuit: 0, dimanche: 0, ferie: 0, premierMai: 0, ferieMineur: 0, sup: 0 },
-      majoPct: { sup: '', nuit: '', dimanche: '', ferie: '' }, statut: { categorie: st.categorie, cadre: st.cadre },
-      demande: null, bulletins: 1, contrats: 1, uid: uid(),
-    };
-  };
-  state.devis = [
-    figerStatut(mk('3097_pub', '1er assistant opérateur')),
-    figerStatut(mk('2642', '1er assistant réalisateur')),
-    figerStatut(mk('1285', 'cachet représentation', 2)),
-  ];
-  sauverDevis();
-  render();
-}
 
 function onProjet(ev) {
   const t = ev.target;
-  if (t.id === 'projet-nom') { state.projet = t.value; lsSet(LS.projet, state.projet); return; }
   const k = t.dataset.r;
   if (!k) return;
   if (k === 'mois') {
@@ -807,12 +687,12 @@ function onProjet(ev) {
     }
     if (err) err.textContent = '';
     state.reglages.mois = v.valeur;
-    sauverDevis();
+    sauverReglages();
     planRender();
     return;
   }
   state.reglages[k] = t.type === 'checkbox' ? t.checked : t.value;
-  sauverDevis();
+  sauverReglages();
   planRender();
 }
 function planRender() {
@@ -823,14 +703,11 @@ function planRender() {
 function majChiffres() {
   const box = $('#chiffres');
   if (box) box.innerHTML = state.parcours.depart === 'budget' ? htmlSolutions() : htmlChiffres();
-  const btn = $('#btn-ajouter');
-  if (btn) btn.disabled = !posteDepuisParcours();
 }
 
 function render() {
   const v = vue();
   document.querySelectorAll('.nav a').forEach((a) => {
-    if (a.dataset.view === 'devis') a.textContent = state.devis.length ? `Devis ${state.devis.length}` : 'Devis';
     if (a.dataset.view === v) a.setAttribute('aria-current', 'page');
     else a.removeAttribute('aria-current');
   });
@@ -846,16 +723,38 @@ function render() {
   const errS = $('#sources-erreur');
   if (errS && v !== 'sources') { /* garder le message si on y revient */ }
   ecran.hidden = false;
-  ecran.innerHTML = v === 'devis' ? htmlDevis() : htmlSimuler();
+  ecran.innerHTML = htmlSimuler();
   const focus = ecran.querySelector('[data-autofocus]');
   if (focus) focus.focus();
   if (v === 'simuler' && state.parcours.etape === 'metier') renderSuggestions();
 }
 
+async function copierResume() {
+  const texte = $('#resume-texte')?.textContent || '';
+  const btn = $('#btn-copier');
+  let ok = false;
+  try {
+    if (navigator.clipboard?.writeText) {
+      await navigator.clipboard.writeText(texte);
+      ok = true;
+    }
+  } catch { ok = false; }
+  if (!ok) {
+    const ta = document.createElement('textarea');
+    ta.value = texte;
+    ta.setAttribute('readonly', '');
+    ta.style.position = 'fixed';
+    ta.style.left = '-9999px';
+    document.body.appendChild(ta);
+    ta.select();
+    try { ok = document.execCommand('copy'); } catch { ok = false; }
+    ta.remove();
+  }
+  if (btn) btn.textContent = ok ? 'Copié' : 'Copier';
+}
 function onClick(ev) {
   const b = ev.target.closest('[data-depart], [data-goto], [data-back], [data-next], [data-metier], [data-projet], [data-unite], [data-action]');
   if (!b) {
-    if (!ev.target.closest('.export')) state.exportOuvert = false;
     if (state.parcours.ouvert && !ev.target.closest('#f-metier') && !ev.target.closest('#suggest')) {
       state.parcours.ouvert = false;
       const box = $('#suggest');
@@ -872,26 +771,7 @@ function onClick(ev) {
   if (b.dataset.unite) { changerUnite(b.dataset.unite); return; }
   const a = b.dataset.action;
   if (a === 'recommencer') { recommencer(); return; }
-  if (a === 'ajouter') { ajouterAuDevis(); return; }
-  if (a === 'ajouter-sol') { ajouterSolution(Number(b.dataset.i)); return; }
-  if (a === 'modifier') { modifierLigne(b.dataset.uid); return; }
-  if (a === 'dupliquer') { dupliquer(b.dataset.uid); return; }
-  if (a === 'supprimer') {
-    state.devis = state.devis.filter((x) => x.uid !== b.dataset.uid);
-    if (state.editUid === b.dataset.uid) state.editUid = null;
-    sauverDevis();
-    render();
-    return;
-  }
-  if (a === 'exemple') { chargerExemple(); return; }
-  if (a === 'vider') { state.confirmVide = true; render(); return; }
-  if (a === 'vider-non') { state.confirmVide = false; render(); return; }
-  if (a === 'vider-oui') {
-    state.confirmVide = false; state.devis = []; state.editUid = null; sauverDevis(); render(); return;
-  }
-  if (a === 'export-menu') { state.exportOuvert = !state.exportOuvert; render(); return; }
-  if (a === 'csv') { exporterCSV(); return; }
-  if (a === 'pdf') { exporterPDF(); return; }
+  if (a === 'copier') { copierResume(); return; }
   if (a === 'reset-params') {
     state.surcharges = {};
     appliquerParametres();
@@ -918,7 +798,6 @@ function onInput(ev) {
   if (t.id === 'f-montant') { state.parcours.montant = t.value; sauverForm(); return; }
   if (t.id === 'f-quantite') { state.parcours.quantite = t.value; sauverForm(); return; }
   if (t.id === 'f-representations') { state.parcours.representations = t.value; sauverForm(); return; }
-  if (t.id === 'projet-nom') { state.projet = t.value; lsSet(LS.projet, state.projet); return; }
   if (t.dataset.r === 'mois') return;
   const k = t.dataset.k;
   if (!k || t.type === 'checkbox' || t.tagName === 'SELECT') return;
@@ -928,7 +807,7 @@ function onInput(ev) {
 }
 function onChange(ev) {
   const t = ev.target;
-  if (t.dataset.r || t.id === 'projet-nom') { onProjet(ev); return; }
+  if (t.dataset.r) { onProjet(ev); return; }
   if (t.dataset.p || t.dataset.c || t.dataset.i) { surParametre(ev); return; }
   if (t.dataset.k === 'cadre') {
     state.parcours.cadreTouche = true;
@@ -965,88 +844,17 @@ function onKey(ev) {
   }
 }
 
-function telecharger(nom, contenu, type) {
-  const blob = contenu instanceof Blob ? contenu : new Blob([contenu], { type });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  a.href = url; a.download = nom; document.body.appendChild(a); a.click(); a.remove();
-  setTimeout(() => URL.revokeObjectURL(url), 1500);
-}
-const nomFichier = (ext) => `devis-intermittents-${(state.projet || 'projet').toLowerCase().normalize('NFD').replace(/\p{M}/gu, '').replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') || 'projet'}-${new Date().toISOString().slice(0, 10)}.${ext}`;
-function exporterCSV() {
-  const D = E.calculerDevis(DATA, state.devis, state.reglages);
-  telecharger(nomFichier('csv'), E.devisCSV(D, { projet: state.projet }), 'text/csv;charset=utf-8');
-  state.exportOuvert = false;
-  render();
-}
-function exporterPDF() {
-  const D = E.calculerDevis(DATA, state.devis, state.reglages);
-  const srcs = new Set();
-  D.lignes.forEach((L) => { if (L.min.ligne.source) srcs.add(L.min.ligne.source); sourcesDe(L.frais.option.source).forEach((s) => srcs.add(s)); });
-  srcs.add(DATA._meta.sources.AUDIENS);
-  const date = new Date().toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' });
-  const donnees = E.formatDateFr(DATA._meta.genere_le);
-  const recap = E.lignesRecapDevis(D);
-  const eur = (c) => E.formatEuros(c);
-  const noteCredit = [D.pack ? `${D.pack.nom} · ${E.formatDecimal(E.toCents(D.pack.prix_credit_ht))} € HT / crédit` : '', D.totaux.credits ? `${E.formatFrNombre(D.totaux.credits)} crédits` : '', D.mention || ''].filter(Boolean).map((s) => `<p>${esc(s)}</p>`).join('');
-  $('#print-view').innerHTML = `<div class="pv-head"><h1>Devis</h1><p>${esc(date)}<br>Données du ${esc(donnees)}</p></div>${state.projet ? `<p><strong>${esc(state.projet)}</strong></p>` : ''}<table><thead><tr><th>Métier</th><th>Unité</th><th class="r">Brut</th><th class="r">Coût empl.</th><th class="r">Frais HT</th><th class="r">Coût total</th></tr></thead><tbody>${D.lignes.map((L) => `<tr><td>${esc(L.min.entree.metier)}<br>${esc(libelleStatut(L.statut))}</td><td>${esc(L.min.unite.label)} × ${esc(E.formatFrNombre(L.min.quantite))}</td><td class="r">${esc(eur(L.brutCents))}</td><td class="r">${esc(eur(L.cot.coutEmployeur))}</td><td class="r">${esc(eur(L.frais.ht))}</td><td class="r">${esc(eur(L.coutTotal))}</td></tr>`).join('')}</tbody></table><div class="pv-totaux">${recap.detail.map(([lib, c]) => `<p>${esc(lib)} ${esc(eur(c))}</p>`).join('')}${noteCredit}</div><p class="pv-avert">${esc(E.AVERTISSEMENT)}</p>`;
-  state.exportOuvert = false;
-  if (window.jspdf?.jsPDF) { genererPDF(D, [...srcs].filter(Boolean), date, donnees, recap); return; }
-  window.print();
-}
-function genererPDF(D, srcs, date, donnees, recap) {
-  const txt = (s) => String(s ?? '').replace(/[\u202f\u00a0]/g, ' ').replace(/≤/g, '<=').replace(/≥/g, '>=').replace(/[\u2018\u2019]/g, "'").replace(/−/g, '-');
-  const e = (c) => txt(E.formatEuros(c));
-  const doc = new window.jspdf.jsPDF({ unit: 'mm', format: 'a4', orientation: 'portrait' });
-  const W = doc.internal.pageSize.getWidth();
-  const M = 14;
-  doc.setFont('helvetica', 'bold'); doc.setFontSize(18); doc.text('Devis', M, 18);
-  doc.setFont('helvetica', 'normal'); doc.setFontSize(9);
-  doc.text(txt(date), W - M, 14, { align: 'right' });
-  doc.text(txt(`Données du ${donnees}`), W - M, 19, { align: 'right' });
-  if (state.projet) doc.text(txt(state.projet), M, 26);
-  doc.autoTable({
-    startY: 32, margin: { left: M, right: M },
-    head: [['Métier', 'Unité', 'Brut', 'Coût empl.', 'Frais HT', 'Coût total']],
-    body: D.lignes.map((L) => [txt(`${L.min.entree.metier}\n${libelleStatut(L.statut)}`), txt(`${L.min.unite.label} × ${E.formatFrNombre(L.min.quantite)}`), e(L.brutCents), e(L.cot.coutEmployeur), e(L.frais.ht), e(L.coutTotal)]),
-    styles: { font: 'helvetica', fontSize: 8, cellPadding: 1.6, textColor: 20 },
-    headStyles: { fillColor: [27, 27, 42], textColor: 243 },
-    columnStyles: { 2: { halign: 'right' }, 3: { halign: 'right' }, 4: { halign: 'right' }, 5: { halign: 'right' } },
-  });
-  const rows = recap.detail.map(([a, b]) => [txt(a), e(b)]);
-  doc.autoTable({
-    startY: doc.lastAutoTable.finalY + 6, margin: { left: W / 2 - 10, right: M }, body: rows, theme: 'plain',
-    styles: { font: 'helvetica', fontSize: 8.5, cellPadding: 1.1, textColor: 20 },
-    columnStyles: { 1: { halign: 'right' } },
-  });
-  let y = doc.lastAutoTable.finalY + 8;
-  const creditLignes = [
-    D.pack ? `${D.pack.nom} · ${E.formatDecimal(E.toCents(D.pack.prix_credit_ht))} € HT / crédit` : '',
-    D.totaux.credits ? `${E.formatFrNombre(D.totaux.credits)} crédits` : '',
-    D.mention || '',
-  ].filter(Boolean);
-  const H = doc.internal.pageSize.getHeight();
-  const ligne = (s, size) => {
-    doc.setFont('helvetica', 'normal'); doc.setFontSize(size);
-    for (const l of doc.splitTextToSize(txt(s), W - 2 * M)) {
-      if (y > H - 16) { doc.addPage(); y = 18; }
-      doc.text(l, M, y); y += size * 0.45;
-    }
-  };
-  creditLignes.forEach((s) => ligne(s, 9));
-  if (creditLignes.length) y += 2;
-  srcs.forEach((s) => ligne(s, 7));
-  y += 3; ligne(E.AVERTISSEMENT, 7.5);
-  telecharger(nomFichier('pdf'), doc.output('blob'), 'application/pdf');
-  render();
-}
-
 function renderSources() {
   const C = DATA.cotisations;
   const RAWC = RAW.cotisations;
   const inp = (attrs, v, base) => `<input type="text" inputmode="decimal" class="param-input" ${attrs} value="${esc(v ?? '')}">`;
   let h = `<div class="sources-grid"><section><h2>Sources</h2><p class="lbl">Données du ${esc(E.formatDateFr(DATA._meta.genere_le))}.</p><ul class="sources-list">`;
   for (const [k, url] of Object.entries(DATA._meta.sources)) h += `<li><code>${esc(k)}</code> ${lien(url, url)}</li>`;
+  h += `</ul><h2>Intermédiaires</h2><ul class="sources-list">`;
+  for (const o of DATA.intermediaires.options) {
+    const urls = Array.isArray(o.source) ? o.source : (o.source ? [o.source] : []);
+    h += `<li>${esc(o.nom.split(' (')[0])} — ${esc(o.note || '')} ${urls.map((u) => lien(u, u)).join(' ')}</li>`;
+  }
   h += `</ul><p class="lbl">SMIC : ${esc(C.smic_horaire_brut.reference || '')} · ${lien(C.smic_horaire_brut.source, 'Insee')}</p></section>`;
   h += `<section><h2>Paramètres</h2><button type="button" class="lien" data-action="reset-params">Revenir aux valeurs du JSON</button><div class="table-wrap"><table><thead><tr><th>Paramètre</th><th class="r">Valeur</th><th>Source</th></tr></thead><tbody>`;
   h += `<tr><td>SMIC horaire brut (€)<br><span class="lbl">${esc(C.smic_horaire_brut.reference || '')}</span></td><td class="r">${inp('data-p="smic"', C.smic_horaire_brut.valeur, RAWC.smic_horaire_brut.valeur)}</td><td>${lien(C.smic_horaire_brut.source, 'Insee')}</td></tr>`;
@@ -1146,20 +954,18 @@ async function init() {
   indexer();
   state.reglages = { ...E.REGLAGES_DEFAUT, ...lsGet(LS.reglages, {}) };
   delete state.reglages.valeurCredit;
+  delete state.reglages.prorata;
   const optReglages = E.optionIntermediaire(DATA, state.reglages.intermediaire);
   if (optReglages.packs?.length && !optReglages.packs.some((p) => p.id === state.reglages.pack)) {
     state.reglages.pack = optReglages.pack_defaut || optReglages.packs[0].id;
   }
   const mois = E.validerMois(state.reglages.mois);
   state.reglages.mois = mois.ok ? mois.valeur : 1;
-  state.projet = lsGet(LS.projet, '') || '';
-  state.devis = (lsGet(LS.devis, []) || []).map(figerStatut);
-  sauverDevis();
+  sauverReglages();
   const fs = lsGet(LS.form, null);
   if (fs?.parcours && (fs.parcours.depart || fs.parcours.etape === 'depart')) {
     const p = fs.parcours;
     state.parcours = { ...parcoursVide(), ...p, heures: { ...heuresVides(), ...(p.heures || {}) }, majoPct: { ...majoVides(), ...(p.majoPct || {}) }, ouvert: false };
-    state.editUid = fs.editUid || null;
   }
   $('#avertissement-complet').textContent = E.AVERTISSEMENT;
   $('#lien-avertissement').addEventListener('click', () => {
@@ -1178,8 +984,30 @@ async function init() {
   document.addEventListener('change', onChange);
   document.addEventListener('keydown', onKey);
   document.addEventListener('mousedown', (e) => { if (e.target.closest('#suggest button')) e.preventDefault(); });
-  $('#affiner')?.addEventListener?.('toggle', () => {});
-  document.addEventListener('toggle', (e) => { if (e.target.id === 'affiner') state.parcours.affinerOuvert = e.target.open; }, true);
+  document.addEventListener('toggle', (e) => {
+    if (e.target.id === 'affiner') state.parcours.affinerOuvert = e.target.open;
+    if (e.target.id === 'calcul') state.parcours.calculOuvert = e.target.open;
+  }, true);
+  $('#theme-toggle')?.addEventListener('click', () => {
+    const next = document.documentElement.dataset.theme === 'light' ? 'dark' : 'light';
+    document.documentElement.dataset.theme = next;
+    const meta = document.querySelector('meta[name="theme-color"]');
+    if (meta) meta.content = next === 'light' ? '#f3efe4' : '#1b1b2a';
+    try { localStorage.setItem(LS.theme, next); } catch { /* quota */ }
+    const btn = $('#theme-toggle');
+    if (btn) btn.textContent = next === 'light' ? 'Sombre' : 'Clair';
+  });
+  matchMedia('(prefers-color-scheme: light)').addEventListener('change', (e) => {
+    let stored = null;
+    try { stored = localStorage.getItem(LS.theme); } catch { stored = null; }
+    if (stored === 'light' || stored === 'dark') return;
+    const next = e.matches ? 'light' : 'dark';
+    document.documentElement.dataset.theme = next;
+    const meta = document.querySelector('meta[name="theme-color"]');
+    if (meta) meta.content = next === 'light' ? '#f3efe4' : '#1b1b2a';
+    const btn = $('#theme-toggle');
+    if (btn) btn.textContent = next === 'light' ? 'Sombre' : 'Clair';
+  });
   window.addEventListener('hashchange', render);
   const pied = $('.avertissement');
   if (pied) {
