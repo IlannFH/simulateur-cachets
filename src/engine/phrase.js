@@ -1,5 +1,6 @@
 // Lecture locale d'une phrase (« 250 € pour un élec, 8 h, clip »). Aucun appel réseau.
 import { parseInput } from './money.js';
+import { categorieStatut } from './catalogue.js';
 import { TYPES_PROJET, cleMetier } from './metiers.js';
 
 const norm = (s) => String(s || '').toLowerCase().normalize('NFD').replace(/\p{M}/gu, '');
@@ -282,8 +283,9 @@ const ALIAS_METIER = [
     mots: ['choregraphe', 'choregraphes'],
     prefixe: true,
     famille: 'artistes',
-    resoudre: (type, jobs) => question('Pas de minimum publié pour un chorégraphe.', [
-      offre(trouver(jobs, /danseur – videomusique/), 'Cachet danseur, clip', 'clip'),
+    resoudre: (type, jobs) => question('Pas de minimum publié pour un chorégraphe. Soliste ou corps de ballet ?', [
+      offre(trouver(jobs, /danseur – emission choregraphique, soliste/), 'Soliste', type === 'edito' ? 'clip' : (type || 'clip')),
+      offre(trouver(jobs, /danseur – emission choregraphique, corps de ballet/), 'Corps de ballet', type === 'edito' ? 'clip' : (type || 'clip')),
     ]),
   }),
   entree({
@@ -297,8 +299,9 @@ const ALIAS_METIER = [
     prefixe: true,
     famille: 'artistes',
     resoudre: (type, jobs) => question('Quel artiste ?', [
-      offre(trouver(jobs, /danseur – videomusique/), 'Danseur, clip', 'clip'),
-      offre(trouver(jobs, /comedien – videomusique/), 'Comédien, clip', 'clip'),
+      offre(trouver(jobs, /danseur – emission choregraphique, soliste/), 'Danseur, soliste', type === 'tele' ? 'tele' : 'clip'),
+      offre(trouver(jobs, /danseur – emission choregraphique, corps de ballet/), 'Danseur, corps de ballet', type === 'tele' ? 'tele' : 'clip'),
+      offre(trouver(jobs, /emission dramatique \/ fiction/), 'Comédien, télé', 'tele'),
       offre(trouver(jobs, /^figurant$/), 'Figurant, film', 'film'),
       offre(trouver(jobs, /musicien – cachet/), 'Musicien, télé', 'tele'),
     ]),
@@ -421,7 +424,6 @@ function question(texte, choix) {
 }
 
 function resoudreDanseur(type, jobs) {
-  const clip = trouver(jobs, /danseur – videomusique/);
   const soliste = trouver(jobs, /danseur – emission choregraphique, soliste/);
   const ballet = trouver(jobs, /danseur – emission choregraphique, corps de ballet/);
   const pub = trouver(jobs, /danseur en film publicitaire/);
@@ -431,9 +433,12 @@ function resoudreDanseur(type, jobs) {
   const tourneeB = trouver(jobs, /danseur du ballet en tournee/);
   const ensemble = trouver(jobs, /artiste choregraphique d'ensemble/);
   const sub = trouver(jobs, /artiste dramatique \/ choregraphique – cachet representation/);
-  if (type === 'clip' && clip) return { metierCle: clip.cle, roles: ['danseur – videomusique'] };
+  const choeur = question('Soliste ou corps de ballet ? Journée indivisible, 6 h au plus (IDCC 2642, art. 5.14.4).', [
+    offre(soliste, 'Soliste', type || 'tele'),
+    offre(ballet, 'Corps de ballet', type || 'tele'),
+  ]);
+  if (type === 'clip' || type === 'tele') return choeur;
   if (type === 'pub' && pub) return { metierCle: pub.cle, roles: ['film publicitaire'] };
-  if (type === 'tele') return question('Soliste ou corps de ballet ?', [offre(soliste, 'Soliste', 'tele'), offre(ballet, 'Corps de ballet', 'tele')]);
   if (type === 'film') return question('Long métrage ou court métrage ?', [offre(long, 'Long métrage', 'film'), offre(court, 'Court métrage', 'film')]);
   if (type === 'spectacle' || type === 'spectacle_sub') {
     return question('Quel danseur ?', [
@@ -443,9 +448,15 @@ function resoudreDanseur(type, jobs) {
       offre(sub, 'Subventionné', 'spectacle_sub'),
     ]);
   }
-  if (type === 'edito') return question('Pas de grille danseur pour l’édito. Le cachet du clip ?', [offre(clip, 'Clip', 'clip')]);
+  if (type === 'edito') {
+    return question('Pas de grille danseur pour l’édito.', [
+      offre(soliste, 'Clip, soliste', 'clip'),
+      offre(ballet, 'Clip, corps de ballet', 'clip'),
+    ]);
+  }
   return question('Danseur : c’est pour quoi ?', [
-    offre(clip, 'Clip', 'clip'),
+    offre(soliste, 'Clip, soliste', 'clip'),
+    offre(ballet, 'Clip, corps de ballet', 'clip'),
     offre(soliste, 'Télé, soliste', 'tele'),
     offre(ballet, 'Télé, ballet', 'tele'),
     offre(pub, 'Pub', 'pub'),
@@ -455,17 +466,19 @@ function resoudreDanseur(type, jobs) {
 }
 
 function resoudreComedien(type, jobs) {
-  const clip = trouver(jobs, /comedien – videomusique/);
   const tele = trouver(jobs, /emission dramatique \/ fiction/);
   const pub = trouver(jobs, /comedien \/ mannequin \/ danseur/);
   const long = trouver(jobs, /artiste-interprete long metrage – engagement/);
   const court = trouver(jobs, /artiste-interprete court metrage/);
-  if (type === 'clip' && clip) return { metierCle: clip.cle, roles: ['comedien – videomusique'] };
+  if (type === 'clip') {
+    return question('Pas de ligne « comédien de clip » pour un producteur audiovisuel. Le cachet IDCC 2121 ne vaut que pour un éditeur phonographique.', [
+      offre(tele, 'Émission dramatique', 'tele'),
+    ]);
+  }
   if (type === 'pub' && pub) return { metierCle: pub.cle, roles: ['film publicitaire'] };
   if (type === 'tele' && tele) return { metierCle: tele.cle, roles: ['emission dramatique'] };
   if (type === 'film') return question('Long métrage ou court métrage ?', [offre(long, 'Long métrage', 'film'), offre(court, 'Court métrage', 'film')]);
   return question('Comédien : c’est pour quoi ?', [
-    offre(clip, 'Clip', 'clip'),
     offre(tele, 'Télé', 'tele'),
     offre(pub, 'Pub', 'pub'),
     offre(long, 'Film', 'film'),
@@ -511,12 +524,10 @@ function resoudreFigurant(type, jobs) {
 
 function resoudreMannequin(type, jobs) {
   const pub = trouver(jobs, /film publicitaire/);
-  const clip = trouver(jobs, /danseur – videomusique/);
   const tele = trouver(jobs, /^mannequin$/);
   if (type === 'pub' && pub) return { metierCle: pub.cle, roles: ['film publicitaire'] };
   return question('Mannequin : pub, ou un autre cadre ?', [
     offre(pub, 'Pub', 'pub'),
-    offre(clip, 'Clip (cachet danseur)', 'clip'),
     offre(tele, 'Télé', 'tele'),
   ]);
 }
@@ -604,10 +615,26 @@ export function analyserPhrase(texte, jobs = []) {
   }
   const famille = alias?.famille || (metierCle ? (jobs.find((j) => j.cle === metierCle)?.familles[0] || '') : '');
   const grade = gradeDePhrase(n) || alias?.grade || '';
+  let statut = '';
+  if (famille === 'artistes') statut = 'artiste';
+  else if (famille) statut = 'technicien';
+  else if (metierCle) {
+    const job = jobs.find((j) => j.cle === metierCle);
+    if (job) statut = categorieStatut(job.categorie) === 'artiste' ? 'artiste' : 'technicien';
+  }
+  const reconnu = Boolean(montant != null || famille || typeProjet || metierCle || choix.length || duree.kind);
+  if (reconnu && !statut && !questionTexte && !choix.length) {
+    questionTexte = 'Artiste ou technicien ?';
+    choix = [
+      { statut: 'artiste', court: 'Artiste', nom: 'Grilles artistes-interprètes', cle: '' },
+      { statut: 'technicien', court: 'Technicien', nom: 'Grilles techniciens', cle: '' },
+    ];
+  }
   return {
     montant,
     brut: ditBrut && !ditHt,
     famille,
+    statut,
     metierCle,
     roles,
     sauf,
@@ -621,6 +648,6 @@ export function analyserPhrase(texte, jobs = []) {
     indice: alias?.alias || '',
     choix,
     question: questionTexte,
-    reconnu: Boolean(montant != null || famille || typeProjet || metierCle || choix.length || duree.kind),
+    reconnu,
   };
 }

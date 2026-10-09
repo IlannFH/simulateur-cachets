@@ -1,8 +1,8 @@
 // Pour un budget et une famille : chaque grade et chaque façon de déclarer (cachet, journée, heures).
 import { calculerLigne, convertirBudget, fraisFixes, REGLAGES_DEFAUT } from './devis.js';
-import { statutPourMetier, trouverPoste, unitesDisponibles, valeurUnitaire } from './catalogue.js';
+import { categorieStatut, statutPourMetier, trouverPoste, unitesDisponibles, valeurUnitaire } from './catalogue.js';
 import { correspondType, indexerMetiers, typeParId } from './metiers.js';
-import { formatEuros, formatFrNombre } from './money.js';
+import { formatEuros, formatFrNombre, toCents } from './money.js';
 import { dureeResume, phraseSansHoraire } from './resume.js';
 
 const euros = (cents) => formatEuros(cents).replace(/[\u202f\u00a0]/g, ' ');
@@ -50,11 +50,11 @@ function score(o, demande) {
   let s = 0;
   if (o.possible) s += 1e12;
   else s -= o.budgetMinimum;
+  if (demande.metierCle && o.cle === demande.metierCle) s += 1e13;
   if (o.possible) {
     const jourPourHeures = demande.kind === 'heure' && o.kind === 'jour' && o.heuresNominales
       && demande.heures && o.heuresNominales * o.quantite === demande.heures;
     if (demande.kind && (o.kind === demande.kind || jourPourHeures)) s += 1e9;
-    if (demande.metierCle && o.cle === demande.metierCle) s += 1e10;
     if (demande.grade && o.grade === demande.grade) s += 1e8;
     else if (!demande.grade && o.grade === 'base') s += 1e8;
     else if (!demande.grade && o.grade === 'assistant') s += 1e7;
@@ -117,6 +117,72 @@ function reduitHeures(data, entree, conv, posteModele, reglages, budget, demande
 
 const nomCourt = (nom) => String(nom || '').split(' (')[0];
 
+function texteHeures(brutCents, tauxCents) {
+  const minutes = Math.round((brutCents * 60) / tauxCents);
+  const h = Math.floor(minutes / 60);
+  const m = minutes % 60;
+  if (!m) return `${formatFrNombre(h)} h`;
+  return `${formatFrNombre(h)} h ${String(m).padStart(2, '0')}`;
+}
+
+function articlePour(ligne, convention, categorie) {
+  if (ligne?.article) return ligne.article;
+  if (categorie === 'artiste' && convention === '2642') return 'art. 5.1';
+  if (convention === '2121') return 'art. 2.2.1';
+  if (categorie !== 'artiste' && convention === '2642') return 'art. IV.2.1';
+  return '';
+}
+
+/**
+ * Ce que ce brut maximum achète, dans l'unité que la convention publie.
+ * Heures seulement si un taux horaire est publié. Une journée ou un cachet
+ * indivisible ne devient pas « 4 h 30 ».
+ */
+export function dureeAuBrut({
+  brutPlafondCents = 0,
+  minimumCents = 0,
+  employeurCents = 0,
+  totalCents = 0,
+  tauxHoraireCents = null,
+  kind = '',
+  article = '',
+  heuresMax = null,
+  serviceCents = null,
+  heuresService = null,
+} = {}) {
+  const tete = `Coût employeur ${euros(employeurCents)}, coût total ${euros(totalCents)} HT.`;
+  const art = article ? `, ${article}` : '';
+  if (kind === 'heure' && tauxHoraireCents > 0) {
+    return `${tete} Brut maximum ${euros(brutPlafondCents)} = ${texteHeures(brutPlafondCents, tauxHoraireCents)} (minimum horaire ${euros(tauxHoraireCents)}).`;
+  }
+  if (kind === 'service' && serviceCents > 0) {
+    const n = Math.floor(brutPlafondCents / serviceCents);
+    const mot = n > 1 ? 'services' : 'service';
+    if (n < 1) return `${tete} Brut maximum ${euros(brutPlafondCents)}. Ça ne couvre pas un service (minimum ${euros(serviceCents)}${art}).`;
+    const de = heuresService ? ` de ${formatFrNombre(heuresService)} h` : '';
+    return `${tete} Brut maximum ${euros(brutPlafondCents)} = ${formatFrNombre(n)} ${mot}${de} (minimum ${euros(serviceCents)}${art}).`;
+  }
+  if (kind === 'semaine' || kind === 'mois') {
+    if (brutPlafondCents < minimumCents) return `${tete} Brut maximum ${euros(brutPlafondCents)}. Ça ne couvre pas le minimum (${euros(minimumCents)}${art}).`;
+    return '';
+  }
+  const unite = kind === 'cachet' ? 'un cachet indivisible' : 'une journée indivisible';
+  if (!(brutPlafondCents >= minimumCents)) {
+    return `${tete} Brut maximum ${euros(brutPlafondCents)}. Ça ne couvre pas ${unite} (minimum ${euros(minimumCents)}${art}).`;
+  }
+  const max = heuresMax ? `, ${formatFrNombre(heuresMax)} h de travail effectif au plus` : '';
+  const mot = kind === 'cachet' ? 'Cachet indivisible' : 'Journée indivisible';
+  return `${tete} ${mot} : minimum ${euros(minimumCents)}${max}${art}. Pas de prorata horaire.`;
+}
+
+function tauxDeLoption(data, entree, unite, poste) {
+  if (!HORAIRES.has(unite.key) || unite.nonTrouve) return null;
+  const v = valeurUnitaire(entree, unite.key, { jauge: poste.jauge || '200', grille: poste.grille, quantite: 1 });
+  if (v?.valeur == null) return null;
+  const smic = toCents(data.cotisations.smic_horaire_brut.valeur);
+  return Math.max(toCents(v.valeur), smic);
+}
+
 /**
  * Frais HT de chaque intermédiaire pour le même engagement.
  * #DIESE n'a pas de tarif public. Les cotisations ne changent pas, sauf le pourcentage Smart.
@@ -159,6 +225,7 @@ function noteDecla(demande, options, ctx = {}) {
   const regle = phraseSansHoraire({
     typeProjet: ctx.typeProjet || '',
     convention: options[0]?.convention || '',
+    categorie: options[0]?.statut?.categorie || '',
     aHeure,
   });
   if (regle) return regle;
@@ -172,7 +239,7 @@ function noteDecla(demande, options, ctx = {}) {
  * Classe les façons de payer un budget pour une famille (ou un métier précis) et un type de projet.
  * Les possibles d'abord. Le premier est recommandé : le grade demandé, sinon le grade de base,
  * sur la durée demandée (8 h → journée 8 h quand c'est elle qui couvre 8 h).
- * Le statut artiste / technicien vient du métier, jamais d'un choix.
+ * Le statut artiste / technicien vient du métier. S'il est déjà connu, l'autre grille est écartée.
  */
 export function solutionsBudget(data, opts = {}) {
   const jobs = opts.jobs || indexerMetiers(data);
@@ -204,6 +271,9 @@ export function solutionsBudget(data, opts = {}) {
     }
     for (const v of job.variantes) {
       if (type && !correspondType(v, type)) continue;
+      const cat = categorieStatut(v.categorie);
+      if (opts.statut === 'artiste' && cat !== 'artiste') continue;
+      if (opts.statut === 'technicien' && cat === 'artiste') continue;
       membres.push({ ...v, nom: job.nom, cle: job.cle });
     }
   }
@@ -269,6 +339,20 @@ export function solutionsBudget(data, opts = {}) {
       const r = convertirBudget(data, poste, budget, reglages);
       if (!r) continue;
       if (r.possible && r.brutCents > 0) poste.demande = { montant: r.brutCents / 100, mode: 'total' };
+      const taux = tauxDeLoption(data, entree, unite, poste);
+      const serviceCents = unite.kind === 'service' && entree.ligne.minimum_service != null ? toCents(entree.ligne.minimum_service) : null;
+      const lecture = dureeAuBrut({
+        brutPlafondCents: r.brutCents,
+        minimumCents: r.minimumCents,
+        employeurCents: r.ligne?.cot?.coutEmployeur ?? r.employeurCents,
+        totalCents: r.ligne ? r.ligne.coutTotal + r.fixesCents : r.budgetMinimum,
+        tauxHoraireCents: taux,
+        kind: unite.kind,
+        article: articlePour(entree.ligne, v.convention, st.categorie),
+        heuresMax: entree.ligne.heures_max || null,
+        serviceCents,
+        heuresService: entree.ligne.heures_service || null,
+      });
       options.push({
         nom: v.nom,
         cle: v.cle,
@@ -280,6 +364,8 @@ export function solutionsBudget(data, opts = {}) {
         possible: r.possible,
         budgetMinimum: r.budgetMinimum,
         brut: r.possible ? r.brutCents : r.minimumCents,
+        brutPlafond: r.brutCents,
+        lecture,
         net: r.netCents ?? null,
         employeur: r.employeurCents ?? null,
         total: r.possible && r.ligne ? r.ligne.coutTotal + r.fixesCents : r.budgetMinimum,

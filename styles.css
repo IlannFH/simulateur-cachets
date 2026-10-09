@@ -219,6 +219,7 @@ label.lbl, .lbl { font-family: var(--body); font-size: 22px; color: var(--muted)
 .cmp ul { margin: 0; padding-left: 18px; display: flex; flex-direction: column; gap: 4px; }
 .cmp li { font-size: 22px; }
 .reduit { color: var(--amber); font-size: 22px; line-height: 1.2; }
+.lecture { font-family: var(--body); font-size: 22px; line-height: 1.25; color: var(--fg); }
 .sols { display: flex; flex-direction: column; gap: 14px; }
 .sol {
   display: flex;

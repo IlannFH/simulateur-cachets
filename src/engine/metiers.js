@@ -37,12 +37,13 @@ const REGLES_FAMILLE = [
 
 /**
  * Types de projet affichés. `genre` vide = toute la convention.
- * Clip et édito partagent la grille audiovisuelle fiction / documentaire :
- * le choix nomme le tournage, le minimum publié est le même.
- * Les lignes 2642 sans genre (artistes d'émission) ne collent qu'à Télé.
+ * Clip et édito partagent la grille techniciens fiction / documentaire.
+ * Les artistes d'émission n'y entrent que si la ligne porte `projets`
+ * (danseur chorégraphique : clip et télé). L'annexe phonographique 2121
+ * n'est pas un clip de producteur audiovisuel.
  */
 export const TYPES_PROJET = [
-  { id: 'clip', label: 'Clip', convention: '2642', genre: 'Fiction / documentaire', aussi: [{ convention: '2121', genre: '' }] },
+  { id: 'clip', label: 'Clip', convention: '2642', genre: 'Fiction / documentaire' },
   { id: 'edito', label: 'Édito / mode', convention: '2642', genre: 'Fiction / documentaire' },
   { id: 'pub', label: 'Pub', convention: '3097_pub', genre: '' },
   { id: 'film', label: 'Film / fiction', convention: '3097_cinema', genre: '' },
@@ -141,7 +142,7 @@ export function labelPourPoste(poste = {}) {
   if (poste.typeProjet) return labelType(poste.typeProjet);
   if (poste.convention === '3097_pub') return 'Pub';
   if (poste.convention === '3097_cinema') return 'Film / fiction';
-  if (poste.convention === '2121') return 'Clip';
+  if (poste.convention === '2121') return 'Édition phonographique';
   if (poste.convention === '2642' && poste.genre === 'Flux (émissions TV)') return 'Télé';
   if (poste.convention === '2642') return 'Clip';
   if (poste.convention === '1285' || poste.convention === '3090') return 'Captation / spectacle';

@@ -741,7 +741,8 @@
      "metier": "Répétition hors tournage – service 3 h",
      "source": "https://sntpct.fr/wp-content/uploads/2024/09/SNTPCT-CCN-Prod-Cine-Texte-convention-19-01-2012-titres-III-artistes-engages-sur-court-metrage-salaires-2023.pdf",
      "date_effet": "01/09/2023",
-     "minimum_service": 54.37
+     "minimum_service": 54.37,
+     "heures_service": 3
     },
     {
      "categorie": "Artiste",
@@ -1367,7 +1368,12 @@
      "metier": "Danseur – émission chorégraphique, soliste (≤ 6 h)",
      "source": "https://lespi.org/wp-content/uploads/2025/03/PAV_Avenant-20_Salaires-signe-v2.pdf",
      "date_effet": "01/01/2025",
-     "minimum_journee": 432.86
+     "minimum_journee": 432.86,
+     "projets": ["clip", "tele"],
+     "indivisible": true,
+     "heures_max": 6,
+     "article": "art. 5.1 et 5.14.4",
+     "note": "Artiste chorégraphique, pas la grille techniciens (fiction, avenant 19). Avenant 18 du 18/04/2024 : un producteur audiovisuel qui produit un vidéogramme musical non cinématographique relève de l'IDCC 2642 ; l'annexe artistes-interprètes (ex-IDCC 1734) y est maintenue. Art. 5.14.4 : journée de répétition ou de tournage, 6 h de travail effectif au plus, soliste 432,86 € (avenant 20, 01/01/2025). Art. 5.1 : ce minimum journalier n'est pas fractionnable. Le lexique « salaire horaire de base = journée ÷ 9 » sert aux heures sup (art. 5.7) et à la nuit (art. 5.8), pas à payer une demi-journée. L'IDCC 2121 (253,55 €) ne vaut que si l'activité principale de l'employeur est phonographique."
     },
     {
      "categorie": "Artiste",
@@ -1375,7 +1381,12 @@
      "metier": "Danseur – émission chorégraphique, corps de ballet (≤ 6 h)",
      "source": "https://lespi.org/wp-content/uploads/2025/03/PAV_Avenant-20_Salaires-signe-v2.pdf",
      "date_effet": "01/01/2025",
-     "minimum_journee": 289.23
+     "minimum_journee": 289.23,
+     "projets": ["clip", "tele"],
+     "indivisible": true,
+     "heures_max": 6,
+     "article": "art. 5.1 et 5.14.4",
+     "note": "Même art. 5.14.4 que le soliste : corps de ballet 289,23 €, journée indivisible, 6 h effectives au plus. Pas la grille techniciens IDCC 2642, pas le cachet phonographique IDCC 2121."
     },
     {
      "categorie": "Artiste",
@@ -1426,7 +1437,7 @@
    "idcc": "2121",
    "date_effet": "Accord du 28/01/2025 (NAO), salaires artistes et techniciens de l'annexe IX au 01/03/2025.",
    "majorations": {
-    "note": "Le cachet de tournage n'a pas de taux horaire : il couvre un jour, 10 h de travail effectif au plus (art. 2.2.1)."
+    "note": "Art. 2.2.1 : le cachet de tournage couvre un jour, 10 h de travail effectif au plus, sans prorata. Cette annexe ne s'applique que si l'activité principale de l'employeur est la production, l'édition ou la distribution de phonogrammes. Un producteur audiovisuel relève de l'IDCC 2642."
    },
    "lignes": [
     {
@@ -1436,7 +1447,10 @@
      "source": "https://www.snam-cgt.org/wp-content/uploads/2025/10/2025-Accord-NAO-Edition-Phonographique-28-janvier-2025.pdf",
      "date_effet": "01/03/2025",
      "minimum_cachet": 253.55,
-     "note": "Art. 2.2.1 du titre II du chapitre 3 de l'annexe IX (IDCC 2121) : 253,55 € brut par jour de tournage d'une vidéomusique, 10 h de travail effectif au plus, versé en cachet. Le titre II vise l'artiste engagé pour un vidéoclip dont l'interprétation n'est pas une fixation sonore : c'est le cachet du danseur sur un clip. Ce n'est pas la grille techniciens IDCC 2642 (vidéomusiques = fiction, avenant 19), ni le danseur d'émission chorégraphique (télé)."
+     "indivisible": true,
+     "heures_max": 10,
+     "article": "art. 2.2.1",
+     "note": "Art. 2.2.1 du titre II du chapitre 3 de l'annexe IX (NAO du 28/01/2025, applicable au 01/03/2025) : 253,55 € brut par cachet, 10 h de travail effectif au plus. Le taux horaire de la rémunération d'enregistrement ne peut pas être inférieur au SMIC : ça n'autorise pas à proratiser ce cachet. Réservé à l'employeur dont l'activité principale est phonographique. Un producteur audiovisuel (IDCC 2642, avenant 18) paie le danseur sur la grille artistes-interprètes, art. 5.14.4, pas ici."
     },
     {
      "categorie": "Artiste",
@@ -1445,7 +1459,10 @@
      "source": "https://www.snam-cgt.org/wp-content/uploads/2025/10/2025-Accord-NAO-Edition-Phonographique-28-janvier-2025.pdf",
      "date_effet": "01/03/2025",
      "minimum_cachet": 253.55,
-     "note": "Même article 2.2.1 : le titre II couvre aussi les artistes dramatiques engagés pour une vidéomusique. Même minimum journalier que le danseur, 253,55 €."
+     "indivisible": true,
+     "heures_max": 10,
+     "article": "art. 2.2.1",
+     "note": "Même art. 2.2.1, même réserve : éditeur phonographique seulement. Pas de ligne « comédien de clip » dans l'annexe artistes de l'IDCC 2642."
     }
    ]
   },
