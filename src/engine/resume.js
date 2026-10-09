@@ -56,6 +56,10 @@ export const LIGNE_CLIP = 'Clip : pas de tarif horaire ni de demi-journée pour 
 
 export const LIGNE_ARTISTE_2642 = "Artiste : la journée n'est pas fractionnable (art. 5.1). Émission chorégraphique : 6 h de travail effectif au plus (art. 5.14.4). Le salaire horaire de base (journée ÷ 9) sert aux heures sup et à la nuit, pas à descendre sous le minimum journalier.";
 
+export const LIGNE_ARTISTE_2121 = "Clip, artiste-interprète : minimum par jour de tournage, IDCC 2121 annexe IX art. 2.2.1, 10 h de travail effectif au plus, versé en un ou plusieurs cachets dont le total atteint au moins ce minimum. Pas d'heure ni de demi-journée pour les danseurs. Les services de 3 h et de 4 h sont réservés aux musiciens.";
+
+export const LIGNE_DEMI_ARTISTE_2121 = "Pas de demi-journée ni de tarif horaire pour un danseur ou un autre artiste-interprète de clip (art. 2.2.1). Les services de 3 h et de 4 h sont réservés aux musiciens.";
+
 export const LIGNE_DEMI_PIGE = 'Demi-pige ? Pas prévue en tournage (clip, pub, fiction). Les services de 4 h existent seulement en spectacle vivant.';
 
 export const LIGNE_DEMI_ARTISTE = "Pas de demi-journée : le salaire journalier n'est pas fractionnable (art. 5.1), sauf essai, postsynchronisation et lecture dramatique de 4 h au plus (art. 3.1, 3.5.1 et 5.14.1.2).";
@@ -69,10 +73,8 @@ const REGLE_2642 = LIGNE_CLIP.replace(/^Clip : /, '');
 /** Grille sans taux horaire : techniciens et artistes n'ont pas la même phrase. */
 export function phraseSansHoraire({ typeProjet = '', convention = '', aHeure = false, categorie = '' } = {}) {
   if (aHeure) return '';
-  if (categorie === 'artiste' && convention === '2642') {
-    if (typeProjet === 'clip') return `Clip : ${LIGNE_ARTISTE_2642}`;
-    return LIGNE_ARTISTE_2642;
-  }
+  if (categorie === 'artiste' && (convention === '2121' || typeProjet === 'clip')) return LIGNE_ARTISTE_2121;
+  if (categorie === 'artiste' && convention === '2642') return LIGNE_ARTISTE_2642;
   if (convention === '2121') return '';
   if (categorie === 'artiste') return '';
   if (typeProjet === 'clip') return LIGNE_CLIP;
@@ -89,7 +91,8 @@ export function phraseSansHoraire({ typeProjet = '', convention = '', aHeure = f
 
 export function ligneDemiPige({ typeProjet = '', convention = '', categorie = '' } = {}) {
   if (categorie === 'artiste') {
-    if (convention === '2642' || convention === '2121') return LIGNE_DEMI_ARTISTE;
+    if (convention === '2121' || typeProjet === 'clip') return LIGNE_DEMI_ARTISTE_2121;
+    if (convention === '2642') return LIGNE_DEMI_ARTISTE;
     return '';
   }
   if (['clip', 'edito', 'pub', 'film', 'tele'].includes(typeProjet) || convention === '2642' || String(convention).startsWith('3097')) {

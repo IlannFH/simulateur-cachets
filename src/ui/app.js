@@ -628,11 +628,12 @@ function htmlDetail() {
   const c = DATA.conventions[state.parcours.convention];
   if (!c) return '';
   const artiste = state.parcours.statut === 'artiste' || statutCourant().categorie === 'artiste';
-  const meme = state.parcours.convention === '2642' && (state.parcours.typeProjet === 'clip' || state.parcours.typeProjet === 'edito')
-    ? (artiste
-      ? ' Annexe artistes-interprètes (ex-IDCC 1734), maintenue dans l’IDCC 2642. Ce n’est pas la grille techniciens.'
-      : ' Clip, édito / mode et série : même grille.')
-    : '';
+  let meme = '';
+  if (state.parcours.convention === '2121') {
+    meme = ' Artistes-interprètes d’une vidéomusique : annexe IX, art. 2.2.1. Ce n’est pas la grille techniciens.';
+  } else if (state.parcours.convention === '2642' && (state.parcours.typeProjet === 'clip' || state.parcours.typeProjet === 'edito') && !artiste) {
+    meme = ' Clip, édito / mode et série : même grille.';
+  }
   return `<details><summary>Détail</summary><p class="lbl">${esc(c.nom)} (IDCC ${esc(c.idcc)}).${esc(meme)}</p></details>`;
 }
 function htmlAffiner(opts = {}) {
