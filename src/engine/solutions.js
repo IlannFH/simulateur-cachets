@@ -3,6 +3,7 @@ import { calculerLigne, convertirBudget, fraisFixes, REGLAGES_DEFAUT } from './d
 import { statutPourMetier, trouverPoste, unitesDisponibles, valeurUnitaire } from './catalogue.js';
 import { correspondType, indexerMetiers, typeParId } from './metiers.js';
 import { formatEuros, formatFrNombre } from './money.js';
+import { dureeResume } from './resume.js';
 
 const euros = (cents) => formatEuros(cents).replace(/[\u202f\u00a0]/g, ' ');
 const HORAIRES = new Set(['horaire_grille', 'horaire_jauge', 'taux_horaire_calcule']);
@@ -168,7 +169,7 @@ export function solutionsBudget(data, opts = {}) {
   const jobs = opts.jobs || indexerMetiers(data);
   const type = typeParId(opts.typeProjet);
   if (!opts.famille && !opts.metierCle) {
-    return { options: [], possible: false, minimumHt: null, note: '', typeProjet: opts.typeProjet || '', intermediaires: [] };
+    return { options: [], possible: false, minimumHt: null, note: '', typeProjet: opts.typeProjet || '', intermediaires: [], reco: null };
   }
   const demande = {
     heures: Number(opts.heures) || null,
@@ -281,5 +282,156 @@ export function solutionsBudget(data, opts = {}) {
     note: noteDecla(demande, options),
     typeProjet: opts.typeProjet || '',
     intermediaires: options[0] ? comparerIntermediaires(data, options[0].poste, reglages) : [],
+    reco: maReco(data, { options, reglages, budgetEuros: budget, demande }),
   };
+}
+
+function inutilisable(comparaison, resultat) {
+  if (comparaison && (comparaison.surDevis || comparaison.fraisCents == null)) return true;
+  if (comparaison && (comparaison.avertissements || []).some((a) => /GUSO/.test(a))) return true;
+  const textes = (resultat?.avertissements || []).map((a) => a.texte).join(' ');
+  return /GUSO|sur devis/.test(textes);
+}
+
+function nomService(data, id) {
+  if (id === 'direct') return 'en direct';
+  const o = data.intermediaires.options.find((x) => x.id === id);
+  return nomCourt(o?.nom || id);
+}
+
+function joindre(parts) {
+  if (parts.length <= 1) return parts[0] || '';
+  if (parts.length === 2) return `${parts[0]} et ${parts[1]}`;
+  return `${parts.slice(0, -1).join(', ')} et ${parts.at(-1)}`;
+}
+
+function phraseDe(action, c) {
+  const phrase = `${action.charAt(0).toUpperCase()}${action.slice(1)}.`;
+  const chiffres = `Brut ${euros(c.brut)}, net ${euros(c.net)}, coût total ${euros(c.total)} HT.`;
+  return { ...c, phrase, chiffres, texte: `${phrase} ${chiffres}` };
+}
+
+/**
+ * Une seule suite concrète : un métier de la famille, un intermédiaire au tarif public,
+ * une durée plus courte seulement si la grille publie l'heure, sinon le budget exact.
+ * GUSO bloqué et tarif sur devis (#DIESE) ne sont pas proposés : on ne chiffre pas une option interdite ou inconnue.
+ */
+export function maReco(data, { options, reglages, budgetEuros, demande }) {
+  if (!options?.length) return null;
+  const courant = options.find((o) => o.recommande) || options[0];
+  const regs0 = reglages || REGLAGES_DEFAUT;
+  const budget = Number(budgetEuros);
+  if (courant.possible) {
+    return phraseDe(`prends ${courant.nom}, ${dureeResume(courant)}`, {
+      id: regs0.intermediaire,
+      cle: courant.cle,
+      nom: courant.nom,
+      brut: courant.brut,
+      net: courant.net,
+      total: courant.total,
+      possible: true,
+      heures: null,
+    });
+  }
+  const ids = comparerIntermediaires(data, { ...courant.poste, demande: null }, regs0)
+    .filter((x) => !x.surDevis && x.fraisCents != null && !(x.avertissements || []).some((a) => /GUSO/.test(a)))
+    .map((x) => x.id);
+  const vus = new Set();
+  const candidats = [];
+  for (const o of options) {
+    const cle = `${o.cle}|${o.kind}|${o.quantite}`;
+    if (vus.has(cle)) continue;
+    vus.add(cle);
+    for (const id of ids) {
+      const regs = { ...regs0, intermediaire: id };
+      const poste = { ...o.poste, demande: null, intermediaire: id };
+      const r = convertirBudget(data, poste, budget, regs);
+      if (!r || inutilisable(null, r)) continue;
+      const ligneMin = calculerLigne(data, poste, regs);
+      const fixesCents = fraisFixes(data, id, regs).reduce((s, f) => s + f.montant, 0);
+      const possible = !!r.possible;
+      candidats.push({
+        id,
+        cle: o.cle,
+        nom: o.nom,
+        kind: o.kind,
+        quantite: o.quantite,
+        heuresNominales: o.heuresNominales,
+        poste,
+        possible,
+        serviceNom: nomService(data, id),
+        brut: possible ? r.brutCents : ligneMin.brutCents,
+        net: possible ? r.ligne.cot.net : ligneMin.cot.net,
+        total: possible ? r.ligne.coutTotal + r.fixesCents : ligneMin.coutTotal + fixesCents,
+        heures: null,
+      });
+    }
+  }
+  const tient = candidats.filter((c) => c.possible);
+  const meilleur = (liste, cmp) => liste.reduce((a, b) => (cmp(b, a) ? b : a));
+  if (tient.length) {
+    const g = meilleur(tient, (a, b) => a.net > b.net || (a.net === b.net && a.total < b.total));
+    return phraseDe(actionDe(g, courant, regs0, demande), g);
+  }
+  const cible = heuresCible(demande || {});
+  const heures = [];
+  const deja = new Set();
+  for (const o of options) {
+    const k = `${o.convention}|${o.poste.posteId}|${o.poste.genre || ''}|${o.poste.grille || ''}`;
+    if (deja.has(k) || !cible) continue;
+    deja.add(k);
+    const entree = trouverPoste(data, o.poste.convention, o.poste.posteId, { genre: o.poste.genre, grille: o.poste.grille });
+    const conv = data.conventions[o.poste.convention];
+    if (!entree || !uniteHoraire(entree, conv, o.poste)) continue;
+    for (const id of ids) {
+      const regs = { ...regs0, intermediaire: id };
+      const red = reduitHeures(data, entree, conv, { ...o.poste, demande: null, intermediaire: id }, regs, budget, cible);
+      if (!red || !(red.heuresMax > 0) || red.heuresMax >= cible) continue;
+      const poste = { ...o.poste, demande: null, intermediaire: id, unite: uniteHoraire(entree, conv, o.poste).key, quantite: red.heuresMax, representations: red.heuresMax };
+      const r = convertirBudget(data, poste, budget, regs);
+      if (!r?.possible || inutilisable(null, r)) continue;
+      heures.push({
+        id,
+        cle: o.cle,
+        nom: o.nom,
+        kind: 'heure',
+        quantite: red.heuresMax,
+        heuresNominales: 1,
+        possible: true,
+        serviceNom: nomService(data, id),
+        brut: r.brutCents,
+        net: r.ligne.cot.net,
+        total: r.ligne.coutTotal + r.fixesCents,
+        heures: red.heuresMax,
+        demandees: cible,
+      });
+    }
+  }
+  if (heures.length) {
+    const g = meilleur(heures, (a, b) => a.heures > b.heures || (a.heures === b.heures && a.net > b.net));
+    return phraseDe(actionDe(g, courant, regs0, demande), g);
+  }
+  if (!candidats.length) return null;
+  const g = meilleur(candidats, (a, b) => a.total < b.total || (a.total === b.total && a.net > b.net));
+  return phraseDe(actionDe(g, courant, regs0, demande), g);
+}
+
+function actionDe(c, courant, reglages, demande) {
+  const parts = [];
+  const autreMetier = c.cle !== courant.cle;
+  const autreService = c.id !== (reglages.intermediaire || REGLAGES_DEFAUT.intermediaire);
+  const moinsDheures = c.heures && demande?.heures && c.heures < demande.heures;
+  if (autreMetier) parts.push(`prends ${c.nom}`);
+  if (autreService && moinsDheures) {
+    const n = formatFrNombre(c.heures);
+    const via = c.id === 'direct' ? 'passe en direct' : `passe par ${c.serviceNom}`;
+    parts.push(`${via}, à ${n} h`);
+  } else if (autreService) {
+    parts.push(c.id === 'direct' ? 'passe en direct' : `passe par ${c.serviceNom}`);
+  } else if (moinsDheures) {
+    parts.push(`passe à ${formatFrNombre(c.heures)} h`);
+  }
+  if (!c.possible) parts.push(parts.length ? `monte à ${euros(c.total)} HT` : `monte le budget à ${euros(c.total)} HT`);
+  if (!parts.length) parts.push(`prends ${c.nom}, ${dureeResume(c)}`);
+  return joindre(parts);
 }
