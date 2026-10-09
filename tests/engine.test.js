@@ -2,6 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { readFileSync } from 'node:fs';
 import {
   listerPostes, calculerMinimum, calculerLigne, calculerDevis, calculerCotisations, fraisIntermediaire,
+  categorieStatut, cadreImpose, cadreParDefaut, statutPourMetier,
   comparerDemande, devisCSV, appliquerSurcharges, toCents, REGLAGES_DEFAUT, convertirBudget,
   parseInput, formatEcartPct, formatDateFr, formatFrNombre, lignesRecapDevis, fraisFixes,
   validerQuantite, validerHeuresJour, validerBrut, validerMois, validerSaisieParam, BORNES,
@@ -305,7 +306,7 @@ describe('Saisie, bornes et formats', () => {
     expect(dureeApresChangementUnite('8', 8, 7)).toBe('7');
     expect(dureeApresChangementUnite('', 8, 8)).toBe('8');
     const suivant = conserverSaisie(
-      { quantite: '3', heuresParJour: '10', demande: { montant: '500', mode: 'total' }, heures: { nuit: '2' }, statutForce: true, statut: { categorie: 'artiste', cadre: true } },
+      { quantite: '3', heuresParJour: '10', demande: { montant: '500', mode: 'total' }, heures: { nuit: '2' }, statutForce: true, statut: { categorie: 'artiste', cadre: true }, cadreChoisi: true },
       { convention: '2642', quantite: '1', heuresParJour: '', demande: { montant: '', mode: 'total' }, heures: { nuit: '' }, statut: { categorie: 'technicien', cadre: false } },
     );
     expect(suivant.convention).toBe('2642');
@@ -313,7 +314,69 @@ describe('Saisie, bornes et formats', () => {
     expect(suivant.heuresParJour).toBe('10');
     expect(suivant.demande.montant).toBe('500');
     expect(suivant.heures.nuit).toBe('2');
-    expect(suivant.statut.categorie).toBe('artiste');
+    expect(suivant.statut.categorie).toBe('technicien');
+    expect(suivant.cadreChoisi).toBe(true);
+    expect(suivant.statutForce).toBeUndefined();
+  });
+});
+
+describe('Statut déduit du métier', () => {
+  it('ne confond pas « non-artistique » avec un artiste', () => {
+    expect(categorieStatut('Artiste')).toBe('artiste');
+    expect(categorieStatut('Technicien')).toBe('technicien');
+    expect(categorieStatut('Technicien / non-artistique')).toBe('technicien');
+  });
+  it('classe chaque ligne de chaque convention', () => {
+    let n = 0;
+    for (const conv of Object.values(data.conventions)) {
+      for (const ligne of conv.lignes || []) {
+        n += 1;
+        const attendu = /^artiste\b/i.test(String(ligne.categorie).trim()) ? 'artiste' : 'technicien';
+        expect([ligne.metier, categorieStatut(ligne.categorie)]).toEqual([ligne.metier, attendu]);
+        const st = statutPourMetier(
+          { categorie: ligne.categorie, metier: ligne.metier },
+          { categorie: attendu === 'artiste' ? 'technicien' : 'artiste', cadre: !cadreParDefaut(ligne.metier) },
+        );
+        expect([ligne.metier, st.categorie]).toEqual([ligne.metier, attendu]);
+        const impose = cadreImpose(ligne.metier);
+        if (impose == null) expect(st.cadreEditable).toBe(true);
+        else {
+          expect(st.cadre).toBe(impose);
+          expect(st.cadreEditable).toBe(false);
+        }
+      }
+    }
+    expect(n).toBeGreaterThan(100);
+  });
+  it('verrouille le cadre seulement quand la grille le nomme', () => {
+    expect(cadreImpose('Groupe 1 – échelon 1')).toBe(true);
+    expect(cadreImpose('Groupe 2 – échelon 1')).toBe(false);
+    expect(cadreImpose('Cadres : directeur technique')).toBe(true);
+    expect(cadreImpose('Agents de maîtrise : régisseur')).toBe(false);
+    expect(cadreImpose('Employés : poursuiteur')).toBe(false);
+    expect(cadreImpose('HMC cadres (chef costumier)')).toBe(true);
+    expect(cadreImpose('HMC employés (habilleur)')).toBe(false);
+    expect(cadreImpose('Directeur de la photographie')).toBe(null);
+    expect(cadreParDefaut('Directeur de la photographie')).toBe(true);
+    const photo = listerPostes(data, '3097_pub').find((p) => p.metier === 'Directeur de la photographie');
+    expect(statutPourMetier(photo, {}).cadre).toBe(true);
+    expect(statutPourMetier(photo, { cadre: false }).cadre).toBe(false);
+    expect(statutPourMetier(photo, { cadre: false }).cadreEditable).toBe(true);
+  });
+  it('un directeur de la photo enregistré comme artiste reste technicien, y compris dupliqué', () => {
+    const p = base('3097_pub', 'Directeur de la photographie', {
+      unite: 'minimum_journee_8h', heuresParJour: 8,
+      statut: { categorie: 'artiste', cadre: false },
+    });
+    const l = calculerLigne(data, p);
+    expect(l.statut.categorie).toBe('technicien');
+    expect(l.statut.cadre).toBe(false);
+    expect(l.cot.lignes.some((x) => x.code === 'urssaf_vieillesse_plaf_technicien')).toBe(true);
+    expect(l.cot.lignes.some((x) => x.code === 'urssaf_vieillesse_plaf_artiste')).toBe(false);
+    const dup = calculerDevis(data, [p, { ...structuredClone(p) }]);
+    expect(dup.lignes.every((x) => x.statut.categorie === 'technicien')).toBe(true);
+    expect(dup.totaux.artistes).toBe(0);
+    expect(dup.totaux.techniciens).toBe(dup.lignes[0].coutTotal + dup.lignes[1].coutTotal);
   });
 });
 
