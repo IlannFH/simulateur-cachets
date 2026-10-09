@@ -142,78 +142,87 @@ describe('Intermédiaires (§ 9)', () => {
     expect(eur(g.ht)).toBe(53.7);
     expect(eur(fraisIntermediaire(data, 'culturepay', { contrats: 1 }).ht)).toBe(17.9);
   });
-  it('T16 : Movinmotion Basic, Pack 1, 1 mois → 62 crédits = 89,90 € HT', () => {
+  it('T16 : Movinmotion Basic, Pack 1, 1 mois → 68 crédits = 98,60 € HT', () => {
     const g = fraisGroupe([t1, t8, t11], { intermediaire: 'movinmotion', formule: 'basic', mois: 1 });
     const pack = packChoisi(data.intermediaires.options.find((o) => o.id === 'movinmotion'), REGLAGES_DEFAUT);
-    // 3 personnes × 14 crédits + Basic 20, au prix du Pack 1 (1,45 €)
-    expect(g.credits).toBe(62);
-    expect(eur(g.ht)).toBe(89.9);
+    // 3 personnes × (14 bulletin + 2 signature) + Basic 20, au prix du Pack 1 (1,45 €)
+    expect(g.credits).toBe(68);
+    expect(eur(g.ht)).toBe(98.6);
     expect(g.fixes).toHaveLength(1);
     expect(pack.id).toBe('pack1');
     expect(pack.prix_credit_ht).toBe(1.45);
     expect(g.fixes[0].libelle).toMatch(/20 crédits × 1,45 €/);
-    expect(g.lignes[0].frais.credits).toBe(14);
+    expect(g.lignes[0].frais.credits).toBe(16);
     expect(g.lignes[0].frais.details[0].libelle).toMatch(/1 bulletin × 14 crédits × 1,45 €/);
+    expect(g.lignes[0].frais.details[1].libelle).toMatch(/Signature électronique × 1 contrat × 2 crédits/);
   });
-  it('T16 bis : 3 mois → un bulletin par personne et par mois, abonnement × 3', () => {
+  it('T16 bis : 3 mois → un bulletin par personne et par mois, signature une fois, abonnement × 3', () => {
     const g = fraisGroupe([t1, t8, t11], { mois: 3 });
-    // 3 × 3 × 14 + 20 × 3 = 186 crédits × 1,45 €
-    expect(g.credits).toBe(186);
-    expect(eur(g.ht)).toBe(269.7);
-    expect(g.lignes.every((l) => l.frais.credits === 42)).toBe(true);
+    // 3 × (3 × 14 + 2) + 20 × 3 = 192 crédits × 1,45 €
+    expect(g.credits).toBe(192);
+    expect(eur(g.ht)).toBe(278.4);
+    expect(g.lignes.every((l) => l.frais.credits === 44)).toBe(true);
   });
-  it('1 électricien, 1 jour, Basic, Pack 1 → 34 crédits = 49,30 € HT', () => {
+  it('1 électricien, 1 jour, Basic, Pack 1 → 36 crédits = 52,20 € HT', () => {
     const elec = base('3097_pub', 'Électricien de prise de vues', { unite: 'minimum_journee_8h', heuresParJour: 8, quantite: 1 });
     const g = fraisGroupe([elec], { formule: 'basic', mois: 1, pack: 'pack1' });
-    expect(g.credits).toBe(34);
-    expect(eur(g.ht)).toBe(49.3);
-    expect(g.lignes[0].frais.credits).toBe(14);
+    expect(g.credits).toBe(36);
+    expect(eur(g.ht)).toBe(52.2);
+    expect(g.lignes[0].frais.credits).toBe(16);
     expect(eur(g.fixes[0].montant)).toBe(29);
   });
-  it('les jours ne multiplient pas le bulletin, les mois oui', () => {
+  it('les jours ne multiplient pas le bulletin, les mois oui, la signature reste par contrat', () => {
     const elec = base('3097_pub', 'Électricien de prise de vues', { unite: 'minimum_journee_8h', heuresParJour: 8, quantite: 5 });
     const unMois = fraisGroupe([elec], {});
     const deuxMois = fraisGroupe([elec], { mois: 2 });
-    expect(unMois.lignes[0].frais.credits).toBe(14);
-    expect(deuxMois.lignes[0].frais.credits).toBe(28);
-    expect(deuxMois.credits).toBe(68);
-    expect(eur(deuxMois.ht)).toBe(98.6);
+    expect(unMois.lignes[0].frais.credits).toBe(16);
+    expect(deuxMois.lignes[0].frais.credits).toBe(30);
+    expect(deuxMois.credits).toBe(70);
+    expect(eur(deuxMois.ht)).toBe(101.5);
   });
   it('une 2e édition dans le même mois coûte 14 crédits de plus', () => {
     const elec = base('3097_pub', 'Électricien de prise de vues', { unite: 'minimum_journee_8h', bulletins: 2 });
     const g = fraisGroupe([elec], { mois: 1, formule: 'basic' });
-    expect(g.lignes[0].frais.credits).toBe(28);
-    expect(g.credits).toBe(48);
-    expect(eur(g.ht)).toBe(69.6);
+    expect(g.lignes[0].frais.credits).toBe(30);
+    expect(g.credits).toBe(50);
+    expect(eur(g.ht)).toBe(72.5);
     expect(g.lignes[0].frais.details[0].libelle).toMatch(/2 bulletins × 14 crédits/);
   });
-  it('la signature électronique ajoute 2 crédits, au prix du pack', () => {
+  it('la signature électronique est comptée par défaut, et se retire', () => {
     const elec = base('3097_pub', 'Électricien de prise de vues', { unite: 'minimum_journee_8h' });
-    const g = fraisGroupe([elec], { signature: true, formule: 'basic' });
-    expect(g.credits).toBe(36);
-    expect(eur(g.ht)).toBe(52.2);
+    const avec = fraisGroupe([elec], { formule: 'basic' });
+    const sans = fraisGroupe([elec], { signature: false, formule: 'basic' });
+    expect(REGLAGES_DEFAUT.signature).toBe(true);
+    expect(avec.credits).toBe(36);
+    expect(eur(avec.ht)).toBe(52.2);
+    expect(sans.credits).toBe(34);
+    expect(eur(sans.ht)).toBe(49.3);
+    expect(sans.lignes[0].frais.details.some((d) => /signature/i.test(d.libelle))).toBe(false);
+    const hors = lignesCalcul(data, bilanPoste(data, elec, { ...REGLAGES_DEFAUT, signature: false }), { ...REGLAGES_DEFAUT, signature: false });
+    expect(hors.join('\n')).toMatch(/n'est pas comptée/);
+    expect(hors.join('\n')).toMatch(/aucun crédit en plus/);
   });
   it('l\'inscription suit le pack choisi, pas 1,30 €', () => {
     const elec = base('3097_pub', 'Électricien de prise de vues', { unite: 'minimum_journee_8h' });
     const g = fraisGroupe([elec], { formule: 'aucune', premiereInscription: true });
-    expect(g.credits).toBe(164);
-    expect(eur(g.ht)).toBe(237.8);
+    expect(g.credits).toBe(166);
+    expect(eur(g.ht)).toBe(240.7);
     expect(g.fixes[0].libelle).toMatch(/150 crédits × 1,45 €/);
     expect(g.fixes[0].libelle).not.toMatch(/1,30/);
   });
   it('Premium = 40 crédits par mois, au même prix de crédit', () => {
     const elec = base('3097_pub', 'Électricien de prise de vues', { unite: 'minimum_journee_8h' });
     const g = fraisGroupe([elec], { formule: 'premium', mois: 1 });
-    expect(g.credits).toBe(54);
-    expect(eur(g.ht)).toBe(78.3);
+    expect(g.credits).toBe(56);
+    expect(eur(g.ht)).toBe(81.2);
     expect(g.fixes[0].libelle).toMatch(/Premium × 1 mois × 40 crédits × 1,45 €/);
   });
   it('le Pack 2 change le prix du crédit, pas le nombre de crédits', () => {
     const elec = base('3097_pub', 'Électricien de prise de vues', { unite: 'minimum_journee_8h' });
     const g = fraisGroupe([elec], { pack: 'pack2', formule: 'basic', mois: 1 });
     const pack = packChoisi(data.intermediaires.options.find((o) => o.id === 'movinmotion'), { pack: 'pack2' });
-    expect(g.credits).toBe(34);
-    expect(eur(g.ht)).toBe(47.6);
+    expect(g.credits).toBe(36);
+    expect(eur(g.ht)).toBe(50.4);
     expect(pack.prix_credit_ht).toBe(1.4);
   });
   it('T17 : Smart sur 1 000 € de coût employeur → 65 € HT + TVA 13 €', () => {
@@ -478,6 +487,8 @@ describe('Comment c\'est calculé', () => {
     });
     expect(lignes.at(-1)).toBe(`Total HT : ${texte.match(/coût total (.+) HT/)[1]}.`);
     expect(lignes.join('\n')).toMatch(/Ces 14 crédits de bulletin couvrent la paie, le bulletin, l'AEM, les congés spectacles et la DSN/);
+    expect(lignes.join('\n')).toMatch(/DPAE \(déclaration unique d'embauche\) : aucun crédit en plus, elle est comprise dans l'abonnement \(conditions financières Movinmotion Social, 18 décembre 2023\)/);
+    expect(lignes.join('\n')).toMatch(/La signature électronique coûte 2 crédits par contrat et est comptée/);
     expect(lignes.join('\n')).toMatch(/1,5 mois/);
     expect(texte).not.toMatch(/crédits de bulletin/);
     expect(texte).not.toMatch(/Cotisations/);
@@ -725,13 +736,16 @@ describe('Solutions de budget', () => {
     expect(dureeResume(opt)).toBe('1 jour 8 h');
     expect(texte).toBe(`Élec · Clip · 1 jour 8 h — Pas possible avec 250 € HT. Minimum : coût employeur ${texte.split('coût employeur ')[1]}`);
     expect(texte).toMatch(/^Élec · Clip · 1 jour 8 h — Pas possible avec 250 € HT\. Minimum : coût employeur .+ €, coût total .+ € HT\. Brut .+ €, net .+ €\.$/);
-    expect(texte).toContain('Minimum : coût employeur 347,07 €, coût total 396,37 € HT. Brut 210,76 €, net 159,67 €.');
+    expect(texte).toContain('Minimum : coût employeur 347,07 €, coût total 399,27 € HT. Brut 210,76 €, net 159,67 €.');
     expect(s.options.every((o) => o.reduit == null)).toBe(true);
     const b = bilanPoste(data, opt.poste, REGLAGES_DEFAUT);
     expect(b.totalCents).toBe(opt.budgetMinimum);
     const lignes = lignesCalcul(data, b, REGLAGES_DEFAUT, { grille: 'Clip' });
     expect(lignes.at(-1)).toContain('Total HT');
     expect(lignes.join(' ')).toMatch(/14 crédits de bulletin/);
+    expect(lignes.join(' ')).toMatch(/DPAE \(déclaration unique d'embauche\) : aucun crédit en plus/);
+    expect(b.ligne.frais.details.some((d) => /dpae|embauche/i.test(d.libelle))).toBe(false);
+    expect(b.ligne.frais.credits).toBe(16);
     expect(lignes.join(' ')).toMatch(/Demi-pige \?/);
     expect(lignes.join(' ')).toContain(LIGNE_DEMI_PIGE);
     expect(texte).not.toMatch(/Cotisations|crédits|Demi-pige/);
@@ -783,9 +797,9 @@ describe('Solutions de budget', () => {
     const cp = cmp.find((x) => x.id === 'culturepay');
     const diese = cmp.find((x) => x.id === 'diese');
     const guso = cmp.find((x) => x.id === 'guso');
-    expect(mm.credits).toBe(34);
-    expect(eur(mm.fraisCents)).toBe(49.3);
-    expect(mm.libelle).toMatch(/34 crédits/);
+    expect(mm.credits).toBe(36);
+    expect(eur(mm.fraisCents)).toBe(52.2);
+    expect(mm.libelle).toMatch(/36 crédits/);
     expect(eur(cp.fraisCents)).toBe(17.9);
     expect(diese.surDevis).toBe(true);
     expect(diese.libelle).toMatch(/non public/);

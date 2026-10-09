@@ -650,7 +650,8 @@ function htmlReglages() {
   }
   h += `<label class="lbl" for="r-mois">Mois</label><input id="r-mois" type="text" inputmode="decimal" data-r="mois" value="${esc(E.formatFrNombre(Number(r.mois)))}"><p id="err-mois" class="note"></p>`;
   if (credit && o.credits.inscription) h += `<label class="check"><input type="checkbox" data-r="premiereInscription" ${r.premiereInscription ? 'checked' : ''}>Première inscription (${esc(E.formatFrNombre(o.credits.inscription))} crédits)</label>`;
-  if (o.credits?.signature_contrat || o.signature_electronique_contrat_ht) h += `<label class="check"><input type="checkbox" data-r="signature" ${r.signature ? 'checked' : ''}>Signature électronique</label>`;
+  if (o.credits?.signature_contrat) h += `<label class="check"><input type="checkbox" data-r="signature" ${r.signature ? 'checked' : ''}>Signature électronique (${esc(E.formatFrNombre(o.credits.signature_contrat))} crédits / contrat)</label>`;
+  else if (o.signature_electronique_contrat_ht) h += `<label class="check"><input type="checkbox" data-r="signature" ${r.signature ? 'checked' : ''}>Signature électronique</label>`;
   return h;
 }
 
@@ -765,6 +766,7 @@ function onProjet(ev) {
     return;
   }
   state.reglages[k] = t.type === 'checkbox' ? t.checked : t.value;
+  if (k === 'signature') state.reglages.signatureChoisie = true;
   sauverReglages();
   planRender();
 }
@@ -1029,7 +1031,10 @@ async function init() {
   state.surcharges = nettoyerSurcharges(lsGet(LS.surcharges, {}));
   DATA = E.appliquerSurcharges(RAW, state.surcharges);
   indexer();
-  state.reglages = { ...E.REGLAGES_DEFAUT, ...lsGet(LS.reglages, {}) };
+  const savedReglages = lsGet(LS.reglages, {});
+  state.reglages = { ...E.REGLAGES_DEFAUT, ...savedReglages };
+  // L'ancien défaut était « pas de signature ». Ce false enregistré n'est pas un choix.
+  if (!savedReglages.signatureChoisie) state.reglages.signature = E.REGLAGES_DEFAUT.signature;
   delete state.reglages.valeurCredit;
   delete state.reglages.prorata;
   if (!DATA.intermediaires.options.some((o) => o.id === state.reglages.intermediaire && o.id !== 'direct')) {

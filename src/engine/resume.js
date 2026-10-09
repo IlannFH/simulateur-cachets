@@ -162,6 +162,19 @@ function ligneCotisation(l) {
   return `${nomCotisation(l.libelle)} : ${parts.join(', ')}.`;
 }
 
+/**
+ * La DPAE (déclaration unique d'embauche) est dans l'abonnement, pas en crédits.
+ * Conditions financières Movinmotion Social, 18 décembre 2023.
+ */
+function phraseDpae(o, ligne) {
+  const sig = Number(o?.credits?.signature_contrat);
+  const comptee = (ligne.frais.details || []).some((d) => /signature/i.test(d.libelle));
+  const suite = sig
+    ? ` La signature électronique coûte ${formatFrNombre(sig)} crédits par contrat et ${comptee ? 'est comptée' : "n'est pas comptée"}.`
+    : '';
+  return `DPAE (déclaration unique d'embauche) : aucun crédit en plus, elle est comprise dans l'abonnement (conditions financières Movinmotion Social, 18 décembre 2023).${suite}`;
+}
+
 function ligneFrais(data, bilan, reglages) {
   const o = optionIntermediaire(data, bilan.ligne.intermediaire);
   const montant = (bilan.ligne.frais.ht || 0) + bilan.fixesCents;
@@ -220,6 +233,7 @@ export function lignesCalcul(data, bilan, reglages = REGLAGES_DEFAUT, ctx = {}) 
   const aUnBulletin = (L.frais.details || []).some((d) => /bulletin/i.test(d.libelle));
   if (tauxBulletin && aUnBulletin) {
     out.push(`Ces ${formatFrNombre(tauxBulletin)} crédits de bulletin couvrent la paie, le bulletin, l'AEM, les congés spectacles et la DSN.`);
+    out.push(phraseDpae(o, L));
   }
   out.push(`Total HT : ${euros(bilan.totalCents)}.`);
   return out;

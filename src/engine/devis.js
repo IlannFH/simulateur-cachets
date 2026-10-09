@@ -11,7 +11,7 @@ export const REGLAGES_DEFAUT = {
   formule: 'basic', // abonnement Movinmotion : basic | premium | aucune
   mois: 1,
   premiereInscription: false,
-  signature: false,
+  signature: true, // 2 crédits / contrat : un contrat Movinmotion est signé
   pack: 'pack1', // Movinmotion : Pack 1 à 1,45 € HT le crédit
 };
 
