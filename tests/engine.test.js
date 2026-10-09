@@ -4,9 +4,10 @@ import {
   listerPostes, calculerMinimum, calculerLigne, calculerDevis, calculerCotisations, fraisIntermediaire,
   categorieStatut, cadreImpose, cadreParDefaut, statutPourMetier,
   comparerDemande, devisCSV, appliquerSurcharges, toCents, REGLAGES_DEFAUT, convertirBudget,
-  parseInput, formatEcartPct, formatDateFr, formatFrNombre, lignesRecapDevis, fraisFixes,
+  parseInput, formatEcartPct, formatDateFr, formatFrNombre,   lignesRecapDevis, fraisFixes,
   validerQuantite, validerHeuresJour, validerBrut, validerMois, validerSaisieParam, BORNES,
   dureeApresChangementUnite, conserverSaisie,
+  analyserPhrase, indexerMetiers, typesDisponibles, solutionsBudget, famillesDe, labelType,
 } from '../src/engine/index.js';
 
 const data = JSON.parse(readFileSync(new URL('../data/simulateur_data.json', import.meta.url), 'utf8'));
@@ -405,5 +406,144 @@ describe('Synthèse du devis', () => {
     expect(csv).toContain('Abonnement et frais fixes');
     expect(csv).toContain('1,5 mois');
     expect(csv).toContain('Montant brut proposé');
+  });
+});
+
+describe('Phrase libre', () => {
+  const jobs = indexerMetiers(data);
+
+  it('250 € pour un élec, 8 h, clip', () => {
+    const a = analyserPhrase('250 € pour un élec, 8 h, clip', jobs);
+    expect(a.montant).toBe(250);
+    expect(a.brut).toBe(false);
+    expect(a.famille).toBe('elec');
+    expect(a.heures).toBe(8);
+    expect(a.kind).toBe('heure');
+    expect(a.typeProjet).toBe('clip');
+    expect(a.grade).toBe('');
+  });
+
+  it('lit un montant européen, le HT, les jours et la pub', () => {
+    const a = analyserPhrase('1 250,50 € HT pour 2 jours de cadreur en pub');
+    expect(a.montant).toBe(1250.5);
+    expect(a.brut).toBe(false);
+    expect(a.jours).toBe(2);
+    expect(a.kind).toBe('jour');
+    expect(a.famille).toBe('camera');
+    expect(a.typeProjet).toBe('pub');
+  });
+
+  it('lit un brut, un grade et la télé', () => {
+    const a = analyserPhrase('400 brut, chef électr, télé');
+    expect(a.brut).toBe(true);
+    expect(a.montant).toBe(400);
+    expect(a.famille).toBe('elec');
+    expect(a.grade).toBe('chef');
+    expect(a.typeProjet).toBe('tele');
+  });
+
+  it('reconnaît un artiste et le spectacle sans montant', () => {
+    const a = analyserPhrase('un danseur, captation');
+    expect(a.montant).toBe(null);
+    expect(a.famille).toBe('artistes');
+    expect(a.typeProjet).toBe('spectacle');
+    expect(a.brut).toBe(false);
+  });
+
+  it('ne prend pas les heures pour un montant', () => {
+    const a = analyserPhrase('8h pour un machino');
+    expect(a.montant).toBe(null);
+    expect(a.heures).toBe(8);
+    expect(a.famille).toBe('machinerie');
+  });
+});
+
+describe('Métiers uniques et types de projet', () => {
+  const jobs = indexerMetiers(data);
+
+  it('ne liste chaque intitulé qu’une fois', () => {
+    const cles = jobs.map((j) => j.cle);
+    expect(new Set(cles).size).toBe(cles.length);
+    const assistant = jobs.find((j) => j.nom === '1er assistant réalisateur');
+    expect(assistant.variantes).toHaveLength(4);
+    const types = typesDisponibles(assistant.variantes);
+    expect(types.map((t) => t.id)).toEqual(['clip', 'edito', 'pub', 'film', 'tele']);
+    expect(types.map((t) => t.label).join(' ')).not.toMatch(/3097|2642|1285|3090|IDCC/);
+  });
+
+  it('classe les familles demandées', () => {
+    expect(famillesDe('Chef électricien')).toEqual(['elec']);
+    expect(famillesDe('Électricien / éclairagiste')).toEqual(['elec']);
+    expect(famillesDe('Cadreur / opérateur de prise de vues')).toEqual(['camera']);
+    expect(famillesDe('Chef opérateur du son')).toEqual(['son']);
+    expect(famillesDe('Machiniste de prise de vues')).toEqual(['machinerie']);
+    expect(famillesDe('Chef décorateur')).toEqual(['deco']);
+    expect(famillesDe('Chef maquilleur')).toEqual(['hmc']);
+    expect(famillesDe('Régisseur général')).toEqual(['regie']);
+    expect(famillesDe('Directeur de production')).toEqual(['prod']);
+    expect(famillesDe('Danseur soliste en tournée (annexe 4) – 1 à 7 représentations/mois')).toEqual(['artistes']);
+    expect(famillesDe('1er assistant réalisateur')).toEqual(['real']);
+    expect(famillesDe('Chef monteur')).toEqual(['montage']);
+    for (const id of ['elec', 'camera', 'son', 'machinerie', 'deco', 'hmc', 'regie', 'prod', 'real', 'montage', 'artistes']) {
+      expect(jobs.some((j) => j.familles.includes(id))).toBe(true);
+    }
+  });
+
+  it('nomme le spectacle sans numéro, et la télé pour une émission', () => {
+    const dramatique = jobs.find((j) => j.nom.startsWith('Artiste dramatique'));
+    const types = typesDisponibles(dramatique.variantes);
+    expect(types.map((t) => t.label)).toEqual(['Captation / spectacle']);
+    expect(labelType('spectacle_sub')).toBe('Captation / spectacle');
+    const danseTv = jobs.find((j) => /Danseur – émission/.test(j.nom));
+    expect(typesDisponibles(danseTv.variantes).map((t) => t.id)).toEqual(['tele']);
+  });
+});
+
+describe('Solutions de budget', () => {
+  const jobs = indexerMetiers(data);
+  const baseOpts = { jobs, famille: 'elec', typeProjet: 'clip', heures: 8, kind: 'heure' };
+
+  it('250 € pour un élec en clip : rien ne passe, le moins cher d’abord, statut technicien', () => {
+    const s = solutionsBudget(data, { ...baseOpts, budgetEuros: 250 });
+    expect(s.options.length).toBeGreaterThanOrEqual(2);
+    expect(s.possible).toBe(false);
+    expect(s.options.every((o) => o.possible === false)).toBe(true);
+    expect(s.options.every((o) => o.statut.categorie === 'technicien')).toBe(true);
+    expect(s.options.some((o) => /éclairagiste/i.test(o.nom))).toBe(true);
+    expect(s.options.some((o) => /prise de vues/i.test(o.nom))).toBe(false);
+    expect(s.options[0].recommande).toBe(true);
+    const mins = s.options.map((o) => o.budgetMinimum);
+    expect([...mins].sort((a, b) => a - b)).toEqual(mins);
+    expect(s.minimumHt).toBe(mins[0]);
+    expect(s.note).toMatch(/journée/);
+  });
+
+  it('un gros budget recommande le grade de base en journée 8 h, pas le chef', () => {
+    const s = solutionsBudget(data, { ...baseOpts, budgetEuros: 2000 });
+    expect(s.possible).toBe(true);
+    const i = s.options.findIndex((o) => !o.possible);
+    expect(s.options.slice(0, i === -1 ? s.options.length : i).every((o) => o.possible)).toBe(true);
+    expect(s.options[0].recommande).toBe(true);
+    expect(s.options[0].possible).toBe(true);
+    expect(s.options[0].grade).toBe('base');
+    expect(s.options[0].kind).toBe('jour');
+    expect(s.options[0].nom).toMatch(/éclairagiste/i);
+    expect(s.options[0].statut.categorie).toBe('technicien');
+    expect(s.options[0].poste.statut.categorie).toBe('technicien');
+    expect(s.options[0].brut).toBeGreaterThan(0);
+    expect(s.options[0].net).toBeGreaterThan(0);
+  });
+
+  it('« chef » recommande le chef quand le budget le permet', () => {
+    const s = solutionsBudget(data, { ...baseOpts, budgetEuros: 2000, grade: 'chef' });
+    expect(s.options[0].grade).toBe('chef');
+    expect(s.options[0].possible).toBe(true);
+  });
+
+  it('la pub ne mélange pas la grille du clip', () => {
+    const s = solutionsBudget(data, { jobs, famille: 'elec', typeProjet: 'pub', budgetEuros: 5000, heures: 8, kind: 'heure' });
+    expect(s.options.some((o) => /prise de vues/i.test(o.nom))).toBe(true);
+    expect(s.options.some((o) => /éclairagiste/i.test(o.nom))).toBe(false);
+    expect(s.options.every((o) => o.statut.categorie === 'technicien')).toBe(true);
   });
 });

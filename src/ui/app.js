@@ -8,14 +8,6 @@ const LS = {
   form: 'simcachets.form.v1',
   projet: 'simcachets.projet.v1',
 };
-const CONVENTIONS = [
-  { key: '3097_pub', label: 'Publicité' },
-  { key: '3097_cinema', label: 'Cinéma' },
-  { key: '2642', label: 'Audiovisuel' },
-  { key: '1285', label: 'Spectacle subventionné' },
-  { key: '3090', label: 'Spectacle privé' },
-];
-
 const $ = (s, r = document) => r.querySelector(s);
 const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 const norm = (s) => String(s || '').toLowerCase().normalize('NFD').replace(/\p{M}/gu, '');
@@ -30,6 +22,8 @@ const majoVides = () => ({ sup: '', nuit: '', dimanche: '', ferie: '' });
 function parcoursVide() {
   return {
     depart: null, etape: 'depart', montant: '', convention: '', posteId: null, recherche: '',
+    phrase: '', famille: '', typeProjet: '', grade: '', kindDemande: '', metierCle: '',
+    heuresDemandees: '', joursDemandes: '', cachetsDemandes: '',
     genre: '', grille: '2025', jauge: '200', unite: null, quantite: '1', representations: '',
     exploitationContinue: false, ouvrier: false, heuresParJour: '', heuresSemaine: '', joursProrata: '',
     heures: heuresVides(), majoPct: majoVides(), cadre: null, cadreTouche: false,
@@ -40,7 +34,7 @@ function parcoursVide() {
 
 let RAW = null;
 let DATA = null;
-let CATALOGUE = [];
+let JOBS = [];
 let sourcesDessine = false;
 const state = {
   parcours: parcoursVide(),
@@ -60,10 +54,7 @@ function setPath(obj, path, v) {
   cur[ks.at(-1)] = v;
 }
 function indexer() {
-  CATALOGUE = [];
-  for (const c of CONVENTIONS) {
-    for (const p of E.listerPostes(DATA, c.key)) CATALOGUE.push({ ...p, convention: c.key, convLabel: c.label });
-  }
+  JOBS = E.indexerMetiers(DATA);
 }
 function vue() {
   const h = location.hash;
@@ -103,6 +94,102 @@ function figerStatut(poste) {
 }
 const libelleStatut = (s) => `${s.categorie === 'artiste' ? 'Artiste' : 'Technicien'} · ${s.cadre ? 'cadre' : 'non-cadre'}`;
 
+function assurerMetier() {
+  const p = state.parcours;
+  if ((p.metierCle && p.famille) || !p.posteId) return;
+  const job = JOBS.find((j) => j.variantes.some((v) => v.posteId === p.posteId && v.convention === p.convention));
+  if (!job) return;
+  if (!p.metierCle) p.metierCle = job.cle;
+  if (!p.famille) p.famille = job.familles[0] || '';
+  if (!p.typeProjet) {
+    const match = E.typesDisponibles(job.variantes).find((t) => t.variante.posteId === p.posteId && t.variante.convention === p.convention);
+    if (match) p.typeProjet = match.id;
+  }
+}
+function jobCourant() {
+  return JOBS.find((j) => j.cle === state.parcours.metierCle) || null;
+}
+function typesCourants() {
+  const p = state.parcours;
+  if (p.metierCle && jobCourant()) return E.typesDisponibles(jobCourant().variantes);
+  if (p.famille) {
+    const vars = JOBS.filter((j) => j.familles.includes(p.famille)).flatMap((j) => j.variantes);
+    return E.typesDisponibles(vars);
+  }
+  return [];
+}
+function variantePourResultat() {
+  const p = state.parcours;
+  const t = E.typeParId(p.typeProjet);
+  const ok = (v) => !t || E.correspondType(v, t);
+  if (p.metierCle && jobCourant()) return jobCourant().variantes.find(ok) || (t ? null : jobCourant().variantes[0]) || null;
+  const vars = [];
+  for (const j of JOBS) {
+    if (!p.famille || !j.familles.includes(p.famille)) continue;
+    for (const v of j.variantes) if (ok(v)) vars.push(v);
+  }
+  const grade = p.grade || 'base';
+  return vars.find((v) => v.grade === grade) || vars.find((v) => v.grade === 'base') || vars[0] || null;
+}
+function lierPoste() {
+  const p = state.parcours;
+  const v = variantePourResultat();
+  if (!v) return;
+  p.convention = v.convention;
+  p.posteId = v.posteId;
+  p.genre = v.genre || '';
+  p.grille = v.grille || '2026';
+  const us = unitesCourantes(entreeCourante());
+  const kind = p.kindDemande;
+  const u = us.find((x) => x.kind === kind) || (kind === 'heure' ? us.find((x) => x.kind === 'jour') : null) || us[0];
+  p.unite = u?.key || null;
+  if (kind === 'heure' && u?.kind === 'heure' && p.heuresDemandees) p.quantite = String(p.heuresDemandees);
+  else if (kind === 'jour' && p.joursDemandes) p.quantite = String(p.joursDemandes);
+  else if (kind === 'cachet' && p.cachetsDemandes) p.quantite = String(p.cachetsDemandes);
+  else if (u?.kind === 'heure' && (p.quantite === '1' || !p.quantite)) p.quantite = '8';
+}
+function etapeManquante() {
+  const p = state.parcours;
+  if ((p.depart === 'budget' || p.depart === 'brut') && erreurMontant()) return 'montant';
+  if (!p.metierCle && (p.depart !== 'budget' || !p.famille)) return 'metier';
+  if (typesCourants().length > 1 && !p.typeProjet) return 'projet';
+  if (!p.typeProjet && typesCourants().length === 1) p.typeProjet = typesCourants()[0].id;
+  lierPoste();
+  if (p.depart !== 'budget' && !p.kindDemande) return 'quantite';
+  return 'resultat';
+}
+function appliquerPhrase() {
+  const p = state.parcours;
+  const a = E.analyserPhrase(p.phrase, JOBS);
+  const err = $('#err-phrase');
+  if (!a.reconnu) {
+    if (err) err.textContent = 'Écris un montant, un métier ou un projet.';
+    return;
+  }
+  if (err) err.textContent = '';
+  p.montant = a.montant != null ? String(a.montant).replace('.', ',') : '';
+  p.depart = a.brut ? 'brut' : (a.montant != null ? 'budget' : 'metier');
+  p.famille = a.famille || '';
+  p.metierCle = a.metierCle || '';
+  p.grade = a.grade || '';
+  p.kindDemande = a.kind || '';
+  p.heuresDemandees = a.heures != null ? String(a.heures) : '';
+  p.joursDemandes = a.jours != null ? String(a.jours) : '';
+  p.cachetsDemandes = a.cachets != null ? String(a.cachets) : '';
+  p.typeProjet = a.typeProjet || '';
+  p.recherche = jobCourant()?.nom || a.indice || '';
+  p.cadreTouche = false;
+  p.cadre = null;
+  const types = typesCourants();
+  if (p.typeProjet && !types.some((t) => t.id === p.typeProjet)) p.typeProjet = '';
+  if (!p.typeProjet && types.length === 1) p.typeProjet = types[0].id;
+  lierPoste();
+  p.etape = etapeManquante();
+  p.ouvert = p.etape === 'metier';
+  state.editUid = null;
+  sauverForm();
+  render();
+}
 function besoinPrecision() {
   const u = uniteCourante();
   return !!u && (u.key === 'horaire_jauge' || u.key === 'cachet_palier' || u.key === 'cachet_representation');
@@ -112,8 +199,11 @@ function etapesActives() {
   const list = [];
   if (p.depart === 'budget' || p.depart === 'brut') list.push('montant');
   list.push('metier');
-  list.push('quantite');
-  if (besoinPrecision()) list.push('precision');
+  if (typesCourants().length > 1) list.push('projet');
+  if (p.depart !== 'budget') {
+    list.push('quantite');
+    if (besoinPrecision()) list.push('precision');
+  }
   list.push('resultat');
   return list;
 }
@@ -182,6 +272,8 @@ function posteDepuisParcours() {
     majoPct: Object.fromEntries(Object.entries(p.majoPct).map(([k, v]) => [k, v === '' || v == null ? '' : num(v)])),
     statut: { categorie: st.categorie, cadre: st.cadre },
     demande: null,
+    typeProjet: p.typeProjet || '',
+    famille: p.famille || '',
     jours: num(p.jours), bulletins: num(p.bulletins) ?? 1, contrats: num(p.contrats) ?? 1,
     intermediaire: p.intermediaire || '', fraisManuel: num(p.fraisManuel),
     abattementPct: p.avance ? num(p.abattementPct) : null,
@@ -201,9 +293,10 @@ function crumb(et) {
     return v == null ? 'Montant' : `${E.formatNumber(v)} €`;
   }
   if (et === 'metier') {
-    const nom = entreeCourante()?.metier || 'Métier';
+    const nom = jobCourant()?.nom || E.labelFamille(p.famille) || 'Métier';
     return nom.length > 32 ? `${nom.slice(0, 30)}…` : nom;
   }
+  if (et === 'projet') return E.labelType(p.typeProjet) || 'Projet';
   if (et === 'quantite') {
     const u = uniteCourante();
     const n = E.parseInput(p.quantite) || 1;
@@ -222,36 +315,47 @@ function titre() {
   const p = state.parcours;
   if (p.etape === 'montant') return p.depart === 'budget' ? 'Quel budget HT ?' : 'Quel brut ?';
   if (p.etape === 'metier') return 'Quel métier ?';
+  if (p.etape === 'projet') return "C'est pour quoi ?";
   if (p.etape === 'quantite') return 'Combien ?';
   if (p.etape === 'precision') return uniteCourante()?.key === 'horaire_jauge' ? 'Quelle jauge ?' : 'Combien de dates dans le mois ?';
-  return entreeCourante()?.metier || 'Résultat';
+  if (p.depart === 'budget' && p.famille) return E.labelFamille(p.famille);
+  return entreeCourante()?.metier || jobCourant()?.nom || 'Résultat';
 }
 
 function choisirDepart(d) {
+  state.parcours = parcoursVide();
   state.parcours.depart = d;
   state.parcours.etape = d === 'metier' ? 'metier' : 'montant';
-  state.parcours.ouvert = false;
   state.editUid = null;
   sauverForm();
   render();
 }
-function choisirPoste(convention, id) {
+function choisirMetier(cle) {
+  const job = JOBS.find((j) => j.cle === cle);
+  if (!job) return;
   const p = state.parcours;
-  p.convention = convention;
-  p.posteId = id;
+  p.metierCle = cle;
+  p.famille = job.familles[0] || p.famille || '';
+  p.recherche = job.nom;
   p.ouvert = false;
   p.cadreTouche = false;
   p.cadre = null;
-  const e = entreeCourante();
-  p.recherche = e?.metier || '';
-  p.genre = e?.ligne?.genre || '';
-  if (/NAO 2026/.test(e?.metier || '')) p.grille = '2026';
-  else if (/2025/.test(e?.metier || '')) p.grille = '2025';
-  const u = unitesCourantes(e)[0];
-  p.unite = u?.key || null;
-  if (u?.kind === 'heure' && (p.quantite === '1' || !p.quantite)) p.quantite = '8';
+  const types = E.typesDisponibles(job.variantes);
+  if (!types.some((t) => t.id === p.typeProjet)) p.typeProjet = types.length === 1 ? types[0].id : '';
+  lierPoste();
   const list = etapesActives();
-  p.etape = list[list.indexOf('metier') + 1] || 'resultat';
+  let next = list[list.indexOf('metier') + 1] || 'resultat';
+  if (next === 'projet' && p.typeProjet) next = list[list.indexOf('projet') + 1] || 'resultat';
+  p.etape = next;
+  sauverForm();
+  render();
+}
+function choisirProjet(id) {
+  const p = state.parcours;
+  p.typeProjet = id;
+  lierPoste();
+  const list = etapesActives();
+  p.etape = list[list.indexOf('projet') + 1] || 'resultat';
   sauverForm();
   render();
 }
@@ -290,7 +394,12 @@ function recommencer() {
 }
 function validerEtape() {
   const et = state.parcours.etape;
-  const msg = et === 'montant' ? erreurMontant() : et === 'metier' ? (state.parcours.posteId ? '' : 'Choisis un métier dans la liste.') : et === 'quantite' ? erreurQuantite() : et === 'precision' ? erreurPrecision() : '';
+  if (et === 'metier' && !state.parcours.metierCle) {
+    const hits = chercher(state.parcours.recherche);
+    const hit = hits[state.parcours.highlight] || hits[0];
+    if (hit && norm(state.parcours.recherche) === norm(hit.nom)) { choisirMetier(hit.cle); return false; }
+  }
+  const msg = et === 'montant' ? erreurMontant() : et === 'metier' ? (state.parcours.metierCle ? '' : 'Choisis un métier dans la liste.') : et === 'quantite' ? erreurQuantite() : et === 'precision' ? erreurPrecision() : '';
   const el = $('#err');
   if (el) el.textContent = msg;
   return !msg;
@@ -298,6 +407,12 @@ function validerEtape() {
 
 function figure(montant, label) {
   return `<p class="figure"><span class="n">${esc(montant)}</span><span class="lbl">${esc(label)}</span></p>`;
+}
+function verdictKo(titre, suite) {
+  return `<p class="verdict ko"><span class="mot">${esc(titre)}</span>${suite ? `<span class="suite">${esc(suite)}</span>` : ''}</p>`;
+}
+function verdictOk(suite) {
+  return `<p class="verdict ok"><span class="mot">OK</span>${suite ? `<span class="suite">${esc(suite)}</span>` : ''}</p>`;
 }
 function notesCalcul(L) {
   const out = [];
@@ -319,14 +434,13 @@ function htmlChiffres() {
   if (p.depart === 'budget') {
     const euros = E.validerBrut(p.montant, { label: 'budget' }).valeur;
     const r = E.convertirBudget(DATA, { ...poste, demande: null }, euros, state.reglages);
-    let h = '';
+    let h = r.possible
+      ? verdictOk('')
+      : verdictKo('Pas possible', `Minimum nécessaire : ${E.formatEuros(r.budgetMinimum)} HT`);
     if (r.ligne) {
       h += figure(E.formatEuros(r.brutCents), 'Brut');
       h += figure(E.formatEuros(r.ligne.cot.net), 'Net');
     }
-    h += r.possible
-      ? '<p class="verdict ok">OK</p>'
-      : `<p class="verdict ko">Pas assez</p><p class="lbl">Minimum ${esc(E.formatEuros(r.budgetMinimum))} HT</p>`;
     const bloque = (r.avertissements || []).filter((a) => a.niveau === 'bloquant' && /GUSO|dépassent déjà/i.test(a.texte));
     h += bloque.map((a) => `<p class="note">${esc(a.texte)}</p>`).join('');
     if (r.ligne) h += notesCalcul(r.ligne).map((t) => `<p class="note">${esc(t)}</p>`).join('');
@@ -336,11 +450,11 @@ function htmlChiffres() {
   if (!L) return '';
   let h = '';
   if (p.depart === 'brut') {
+    h += L.demande?.sousMinimum
+      ? verdictKo('Pas possible', `Minimum nécessaire : ${E.formatEuros(L.min.minimumCents)}`)
+      : verdictOk('');
     h += figure(E.formatEuros(L.cot.coutEmployeur), 'Coût employeur');
     h += figure(E.formatEuros(L.cot.net), 'Net');
-    h += L.demande?.sousMinimum
-      ? `<p class="verdict ko">Sous le minimum</p><p class="lbl">Minimum ${esc(E.formatEuros(L.min.minimumCents))}</p>`
-      : '<p class="verdict ok">OK</p>';
   } else {
     h += figure(E.formatEuros(L.min.minimumCents), 'Minimum');
     h += figure(E.formatEuros(L.cot.coutEmployeur), 'Coût employeur');
@@ -350,7 +464,58 @@ function htmlChiffres() {
   h += notesCalcul(L).map((t) => `<p class="note">${esc(t)}</p>`).join('');
   return h;
 }
-function htmlAffiner() {
+function posteExtraAffiner() {
+  const p = state.parcours;
+  const num = (v) => E.parseInput(v);
+  return {
+    heuresParJour: p.heuresParJour,
+    heuresSemaine: p.heuresSemaine,
+    ouvrier: p.ouvrier,
+    heures: Object.fromEntries(Object.entries(p.heures).map(([k, v]) => [k, E.validerHeuresMajo(v).valeur || 0])),
+    majoPct: Object.fromEntries(Object.entries(p.majoPct).map(([k, v]) => [k, v === '' || v == null ? '' : num(v)])),
+  };
+}
+function htmlSolutions() {
+  const p = state.parcours;
+  const euros = E.validerBrut(p.montant, { label: 'budget' });
+  if (!euros.ok) return `<p class="note">${esc(euros.message || 'Indique un budget.')}</p>`;
+  const s = E.solutionsBudget(DATA, {
+    jobs: JOBS,
+    famille: p.famille,
+    metierCle: p.metierCle,
+    typeProjet: p.typeProjet,
+    budgetEuros: euros.valeur,
+    heures: p.heuresDemandees ? E.parseInput(p.heuresDemandees) : null,
+    jours: p.joursDemandes ? E.parseInput(p.joursDemandes) : null,
+    cachets: p.cachetsDemandes ? E.parseInput(p.cachetsDemandes) : null,
+    kind: p.kindDemande,
+    grade: p.grade,
+    reglages: state.reglages,
+    posteExtra: posteExtraAffiner(),
+  });
+  state.solutions = s;
+  if (!s.options.length) return '<p class="note">Aucun barème pour ce métier et ce projet.</p>';
+  const top = s.possible
+    ? verdictOk(`${s.options[0].nom} · ${s.options[0].uniteLabel}`)
+    : verdictKo('Pas possible', `Minimum nécessaire : ${E.formatEuros(s.minimumHt)} HT`);
+  const cards = s.options.map((o, i) => {
+    const ligne = o.possible
+      ? `<p class="ok-txt">Possible : brut ${esc(E.formatEuros(o.brut))}, net ${esc(E.formatEuros(o.net))}</p>`
+      : `<p class="ko-txt">Pas possible, minimum ${esc(E.formatEuros(o.budgetMinimum))}</p>`;
+    return `<article class="sol ${o.possible ? 'ok' : 'ko'}${o.recommande ? ' reco' : ''}">${o.recommande ? '<p class="tag">Recommandé</p>' : ''}<h3>${esc(o.nom)}</h3><p class="lbl">${esc(o.uniteLabel)} · ${esc(libelleStatut(o.statut))}</p>${ligne}<button type="button" class="pixel-btn" data-action="ajouter-sol" data-i="${i}">Ajouter au devis</button></article>`;
+  }).join('');
+  const note = s.note ? `<p class="note">${esc(s.note)}</p>` : '';
+  return `${top}${note}<div class="sols">${cards}</div>`;
+}
+function htmlDetail() {
+  const c = DATA.conventions[state.parcours.convention];
+  if (!c) return '';
+  const meme = state.parcours.typeProjet === 'clip' || state.parcours.typeProjet === 'edito'
+    ? ' Clip, édito / mode et série : même grille.'
+    : '';
+  return `<details><summary>Détail</summary><p class="lbl">${esc(c.nom)} (IDCC ${esc(c.idcc)}).${esc(meme)}</p></details>`;
+}
+function htmlAffiner(opts = {}) {
   const p = state.parcours;
   const e = entreeCourante();
   const u = uniteCourante();
@@ -370,7 +535,7 @@ function htmlAffiner() {
   if (u && ['jour', 'cachet', 'service'].includes(u.kind)) h += champ('f-duree', 'heuresParJour', 'Durée (h)', p.heuresParJour);
   if (u?.kind === 'semaine') h += champ('f-hsem', 'heuresSemaine', 'Heures dans la semaine', p.heuresSemaine);
   if (p.convention === '2642') h += `<label class="check"><input type="checkbox" data-k="ouvrier" ${p.ouvrier ? 'checked' : ''}>Électricien, machiniste ou déco</label>`;
-  if (st.cadreEditable) h += `<label class="check"><input type="checkbox" data-k="cadre" ${st.cadre ? 'checked' : ''}>Cadre</label>`;
+  if (!opts.sansCadre && st.cadreEditable) h += `<label class="check"><input type="checkbox" data-k="cadre" ${st.cadre ? 'checked' : ''}>Cadre</label>`;
   h += `<label class="lbl" for="f-inter">Intermédiaire de la ligne</label><select id="f-inter" data-k="intermediaire"><option value="">Comme le devis</option>${DATA.intermediaires.options.map((o) => `<option value="${o.id}" ${p.intermediaire === o.id ? 'selected' : ''}>${esc(o.nom.split(' (')[0])}</option>`).join('')}</select>`;
   h += champ('f-jours', 'jours', 'Jours pour les plafonds', p.jours);
   h += champ('f-bulletins', 'bulletins', 'Bulletins', p.bulletins);
@@ -397,8 +562,8 @@ function htmlCotis() {
 function chercher(q) {
   const n = norm(q);
   if (!n) return [];
-  const hits = CATALOGUE.filter((p) => norm(`${p.metier} ${p.departement} ${p.categorie} ${p.convLabel} ${p.ligne?.genre || ''}`).includes(n));
-  hits.sort((a, b) => (norm(a.metier).startsWith(n) ? 0 : 1) - (norm(b.metier).startsWith(n) ? 0 : 1) || a.metier.localeCompare(b.metier, 'fr'));
+  const hits = JOBS.filter((j) => norm(`${j.nom} ${j.familles.map((id) => E.labelFamille(id)).join(' ')}`).includes(n));
+  hits.sort((a, b) => (norm(a.nom).startsWith(n) ? 0 : 1) - (norm(b.nom).startsWith(n) ? 0 : 1) || (a.nom.includes(':') ? 1 : 0) - (b.nom.includes(':') ? 1 : 0) || a.nom.localeCompare(b.nom, 'fr'));
   return hits.slice(0, 8);
 }
 function renderSuggestions() {
@@ -415,16 +580,23 @@ function renderSuggestions() {
   if (!hits.length) { box.innerHTML = '<p class="lbl">Aucun métier.</p>'; return; }
   box.innerHTML = hits.map((hit, i) => {
     const st = E.categorieStatut(hit.categorie) === 'artiste' ? 'Artiste' : 'Technicien';
-    const meta = [hit.convLabel, hit.ligne?.genre, st].filter(Boolean).join(' · ');
-    const sel = hit.convention === p.convention && hit.id === p.posteId;
-    return `<button type="button" role="option" data-poste="${esc(hit.id)}" data-convention="${esc(hit.convention)}" aria-selected="${i === p.highlight || sel}"><span>${esc(hit.metier)}</span><span class="sug-meta">${esc(meta)}</span></button>`;
+    const sel = hit.cle === p.metierCle;
+    return `<button type="button" role="option" data-metier="${esc(hit.cle)}" aria-selected="${i === p.highlight || sel}"><span>${esc(hit.nom)}</span><span class="sug-meta">${esc(st)}</span></button>`;
   }).join('');
 }
 
 function htmlSimuler() {
   const p = state.parcours;
   if (p.etape === 'depart' || !p.depart) {
-    return `<div class="ecran"><h2 class="q">Tu pars de quoi ?</h2><div class="choix">
+    return `<div class="ecran">
+      <form id="phrase" class="phrase">
+        <label class="lbl" for="f-phrase">Décris le besoin</label>
+        <input id="f-phrase" data-autofocus type="text" autocomplete="off" value="${esc(p.phrase)}" placeholder="Ex. 250 € pour un élec, 8 h, clip">
+        <button type="submit" class="pixel-btn">Voir</button>
+        <p id="err-phrase" role="alert"></p>
+      </form>
+      <h2 class="q">Tu pars de quoi ?</h2>
+      <div class="choix">
       <button type="button" class="choice" data-depart="budget"><span class="pixel">J'ai un budget</span><span class="hint">un montant HT</span></button>
       <button type="button" class="choice" data-depart="metier"><span class="pixel">Je connais le métier</span><span class="hint">le minimum</span></button>
       <button type="button" class="choice" data-depart="brut"><span class="pixel">J'ai un brut en tête</span><span class="hint">coût et net</span></button>
@@ -435,15 +607,27 @@ function htmlSimuler() {
   const crumbs = list.slice(0, Math.max(0, i)).map((et) => `<button type="button" data-goto="${et}">${esc(crumb(et))}</button>`).join('');
   const head = `<div class="top"><button type="button" class="ghost" data-back>Retour</button><button type="button" class="lien" data-action="recommencer">Recommencer</button></div>${crumbs ? `<nav class="crumbs" aria-label="Réponses">${crumbs}</nav>` : ''}`;
   if (p.etape === 'resultat') {
+    assurerMetier();
+    lierPoste();
     const st = statutCourant();
+    const typeLabel = E.labelType(p.typeProjet);
+    if (p.depart === 'budget') {
+      const duree = p.kindDemande === 'heure' && p.heuresDemandees ? `${p.heuresDemandees} h` : (p.kindDemande === 'jour' && p.joursDemandes ? `${p.joursDemandes} j` : '');
+      const sous = [typeLabel, duree].filter(Boolean).join(' · ');
+      return `<div class="ecran">${head}<h2 class="q">${esc(titre())}</h2>${sous ? `<p class="stat">${esc(sous)}</p>` : ''}<div id="chiffres">${htmlSolutions()}</div>${htmlAffiner({ sansCadre: true })}${htmlDetail()}</div>`;
+    }
     const ok = !!posteDepuisParcours();
-    return `<div class="ecran">${head}<h2 class="nom">${esc(titre())}</h2><p class="stat">${esc(libelleStatut(st))}</p><div id="chiffres" class="figures">${htmlChiffres()}</div>${htmlAffiner()}${htmlCotis()}<div class="bas"><button type="button" class="pixel-btn" id="btn-ajouter" data-action="ajouter" ${ok ? '' : 'disabled'}>${state.editUid ? 'Enregistrer' : 'Ajouter au devis'}</button></div></div>`;
+    const sous = [typeLabel, libelleStatut(st)].filter(Boolean).join(' · ');
+    return `<div class="ecran">${head}<h2 class="nom">${esc(titre())}</h2><p class="stat">${esc(sous)}</p><div id="chiffres" class="figures">${htmlChiffres()}</div>${htmlAffiner()}${htmlDetail()}${htmlCotis()}<div class="bas"><button type="button" class="pixel-btn" id="btn-ajouter" data-action="ajouter" ${ok ? '' : 'disabled'}>${state.editUid ? 'Enregistrer' : 'Ajouter au devis'}</button></div></div>`;
   }
   let corps = '';
   if (p.etape === 'montant') {
     corps = `<label class="lbl" for="f-montant">${p.depart === 'budget' ? 'Montant HT' : 'Brut'}</label><input id="f-montant" data-autofocus type="text" inputmode="decimal" autocomplete="off" value="${esc(p.montant)}" placeholder="250">`;
   } else if (p.etape === 'metier') {
     corps = `<label class="lbl" for="f-metier">Métier</label><input id="f-metier" data-autofocus type="search" autocomplete="off" role="combobox" aria-autocomplete="list" aria-controls="suggest" aria-expanded="${p.ouvert}" value="${esc(p.recherche)}" placeholder="photo, danseur, assistant"><div id="suggest" class="suggest"></div>`;
+  } else if (p.etape === 'projet') {
+    const types = typesCourants();
+    corps = `<div class="choix">${types.map((t) => `<button type="button" class="choice" data-projet="${esc(t.id)}"><span class="pixel">${esc(t.label)}</span></button>`).join('')}</div>`;
   } else if (p.etape === 'quantite') {
     const us = unitesCourantes();
     const u = uniteCourante();
@@ -459,6 +643,7 @@ function htmlSimuler() {
       if (u?.key === 'cachet_representation') corps += `<label class="check"><input type="checkbox" data-k="exploitationContinue" ${p.exploitationContinue ? 'checked' : ''}>Exploitation continue</label>`;
     }
   }
+  if (p.etape === 'projet') return `<div class="ecran">${head}<h2 class="q" id="q">${esc(titre())}</h2>${corps}</div>`;
   const suite = `<p id="err" role="alert"></p><div class="bas"><button type="button" class="pixel-btn" data-next>Continuer</button></div>`;
   return `<div class="ecran">${head}<h2 class="q" id="q">${esc(titre())}</h2>${corps}${suite}</div>`;
 }
@@ -479,7 +664,8 @@ function htmlDevis() {
   plus += `<label class="check"><input type="checkbox" data-r="prorata" ${r.prorata ? 'checked' : ''}>Répartir l'abonnement</label>`;
   const lignes = D.lignes.map((L, i) => {
     const id = state.devis[i].uid;
-    return `<article class="ligne"><h3>${esc(L.min.entree.metier)}</h3><p class="lbl">${esc(L.min.conv.nom.split('–')[0].trim())} · ${esc(libelleStatut(L.statut))} · ${esc(L.min.unite.label)} × ${esc(E.formatFrNombre(L.min.quantite))}</p><p class="n">${esc(E.formatEuros(L.coutTotal + (L.partFixes || 0)))}</p><p class="actions"><button type="button" class="lien" data-action="modifier" data-uid="${esc(id)}">Modifier</button><button type="button" class="lien" data-action="dupliquer" data-uid="${esc(id)}">Dupliquer</button><button type="button" class="lien" data-action="supprimer" data-uid="${esc(id)}">Supprimer</button></p></article>`;
+    const type = E.labelPourPoste(state.devis[i]);
+    return `<article class="ligne"><h3>${esc(L.min.entree.metier)}</h3><p class="lbl">${esc([type, libelleStatut(L.statut), `${L.min.unite.label} × ${E.formatFrNombre(L.min.quantite)}`].filter(Boolean).join(' · '))}</p><p class="n">${esc(E.formatEuros(L.coutTotal + (L.partFixes || 0)))}</p><p class="actions"><button type="button" class="lien" data-action="modifier" data-uid="${esc(id)}">Modifier</button><button type="button" class="lien" data-action="dupliquer" data-uid="${esc(id)}">Dupliquer</button><button type="button" class="lien" data-action="supprimer" data-uid="${esc(id)}">Supprimer</button></p></article>`;
   }).join('');
   const vide = D.lignes.length ? '' : `<p class="lbl">Aucune ligne.</p><button type="button" class="pixel-btn" data-action="exemple">Exemple</button>`;
   const recap = E.lignesRecapDevis(D);
@@ -494,6 +680,19 @@ function htmlDevis() {
   return `<div class="ecran"><h2 class="q">Devis</h2><div class="bloc">${reglages}</div><details><summary>Réglages</summary><div class="bloc">${plus}</div></details>${vide}${lignes}${totaux}</div>`;
 }
 
+function ajouterSolution(i) {
+  const opt = state.solutions?.options?.[i];
+  if (!opt) return;
+  const poste = figerStatut({ ...opt.poste, typeProjet: state.parcours.typeProjet, famille: state.parcours.famille });
+  const ligne = { ...poste, uid: uid(), _parcours: structuredClone({ ...state.parcours, ouvert: false }) };
+  state.devis.push(ligne);
+  state.editUid = null;
+  state.parcours = parcoursVide();
+  sauverDevis();
+  sauverForm();
+  if (location.hash !== '#devis') location.hash = '#devis';
+  else render();
+}
 function ajouterAuDevis() {
   if (!posteDepuisParcours()) { majChiffres(); return; }
   const poste = figerStatut(posteDepuisParcours());
@@ -613,7 +812,7 @@ function planRender() {
 
 function majChiffres() {
   const box = $('#chiffres');
-  if (box) box.innerHTML = htmlChiffres();
+  if (box) box.innerHTML = state.parcours.depart === 'budget' ? htmlSolutions() : htmlChiffres();
   const btn = $('#btn-ajouter');
   if (btn) btn.disabled = !posteDepuisParcours();
 }
@@ -644,7 +843,7 @@ function render() {
 }
 
 function onClick(ev) {
-  const b = ev.target.closest('[data-depart], [data-goto], [data-back], [data-next], [data-poste], [data-unite], [data-action]');
+  const b = ev.target.closest('[data-depart], [data-goto], [data-back], [data-next], [data-metier], [data-projet], [data-unite], [data-action]');
   if (!b) {
     if (!ev.target.closest('.export')) state.exportOuvert = false;
     if (state.parcours.ouvert && !ev.target.closest('#f-metier') && !ev.target.closest('#suggest')) {
@@ -658,11 +857,13 @@ function onClick(ev) {
   if (b.dataset.goto) { state.parcours.etape = b.dataset.goto; sauverForm(); render(); return; }
   if (b.hasAttribute('data-back')) { precedent(); return; }
   if (b.hasAttribute('data-next')) { if (validerEtape()) avancer(); return; }
-  if (b.dataset.poste) { choisirPoste(b.dataset.convention, b.dataset.poste); return; }
+  if (b.dataset.metier) { choisirMetier(b.dataset.metier); return; }
+  if (b.dataset.projet) { choisirProjet(b.dataset.projet); return; }
   if (b.dataset.unite) { changerUnite(b.dataset.unite); return; }
   const a = b.dataset.action;
   if (a === 'recommencer') { recommencer(); return; }
   if (a === 'ajouter') { ajouterAuDevis(); return; }
+  if (a === 'ajouter-sol') { ajouterSolution(Number(b.dataset.i)); return; }
   if (a === 'modifier') { modifierLigne(b.dataset.uid); return; }
   if (a === 'dupliquer') { dupliquer(b.dataset.uid); return; }
   if (a === 'supprimer') {
@@ -691,12 +892,16 @@ function onClick(ev) {
 }
 function onInput(ev) {
   const t = ev.target;
+  if (t.id === 'f-phrase') { state.parcours.phrase = t.value; return; }
   if (t.id === 'f-metier') {
     state.parcours.recherche = t.value;
     state.parcours.ouvert = true;
     state.parcours.highlight = 0;
-    const e = entreeCourante();
-    if (e && norm(t.value) !== norm(e.metier)) state.parcours.posteId = null;
+    const job = jobCourant();
+    if (job && norm(t.value) !== norm(job.nom)) {
+      state.parcours.metierCle = '';
+      state.parcours.posteId = null;
+    }
     renderSuggestions();
     return;
   }
@@ -742,7 +947,7 @@ function onKey(ev) {
   } else if (ev.key === 'Enter') {
     ev.preventDefault();
     const hit = hits[state.parcours.highlight] || hits[0];
-    if (hit) choisirPoste(hit.convention, hit.id);
+    if (hit) choisirMetier(hit.cle);
     else { const el = $('#err'); if (el) el.textContent = 'Choisis un métier dans la liste.'; }
   } else if (ev.key === 'Escape') {
     state.parcours.ouvert = false;
@@ -939,6 +1144,13 @@ async function init() {
     el.hidden = !el.hidden;
   });
   document.addEventListener('click', onClick);
+  document.addEventListener('submit', (e) => {
+    if (e.target.id !== 'phrase') return;
+    e.preventDefault();
+    const input = $('#f-phrase');
+    if (input) state.parcours.phrase = input.value;
+    appliquerPhrase();
+  });
   document.addEventListener('input', onInput);
   document.addEventListener('change', onChange);
   document.addEventListener('keydown', onKey);
