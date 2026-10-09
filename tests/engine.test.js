@@ -1,13 +1,14 @@
 import { describe, it, expect } from 'vitest';
 import { readFileSync } from 'node:fs';
 import {
-  listerPostes, calculerMinimum, calculerLigne, calculerDevis, calculerCotisations, fraisIntermediaire,
+  listerPostes, calculerMinimum, calculerLigne, calculerCotisations, fraisIntermediaire,
   categorieStatut, cadreImpose, cadreParDefaut, statutPourMetier,
-  comparerDemande, devisCSV, appliquerSurcharges, toCents, REGLAGES_DEFAUT, convertirBudget,
-  parseInput, formatEcartPct, formatDateFr, formatFrNombre,   lignesRecapDevis, fraisFixes,
+  comparerDemande, appliquerSurcharges, toCents, REGLAGES_DEFAUT, convertirBudget,
+  parseInput, formatEcartPct, formatDateFr, formatFrNombre, fraisFixes, packChoisi,
   validerQuantite, validerHeuresJour, validerBrut, validerMois, validerSaisieParam, BORNES,
   dureeApresChangementUnite, conserverSaisie,
   analyserPhrase, indexerMetiers, typesDisponibles, solutionsBudget, famillesDe, labelType,
+  texteResume, bilanPoste, lignesCalcul, quiResume, dureeResume, comparerIntermediaires,
 } from '../src/engine/index.js';
 
 const data = JSON.parse(readFileSync(new URL('../data/simulateur_data.json', import.meta.url), 'utf8'));
@@ -120,87 +121,99 @@ describe('Cotisations (§ 9, T14 : exemple officiel Audiens 2026)', () => {
   });
 });
 
-describe('Intermédiaires et devis (§ 9)', () => {
+/** Frais de plusieurs personnes : bulletins de chaque ligne, abonnement une seule fois. */
+function fraisGroupe(postes, reglages) {
+  const regs = { ...REGLAGES_DEFAUT, ...reglages };
+  const lignes = postes.map((p) => calculerLigne(data, p, regs));
+  const fixes = fraisFixes(data, regs.intermediaire, regs);
+  const credits = Math.round((lignes.reduce((s, l) => s + (l.frais.credits || 0), 0) + fixes.reduce((s, f) => s + (f.credits || 0), 0)) * 100) / 100;
+  const ht = lignes.reduce((s, l) => s + l.frais.ht, 0) + fixes.reduce((s, f) => s + f.montant, 0);
+  return { lignes, fixes, credits, ht };
+}
+
+describe('Intermédiaires (§ 9)', () => {
   const t1 = base('3097_pub', '1er assistant opérateur', { unite: 'minimum_journee_8h', heuresParJour: 8 });
   const t8 = base('2642', '1er assistant réalisateur', { genre: 'Fiction / documentaire', unite: 'minimum_journee_8h', heuresParJour: 8 });
   const t11 = { convention: '1285', posteId: poste('1285', 'cachet représentation'), unite: 'cachet_palier', quantite: 2, representations: 2, heures: {}, statut: { categorie: 'artiste', cadre: false } };
 
-  it('T15 : CulturePay → 53,70 € HT', () => {
-    const d = calculerDevis(data, [t1, t8, t11], { ...REGLAGES_DEFAUT, intermediaire: 'culturepay' });
-    expect(eur(d.totaux.frais)).toBe(53.7);
+  it('T15 : CulturePay, 3 contrats → 53,70 € HT', () => {
+    const g = fraisGroupe([t1, t8, t11], { intermediaire: 'culturepay' });
+    expect(eur(g.ht)).toBe(53.7);
+    expect(eur(fraisIntermediaire(data, 'culturepay', { contrats: 1 }).ht)).toBe(17.9);
   });
   it('T16 : Movinmotion Basic, Pack 1, 1 mois → 62 crédits = 89,90 € HT', () => {
-    const d = calculerDevis(data, [t1, t8, t11], { ...REGLAGES_DEFAUT, intermediaire: 'movinmotion', formule: 'basic', mois: 1 });
+    const g = fraisGroupe([t1, t8, t11], { intermediaire: 'movinmotion', formule: 'basic', mois: 1 });
+    const pack = packChoisi(data.intermediaires.options.find((o) => o.id === 'movinmotion'), REGLAGES_DEFAUT);
     // 3 personnes × 14 crédits + Basic 20, au prix du Pack 1 (1,45 €)
-    expect(d.totaux.credits).toBe(62);
-    expect(eur(d.totaux.frais)).toBe(89.9);
-    expect(d.fixes).toHaveLength(1);
-    expect(d.pack.id).toBe('pack1');
-    expect(d.pack.prix_credit_ht).toBe(1.45);
-    expect(d.mention).toBe('Prix HT, TVA en plus.');
-    expect(d.fixes[0].libelle).toMatch(/20 crédits × 1,45 €/);
-    expect(d.lignes[0].frais.credits).toBe(14);
-    expect(d.lignes[0].frais.details[0].libelle).toMatch(/1 bulletin × 14 crédits × 1,45 €/);
+    expect(g.credits).toBe(62);
+    expect(eur(g.ht)).toBe(89.9);
+    expect(g.fixes).toHaveLength(1);
+    expect(pack.id).toBe('pack1');
+    expect(pack.prix_credit_ht).toBe(1.45);
+    expect(g.fixes[0].libelle).toMatch(/20 crédits × 1,45 €/);
+    expect(g.lignes[0].frais.credits).toBe(14);
+    expect(g.lignes[0].frais.details[0].libelle).toMatch(/1 bulletin × 14 crédits × 1,45 €/);
   });
   it('T16 bis : 3 mois → un bulletin par personne et par mois, abonnement × 3', () => {
-    const d = calculerDevis(data, [t1, t8, t11], { ...REGLAGES_DEFAUT, mois: 3 });
+    const g = fraisGroupe([t1, t8, t11], { mois: 3 });
     // 3 × 3 × 14 + 20 × 3 = 186 crédits × 1,45 €
-    expect(d.totaux.credits).toBe(186);
-    expect(eur(d.totaux.frais)).toBe(269.7);
-    expect(d.lignes.every((l) => l.frais.credits === 42)).toBe(true);
+    expect(g.credits).toBe(186);
+    expect(eur(g.ht)).toBe(269.7);
+    expect(g.lignes.every((l) => l.frais.credits === 42)).toBe(true);
   });
   it('1 électricien, 1 jour, Basic, Pack 1 → 34 crédits = 49,30 € HT', () => {
     const elec = base('3097_pub', 'Électricien de prise de vues', { unite: 'minimum_journee_8h', heuresParJour: 8, quantite: 1 });
-    const d = calculerDevis(data, [elec], { ...REGLAGES_DEFAUT, formule: 'basic', mois: 1, pack: 'pack1' });
-    expect(d.totaux.credits).toBe(34);
-    expect(eur(d.totaux.frais)).toBe(49.3);
-    expect(d.lignes[0].frais.credits).toBe(14);
-    expect(eur(d.fixes[0].montant)).toBe(29);
+    const g = fraisGroupe([elec], { formule: 'basic', mois: 1, pack: 'pack1' });
+    expect(g.credits).toBe(34);
+    expect(eur(g.ht)).toBe(49.3);
+    expect(g.lignes[0].frais.credits).toBe(14);
+    expect(eur(g.fixes[0].montant)).toBe(29);
   });
   it('les jours ne multiplient pas le bulletin, les mois oui', () => {
     const elec = base('3097_pub', 'Électricien de prise de vues', { unite: 'minimum_journee_8h', heuresParJour: 8, quantite: 5 });
-    const unMois = calculerDevis(data, [elec], REGLAGES_DEFAUT);
-    const deuxMois = calculerDevis(data, [elec], { ...REGLAGES_DEFAUT, mois: 2 });
+    const unMois = fraisGroupe([elec], {});
+    const deuxMois = fraisGroupe([elec], { mois: 2 });
     expect(unMois.lignes[0].frais.credits).toBe(14);
     expect(deuxMois.lignes[0].frais.credits).toBe(28);
-    expect(deuxMois.totaux.credits).toBe(68);
-    expect(eur(deuxMois.totaux.frais)).toBe(98.6);
+    expect(deuxMois.credits).toBe(68);
+    expect(eur(deuxMois.ht)).toBe(98.6);
   });
   it('une 2e édition dans le même mois coûte 14 crédits de plus', () => {
     const elec = base('3097_pub', 'Électricien de prise de vues', { unite: 'minimum_journee_8h', bulletins: 2 });
-    const d = calculerDevis(data, [elec], { ...REGLAGES_DEFAUT, mois: 1, formule: 'basic' });
-    expect(d.lignes[0].frais.credits).toBe(28);
-    expect(d.totaux.credits).toBe(48);
-    expect(eur(d.totaux.frais)).toBe(69.6);
-    expect(d.lignes[0].frais.details[0].libelle).toMatch(/2 bulletins × 14 crédits/);
+    const g = fraisGroupe([elec], { mois: 1, formule: 'basic' });
+    expect(g.lignes[0].frais.credits).toBe(28);
+    expect(g.credits).toBe(48);
+    expect(eur(g.ht)).toBe(69.6);
+    expect(g.lignes[0].frais.details[0].libelle).toMatch(/2 bulletins × 14 crédits/);
   });
   it('la signature électronique ajoute 2 crédits, au prix du pack', () => {
     const elec = base('3097_pub', 'Électricien de prise de vues', { unite: 'minimum_journee_8h' });
-    const d = calculerDevis(data, [elec], { ...REGLAGES_DEFAUT, signature: true, formule: 'basic' });
-    expect(d.totaux.credits).toBe(36);
-    expect(eur(d.totaux.frais)).toBe(52.2);
+    const g = fraisGroupe([elec], { signature: true, formule: 'basic' });
+    expect(g.credits).toBe(36);
+    expect(eur(g.ht)).toBe(52.2);
   });
   it('l\'inscription suit le pack choisi, pas 1,30 €', () => {
     const elec = base('3097_pub', 'Électricien de prise de vues', { unite: 'minimum_journee_8h' });
-    const d = calculerDevis(data, [elec], { ...REGLAGES_DEFAUT, formule: 'aucune', premiereInscription: true, valeurCredit: 1.3 });
-    expect(d.totaux.credits).toBe(164);
-    expect(eur(d.totaux.frais)).toBe(237.8);
-    expect(d.fixes[0].libelle).toMatch(/150 crédits × 1,45 €/);
-    expect(d.fixes[0].libelle).not.toMatch(/1,30/);
+    const g = fraisGroupe([elec], { formule: 'aucune', premiereInscription: true });
+    expect(g.credits).toBe(164);
+    expect(eur(g.ht)).toBe(237.8);
+    expect(g.fixes[0].libelle).toMatch(/150 crédits × 1,45 €/);
+    expect(g.fixes[0].libelle).not.toMatch(/1,30/);
   });
   it('Premium = 40 crédits par mois, au même prix de crédit', () => {
     const elec = base('3097_pub', 'Électricien de prise de vues', { unite: 'minimum_journee_8h' });
-    const d = calculerDevis(data, [elec], { ...REGLAGES_DEFAUT, formule: 'premium', mois: 1 });
-    expect(d.totaux.credits).toBe(54);
-    expect(eur(d.totaux.frais)).toBe(78.3);
-    expect(d.fixes[0].libelle).toMatch(/Premium × 1 mois × 40 crédits × 1,45 €/);
+    const g = fraisGroupe([elec], { formule: 'premium', mois: 1 });
+    expect(g.credits).toBe(54);
+    expect(eur(g.ht)).toBe(78.3);
+    expect(g.fixes[0].libelle).toMatch(/Premium × 1 mois × 40 crédits × 1,45 €/);
   });
   it('le Pack 2 change le prix du crédit, pas le nombre de crédits', () => {
     const elec = base('3097_pub', 'Électricien de prise de vues', { unite: 'minimum_journee_8h' });
-    const d = calculerDevis(data, [elec], { ...REGLAGES_DEFAUT, pack: 'pack2', formule: 'basic', mois: 1 });
-    expect(d.totaux.credits).toBe(34);
-    expect(eur(d.totaux.frais)).toBe(47.6);
-    expect(d.pack.prix_credit_ht).toBe(1.4);
+    const g = fraisGroupe([elec], { pack: 'pack2', formule: 'basic', mois: 1 });
+    const pack = packChoisi(data.intermediaires.options.find((o) => o.id === 'movinmotion'), { pack: 'pack2' });
+    expect(g.credits).toBe(34);
+    expect(eur(g.ht)).toBe(47.6);
+    expect(pack.prix_credit_ht).toBe(1.4);
   });
   it('T17 : Smart sur 1 000 € de coût employeur → 65 € HT + TVA 13 €', () => {
     const f = fraisIntermediaire(data, 'smart', { coutEmployeurCents: 100000, convention: '1285' });
@@ -226,18 +239,12 @@ describe('Intermédiaires et devis (§ 9)', () => {
     const l = calculerLigne(data, { ...t1, demande: { montant: 350, mode: 'total' } });
     expect(eur(l.brutCents)).toBe(350);
   });
-  it('le devis additionne au centime et le CSV reprend les mêmes totaux', () => {
-    const d = calculerDevis(data, [t1, t8, t11]);
-    const t = d.totaux;
-    expect(t.coutTotal).toBe(d.lignes.reduce((s, l) => s + l.coutTotal, 0) + t.fixes);
-    expect(t.artistes + t.techniciens + t.fixes).toBe(t.coutTotal);
-    const csv = devisCSV(d);
-    expect(csv.charCodeAt(0)).toBe(0xfeff);
-    expect(csv).toContain((t.coutTotal / 100).toFixed(2).replace('.', ','));
-    expect(csv).toContain('14 crédits × 1,45 €');
-    expect(csv).toContain('Pack de crédits');
-    expect(csv).toContain('Prix HT, TVA en plus.');
-    expect(csv.trim().split('\r\n').pop()).toMatch(/^"?Simulation indicative/);
+  it('le total HT d\'une ligne égale le coût employeur, les frais de ligne et l\'abonnement', () => {
+    const regs = { ...REGLAGES_DEFAUT, mois: 1.5 };
+    const b = bilanPoste(data, t1, regs);
+    expect(b.totalCents).toBe(b.ligne.cot.coutEmployeur + b.ligne.frais.ht + b.fixesCents);
+    expect(b.fixes[0].libelle).toContain('1,5 mois');
+    expect(b.fixes[0].libelle).not.toMatch(/1\.5/);
   });
   it('une surcharge locale du taux AT/MP change le résultat sans toucher au code', () => {
     const d2 = appliquerSurcharges(data, { cotisations: { at_mp: { patronal: 2.19 } } });
@@ -442,14 +449,13 @@ describe('Statut déduit du métier', () => {
     expect(l.statut.cadre).toBe(false);
     expect(l.cot.lignes.some((x) => x.code === 'urssaf_vieillesse_plaf_technicien')).toBe(true);
     expect(l.cot.lignes.some((x) => x.code === 'urssaf_vieillesse_plaf_artiste')).toBe(false);
-    const dup = calculerDevis(data, [p, { ...structuredClone(p) }]);
-    expect(dup.lignes.every((x) => x.statut.categorie === 'technicien')).toBe(true);
-    expect(dup.totaux.artistes).toBe(0);
-    expect(dup.totaux.techniciens).toBe(dup.lignes[0].coutTotal + dup.lignes[1].coutTotal);
+    const dup = calculerLigne(data, structuredClone(p));
+    expect(dup.statut.categorie).toBe('technicien');
+    expect(dup.cot.lignes.some((x) => x.code === 'urssaf_vieillesse_plaf_artiste')).toBe(false);
   });
 });
 
-describe('Synthèse du devis', () => {
+describe('Comment c\'est calculé', () => {
   const t1 = base('3097_pub', '1er assistant opérateur', { unite: 'minimum_journee_8h', heuresParJour: 8 });
   const danse = { convention: '1285', posteId: poste('1285', 'cachet représentation'), unite: 'cachet_palier', quantite: 1, representations: 1, heures: { nuit: 2 }, majoPct: { nuit: '' }, statut: { categorie: 'artiste', cadre: false } };
 
@@ -459,21 +465,21 @@ describe('Synthèse du devis', () => {
     expect(m.avertissements.join(' ')).toMatch(/heures de nuit/);
     expect(m.avertissements.join(' ')).not.toMatch(/\+0/);
   });
-  it('artistes + techniciens + abonnement = total, et les frais par ligne ont leur ligne', () => {
-    const d = calculerDevis(data, [t1, danse], { ...REGLAGES_DEFAUT, mois: 1.5 });
-    const t = d.totaux;
-    expect(t.artistes + t.techniciens + t.fixes).toBe(t.coutTotal);
-    expect(t.coutEmployeur + t.fraisLignes + t.fixes).toBe(t.coutTotal);
-    const recap = lignesRecapDevis(d);
-    const libs = recap.detail.map(([lib]) => lib);
-    expect(libs).toContain("Frais d'intermédiaire par ligne");
-    expect(libs).toContain('Abonnement et frais fixes');
-    expect(recap.visibles.map(([lib]) => lib)).toEqual(['Brut', 'Coût employeur', 'Frais']);
-    const csv = devisCSV(d);
-    expect(csv).toContain("Frais d'intermédiaire par ligne");
-    expect(csv).toContain('Abonnement et frais fixes');
-    expect(csv).toContain('1,5 mois');
-    expect(csv).toContain('Montant brut proposé');
+  it('le détail reprend le total de la phrase, et les 14 crédits de bulletin', () => {
+    const regs = { ...REGLAGES_DEFAUT, mois: 1.5 };
+    const b = bilanPoste(data, t1, regs);
+    const lignes = lignesCalcul(data, b, regs, { grille: 'Pub' });
+    const texte = texteResume({
+      qui: '1er assistant opérateur', projet: 'Pub', duree: '1 jour 8 h',
+      mode: 'metier', possible: true, brutCents: b.ligne.brutCents, netCents: b.ligne.cot.net, totalCents: b.totalCents,
+    });
+    expect(lignes.at(-1)).toBe(`Total HT : ${texte.match(/coût total (.+) HT/)[1]}.`);
+    expect(lignes.join('\n')).toMatch(/Ces 14 crédits de bulletin couvrent la paie, le bulletin, l'AEM, les congés spectacles et la DSN/);
+    expect(lignes.join('\n')).toMatch(/1,5 mois/);
+    expect(texte).not.toMatch(/crédits de bulletin/);
+    expect(texte).not.toMatch(/Cotisations/);
+    expect(lignes[0]).toMatch(/Minimum conventionnel/);
+    expect(lignes[0]).toMatch(/grille Pub/);
   });
 });
 
@@ -613,5 +619,72 @@ describe('Solutions de budget', () => {
     expect(s.options.some((o) => /prise de vues/i.test(o.nom))).toBe(true);
     expect(s.options.some((o) => /éclairagiste/i.test(o.nom))).toBe(false);
     expect(s.options.every((o) => o.statut.categorie === 'technicien')).toBe(true);
+  });
+
+  it('250 € pour un élec en clip : phrase courte, et l\'abonnement Basic dans le minimum', () => {
+    const s = solutionsBudget(data, { ...baseOpts, budgetEuros: 250 });
+    const sans = solutionsBudget(data, { ...baseOpts, budgetEuros: 250, reglages: { ...REGLAGES_DEFAUT, formule: 'aucune' } });
+    expect(s.minimumHt - sans.minimumHt).toBe(2900);
+    const opt = s.options[0];
+    const texte = texteResume({
+      qui: quiResume('elec', ''),
+      projet: 'Clip',
+      duree: dureeResume(opt),
+      mode: 'budget',
+      possible: false,
+      budgetEuros: 250,
+      minimumCents: s.minimumHt,
+    });
+    expect(quiResume('elec', '')).toBe('Élec');
+    expect(dureeResume(opt)).toBe('1 jour 8 h');
+    expect(texte).toBe(`Élec · Clip · 1 jour 8 h — Pas possible avec 250 € HT. Minimum : ${texte.split('Minimum : ')[1]}`);
+    expect(texte).toMatch(/^Élec · Clip · 1 jour 8 h — Pas possible avec 250 € HT\. Minimum : .+ HT\.$/);
+    expect(s.options.every((o) => o.reduit == null)).toBe(true);
+    const b = bilanPoste(data, opt.poste, REGLAGES_DEFAUT);
+    expect(b.totalCents).toBe(opt.budgetMinimum);
+    const lignes = lignesCalcul(data, b, REGLAGES_DEFAUT, { grille: 'Clip' });
+    expect(lignes.at(-1)).toContain('Total HT');
+    expect(lignes.join(' ')).toMatch(/14 crédits de bulletin/);
+    expect(texte).not.toMatch(/Cotisations|crédits/);
+  });
+
+  it('réduit les heures seulement quand un taux horaire est publié', () => {
+    const regs = { ...REGLAGES_DEFAUT, intermediaire: 'direct', formule: 'aucune' };
+    const large = solutionsBudget(data, { jobs, famille: 'hmc', typeProjet: 'spectacle', heures: 8, kind: 'heure', budgetEuros: 5000, reglages: regs });
+    const heure = large.options.find((o) => o.kind === 'heure');
+    expect(heure.reduit.heuresMax).toBe(8);
+    expect(heure.reduit.texte).toBe('');
+    const poste3 = { ...heure.poste, quantite: 3, demande: null };
+    const r3 = convertirBudget(data, poste3, 100000, regs);
+    const r8 = convertirBudget(data, { ...poste3, quantite: 8 }, 100000, regs);
+    expect(r8.budgetMinimum).toBeGreaterThan(r3.budgetMinimum);
+    const s = solutionsBudget(data, {
+      jobs, famille: 'hmc', typeProjet: 'spectacle', heures: 8, kind: 'heure', reglages: regs,
+      budgetEuros: (r3.budgetMinimum + 1) / 100,
+    });
+    const card = s.options.find((o) => o.cle === heure.cle && o.kind === 'heure');
+    expect(card.reduit.heuresMax).toBeGreaterThan(0);
+    expect(card.reduit.heuresMax).toBeLessThan(8);
+    expect(card.reduit.texte).toMatch(/^Pas 8 h mais \d+ h : possible, brut .+ net .+\.$/);
+  });
+
+  it('compare les frais : Movinmotion, CulturePay, tarif #DIESE non public', () => {
+    const elec = base('3097_pub', 'Électricien de prise de vues', { unite: 'minimum_journee_8h', heuresParJour: 8, quantite: 1 });
+    const cmp = comparerIntermediaires(data, elec, REGLAGES_DEFAUT);
+    const mm = cmp.find((x) => x.id === 'movinmotion');
+    const cp = cmp.find((x) => x.id === 'culturepay');
+    const diese = cmp.find((x) => x.id === 'diese');
+    const guso = cmp.find((x) => x.id === 'guso');
+    expect(mm.credits).toBe(34);
+    expect(eur(mm.fraisCents)).toBe(49.3);
+    expect(mm.libelle).toMatch(/34 crédits/);
+    expect(eur(cp.fraisCents)).toBe(17.9);
+    expect(diese.surDevis).toBe(true);
+    expect(diese.libelle).toMatch(/non public/);
+    expect(diese.fraisCents).toBe(null);
+    expect(guso.fraisCents).toBe(0);
+    expect(guso.avertissements.join(' ')).toMatch(/spectacle vivant/);
+    const s = solutionsBudget(data, { ...baseOpts, budgetEuros: 250 });
+    expect(s.intermediaires.find((x) => x.id === 'culturepay').fraisCents).toBe(1790);
   });
 });

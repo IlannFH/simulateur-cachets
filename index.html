@@ -6,7 +6,19 @@
   <meta name="theme-color" content="#1b1b2a">
   <title>Cachets</title>
   <link rel="icon" href="data:,">
-  <meta name="description" content="Minimum conventionnel, cotisations et devis pour les intermittents du spectacle (France, 2026).">
+  <meta name="description" content="Minimum conventionnel, cotisations et coût d'un intermittent du spectacle (France, 2026).">
+  <script>
+    (function () {
+      var stored = null;
+      try { stored = localStorage.getItem('simcachets.theme.v1'); } catch (e) {}
+      var theme = stored === 'light' || stored === 'dark'
+        ? stored
+        : (matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark');
+      document.documentElement.setAttribute('data-theme', theme);
+      var meta = document.querySelector('meta[name="theme-color"]');
+      if (meta) meta.setAttribute('content', theme === 'light' ? '#f3efe4' : '#1b1b2a');
+    })();
+  </script>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=VT323&display=swap">
@@ -19,11 +31,15 @@
       <a class="logo" href="#simuler">Cachets</a>
       <nav class="nav" aria-label="Sections">
         <a href="#simuler" data-view="simuler">Simuler</a>
-        <a href="#devis" data-view="devis">Devis</a>
         <a href="#sources" data-view="sources">Sources</a>
       </nav>
+      <button type="button" class="theme-btn" id="theme-toggle">Clair</button>
     </div>
   </header>
+  <script>
+    document.getElementById('theme-toggle').textContent =
+      document.documentElement.dataset.theme === 'light' ? 'Sombre' : 'Clair';
+  </script>
 
   <main id="main" class="wrap">
     <p id="load-error" class="note" hidden></p>
@@ -39,9 +55,6 @@
     </div>
   </footer>
 
-  <div id="print-view" aria-hidden="true"></div>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
   <script type="module" src="src/ui/app.js"></script>
 </body>
 </html>

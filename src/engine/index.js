@@ -9,3 +9,4 @@ export * from './saisie.js';
 export * from './metiers.js';
 export * from './phrase.js';
 export * from './solutions.js';
+export * from './resume.js';

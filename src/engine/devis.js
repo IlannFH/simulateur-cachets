@@ -1,4 +1,4 @@
-// Ligne complète (minimum → brut → cotisations → intermédiaire) et devis d'équipe.
+// Ligne complète : minimum, brut, cotisations, frais d'intermédiaire.
 import { toCents, mul, pctOf, roundInt, formatEuros, formatFrNombre } from './money.js';
 import { calculerMinimum, comparerDemande } from './poste.js';
 import { calculerCotisations } from './cotisations.js';
@@ -10,7 +10,6 @@ export const REGLAGES_DEFAUT = {
   intermediaire: 'movinmotion',
   formule: 'basic', // abonnement Movinmotion : basic | premium | aucune
   mois: 1,
-  prorata: false,
   premiereInscription: false,
   signature: false,
   pack: 'pack1', // Movinmotion : Pack 1 à 1,45 € HT le crédit
@@ -127,7 +126,7 @@ export function fraisIntermediaire(data, optionId, ctx = {}) {
   return { option: o, ht, tva, details, avertissements, surDevis, credits };
 }
 
-/** Abonnement et frais d'inscription d'une option, pour le devis entier. */
+/** Abonnement et frais d'inscription, comptés une fois pour la simulation. */
 export function fraisFixes(data, optionId, reglages) {
   const o = optionIntermediaire(data, optionId);
   const lignes = [];
@@ -166,7 +165,7 @@ export function fraisFixes(data, optionId, reglages) {
   return lignes;
 }
 
-/** Calcule une ligne de devis complète. */
+/** Calcule une ligne complète. */
 export function calculerLigne(data, poste, reglages = REGLAGES_DEFAUT) {
   const min = calculerMinimum(data, poste);
   if (!min) return null;
@@ -187,7 +186,8 @@ export function calculerLigne(data, poste, reglages = REGLAGES_DEFAUT) {
 
 /**
  * Convertit un budget HT (montant facturé ou enveloppe disponible) en brut maximal pour un poste.
- * Le budget couvre brut + cotisations patronales + frais d'intermédiaire de la ligne (hors abonnement).
+ * Le budget couvre le brut, les cotisations patronales et les frais d'intermédiaire,
+ * abonnement compris (une fois, pour cette simulation).
  * opts.parUnite : le budget est exprimé par unité (jour, cachet…) et multiplié par la quantité.
  */
 export function convertirBudget(data, poste, budgetEuros, reglages = REGLAGES_DEFAUT, opts = {}) {
@@ -195,25 +195,27 @@ export function convertirBudget(data, poste, budgetEuros, reglages = REGLAGES_DE
   if (!base) return null;
   const quantite = base.min.quantite || 1;
   const budgetCents = opts.parUnite ? mul(toCents(budgetEuros), quantite) : toCents(budgetEuros);
+  const fixesCents = fraisFixes(data, poste.intermediaire || reglages.intermediaire, reglages).reduce((s, f) => s + f.montant, 0);
   const cout = (brut) => calculerLigne(data, { ...poste, demande: { montant: brut / 100, mode: 'total' } }, reglages);
+  const tient = (l) => l.coutTotal + fixesCents <= budgetCents;
   const avertissements = [];
 
   // Le coût total croît avec le brut : recherche dichotomique du plus grand brut qui tient dans le budget
   let lo = 0;
   let hi = Math.max(budgetCents, 1);
   let meilleur = null;
-  if (cout(0).coutTotal > budgetCents) {
-    avertissements.push({ niveau: 'bloquant', texte: `Impossible : les frais fixes de l'intermédiaire (${formatEuros(cout(0).frais.ht)} HT) dépassent déjà le budget.` });
+  if (!tient(cout(0))) {
+    avertissements.push({ niveau: 'bloquant', texte: `Impossible : les frais de l'intermédiaire (${formatEuros(cout(0).frais.ht + fixesCents)} HT) dépassent déjà le budget.` });
   } else {
     while (lo <= hi) {
       const mid = Math.floor((lo + hi) / 2);
       const l = cout(mid);
-      if (l.coutTotal <= budgetCents) { meilleur = l; lo = mid + 1; } else hi = mid - 1;
+      if (tient(l)) { meilleur = l; lo = mid + 1; } else hi = mid - 1;
     }
   }
   const brutCents = meilleur ? meilleur.brutCents : 0;
   const minimumCents = base.min.minimumCents;
-  const budgetMinimum = base.coutTotal;
+  const budgetMinimum = base.coutTotal + fixesCents;
   const possible = !!meilleur && brutCents >= minimumCents;
   if (meilleur && !possible) {
     avertissements.push({
@@ -227,11 +229,6 @@ export function convertirBudget(data, poste, budgetEuros, reglages = REGLAGES_DE
   if (base.cot.nonTrouves) {
     avertissements.push({ niveau: 'attention', texte: `${base.cot.nonTrouves} cotisation(s) non trouvée(s) comptée(s) à 0 € : le brut réellement possible est un peu plus bas.` });
   }
-  const opt = optionIntermediaire(data, base.intermediaire);
-  const abonnementActif = (enCredits(opt) ? opt.credits.abonnement : (typeof opt.abonnement_mensuel_ht === 'object' ? opt.abonnement_mensuel_ht : null));
-  if (abonnementActif && reglages.formule !== 'aucune') {
-    avertissements.push({ niveau: 'info', texte: "L'abonnement mensuel de l'intermédiaire n'est pas déduit : il est compté une fois au total du devis." });
-  }
   if (base.frais.surDevis && (poste.fraisManuel === null || poste.fraisManuel === undefined || poste.fraisManuel === '')) {
     avertissements.push({ niveau: 'attention', texte: "Tarif de l'intermédiaire sur devis : ses frais ne sont pas déduits du budget." });
   }
@@ -244,85 +241,7 @@ export function convertirBudget(data, poste, budgetEuros, reglages = REGLAGES_DE
   return {
     budgetCents, brutCents, possible, minimumCents, budgetMinimum, quantite,
     brutParUnite: quantite ? roundInt(brutCents / quantite) : brutCents,
-    ligne: meilleur, reste: meilleur ? budgetCents - meilleur.coutTotal : budgetCents,
+    ligne: meilleur, reste: meilleur ? budgetCents - meilleur.coutTotal - fixesCents : budgetCents, fixesCents,
     avertissements,
-  };
-}
-
-/** Devis d'équipe : lignes, abonnements (comptés une fois), totaux. */
-export function calculerDevis(data, postes, reglages = REGLAGES_DEFAUT) {
-  const lignes = postes.map((p) => calculerLigne(data, p, reglages)).filter(Boolean);
-  const optionsUtilisees = [...new Set(lignes.map((l) => l.intermediaire))];
-  if (lignes.length === 0) optionsUtilisees.push(reglages.intermediaire);
-  const fixes = lignes.length ? optionsUtilisees.flatMap((id) => fraisFixes(data, id, reglages)) : [];
-  const fixesCents = fixes.reduce((s, f) => s + f.montant, 0);
-
-  // Répartition facultative des frais fixes au prorata du coût employeur
-  if (reglages.prorata && fixesCents && lignes.length) {
-    const totalCE = lignes.reduce((s, l) => s + l.cot.coutEmployeur, 0) || 1;
-    let reste = fixesCents;
-    lignes.forEach((l, i) => {
-      const part = i === lignes.length - 1 ? reste : roundInt((fixesCents * l.cot.coutEmployeur) / totalCE);
-      reste -= part;
-      l.partFixes = part;
-    });
-  }
-
-  const somme = (f, filtre = () => true) => lignes.filter(filtre).reduce((s, l) => s + f(l), 0);
-  const estArtiste = (l) => l.statut.categorie === 'artiste';
-  const t = {
-    brut: somme((l) => l.brutCents),
-    patronal: somme((l) => l.cot.patronal),
-    salarial: somme((l) => l.cot.salarial),
-    coutEmployeur: somme((l) => l.cot.coutEmployeur),
-    fraisLignes: somme((l) => l.frais.ht),
-    tva: somme((l) => l.frais.tva),
-    fixes: fixesCents,
-    artistes: somme((l) => l.coutTotal, estArtiste),
-    techniciens: somme((l) => l.coutTotal, (l) => !estArtiste(l)),
-  };
-  t.frais = t.fraisLignes + t.fixes;
-  t.coutTotal = t.coutEmployeur + t.frais;
-  const suitCredits = lignes.some((l) => l.frais.credits != null) || fixes.some((f) => f.credits != null);
-  t.credits = suitCredits
-    ? creditsArrondis(lignes.reduce((s, l) => s + (l.frais.credits || 0), 0) + fixes.reduce((s, f) => s + (f.credits || 0), 0))
-    : 0;
-  const optCredit = optionsUtilisees.map((id) => optionIntermediaire(data, id)).find(enCredits) || null;
-  const pack = optCredit ? packChoisi(optCredit, reglages) : null;
-  return { lignes, fixes, totaux: t, pack, mention: pack ? 'Prix HT, TVA en plus.' : '' };
-}
-
-/**
- * Lignes de synthèse communes au web, au PDF et au CSV.
- * Artistes + techniciens + abonnement = coût total.
- * Coût employeur + frais par ligne + abonnement = coût total.
- */
-export function lignesRecapDevis(devis) {
-  const t = devis.totaux;
-  const detailFrais = (devis.lignes || []).flatMap((l) => (l.frais?.details || []).map((d) => {
-    const nom = l.min?.entree?.metier;
-    return [nom ? `${nom} — ${d.libelle}` : d.libelle, d.montant];
-  }));
-  const detail = [
-    ['Sous-total artistes', t.artistes],
-    ['Sous-total techniciens', t.techniciens],
-    ['Abonnement et frais fixes', t.fixes],
-    ['Total brut', t.brut],
-    ['Total cotisations patronales', t.patronal],
-    ['Coût employeur', t.coutEmployeur],
-    ["Frais d'intermédiaire par ligne", t.fraisLignes],
-    ...detailFrais,
-    ...devis.fixes.map((f) => [f.libelle, f.montant]),
-    ["Total frais d'intermédiaire HT", t.frais],
-  ];
-  if (t.tva) detail.push(['TVA sur frais (non comprise)', t.tva]);
-  detail.push(["Coût total de l'équipe", t.coutTotal]);
-  return {
-    visibles: [
-      ['Brut', t.brut],
-      ['Coût employeur', t.coutEmployeur],
-      ['Frais', t.frais],
-    ],
-    detail,
   };
 }
