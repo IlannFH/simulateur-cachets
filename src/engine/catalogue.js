@@ -28,12 +28,44 @@ export const JAUGES = [
   { id: '500_plus', label: '> 500 places' },
 ];
 
-/** Catégorie normalisée : 'artiste' | 'technicien'. */
-export const categorieStatut = (categorie = '') => (/artiste/i.test(categorie) ? 'artiste' : 'technicien');
+const sansAccent = (s) => String(s || '').normalize('NFD').replace(/\p{M}/gu, '').toLowerCase();
 
-/** Cadre par défaut (modifiable dans l'interface). */
+/**
+ * Artiste ou technicien, d'après la catégorie de la grille — jamais un choix de l'utilisateur.
+ * « Technicien / non-artistique » (CCNEAC) reste technicien : le mot artiste n'y est pas une catégorie.
+ */
+export function categorieStatut(categorie = '') {
+  const s = sansAccent(categorie).replace(/\bnon[-\s]+artiste\w*/g, ' ');
+  return /\bartiste\b/.test(s) ? 'artiste' : 'technicien';
+}
+
+/** Cadre suggéré quand la grille ne l'impose pas. L'interface peut encore le changer. */
 export function cadreParDefaut(metier = '') {
   return /^(réalisateur|directeur (?!de casting)|chef décorateur|chef opérateur(?! du son)|créateur de costumes|cadres|HMC cadres|groupe 1 )/i.test(metier);
+}
+
+/**
+ * true / false si l'intitulé de la grille fixe le cadre (Cadres, Employés, Groupe 1…).
+ * null si le métier laisse le choix.
+ */
+export function cadreImpose(metier = '') {
+  const s = sansAccent(metier).trim();
+  if (/^(cadres|hmc cadres|groupe 1)\b/.test(s)) return true;
+  if (/^(agents de maitrise|hmc agents de maitrise|employes|hmc employes|groupe [2-9])\b/.test(s)) return false;
+  return null;
+}
+
+/**
+ * Statut de paie d'un métier.
+ * La catégorie artiste/technicien vient toujours de la grille.
+ * Le cadre vient de la grille s'il est imposé, sinon du choix (ou du défaut).
+ * statut.cadre n'est respecté que lorsqu'il s'agit d'un booléen explicite.
+ */
+export function statutPourMetier(entree, statut = {}) {
+  const categorie = categorieStatut(entree?.categorie || '');
+  const impose = cadreImpose(entree?.metier || '');
+  const cadre = impose != null ? impose : (typeof statut?.cadre === 'boolean' ? statut.cadre : cadreParDefaut(entree?.metier || ''));
+  return { categorie, cadre, cadreEditable: impose == null };
 }
 
 /** Lignes regroupées en paliers selon le nombre de représentations dans le mois (CCNEAC). */

@@ -2,6 +2,7 @@
 import { toCents, mul, pctOf, roundInt, formatEuros, formatFrNombre } from './money.js';
 import { calculerMinimum, comparerDemande } from './poste.js';
 import { calculerCotisations } from './cotisations.js';
+import { statutPourMetier } from './catalogue.js';
 
 const CONVENTIONS_AUDIOVISUELLES = ['3097_pub', '3097_cinema', '2642', '2412'];
 
@@ -86,7 +87,8 @@ export function calculerLigne(data, poste, reglages = REGLAGES_DEFAUT) {
   if (!min) return null;
   const demande = comparerDemande(min, poste.demande);
   const brutCents = demande ? demande.cents : min.minimumCents;
-  const statut = poste.statut || { categorie: 'technicien', cadre: false };
+  // Une ligne enregistrée ou dupliquée ne peut pas garder une catégorie contraire au métier.
+  const statut = statutPourMetier(min.entree, poste.statut);
   const jours = Number(poste.jours) > 0 ? Number(poste.jours) : min.jours;
   const cot = calculerCotisations(data, { brutCents, statut, idcc: min.conv.idcc, jours, abattementPct: poste.abattementPct, rgduPct: poste.rgduPct });
   const intermediaire = poste.intermediaire || reglages.intermediaire;

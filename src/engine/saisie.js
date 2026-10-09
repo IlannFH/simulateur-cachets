@@ -135,7 +135,7 @@ export function dureeApresChangementUnite(actuelle, nominaleAvant, nominaleApres
 export const CLES_CONSERVEES = [
   'quantite', 'heuresParJour', 'heuresSemaine', 'joursProrata', 'representations',
   'exploitationContinue', 'ouvrier', 'saisie', 'bulletins', 'contrats', 'fraisManuel',
-  'avance', 'abattementPct', 'rgduPct', 'jours', 'statutForce', 'genre', 'grille', 'jauge', 'intermediaire',
+  'avance', 'abattementPct', 'rgduPct', 'jours', 'genre', 'grille', 'jauge', 'intermediaire',
 ];
 
 /** Recopie dans un formulaire neuf ce qui reste valable (quantité, durées, brut, heures majorées). */
@@ -146,6 +146,7 @@ export function conserverSaisie(prev, base) {
   out.majoPct = { ...(base.majoPct || {}), ...(prev?.majoPct || {}) };
   out.demande = { ...(base.demande || {}), ...(prev?.demande || {}) };
   out.budget = { ...(base.budget || {}), ...(prev?.budget || {}) };
-  if (prev?.statutForce && prev.statut) out.statut = { ...prev.statut };
+  // La catégorie artiste/technicien suit le métier, elle ne se recopie pas.
+  if (typeof prev?.cadreChoisi === 'boolean') out.cadreChoisi = prev.cadreChoisi;
   return out;
 }
