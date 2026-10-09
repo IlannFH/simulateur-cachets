@@ -38,9 +38,8 @@ const REGLES_FAMILLE = [
 /**
  * Types de projet affichés. `genre` vide = toute la convention.
  * Clip et édito partagent la grille techniciens fiction / documentaire.
- * Les artistes d'émission n'y entrent que si la ligne porte `projets`
- * (danseur chorégraphique : clip et télé). L'annexe phonographique 2121
- * n'est pas un clip de producteur audiovisuel.
+ * Un artiste-interprète de clip (vidéomusique) est sur l'annexe IX IDCC 2121
+ * (la ligne porte `projets: ["clip"]`). L'émission chorégraphique 2642 reste la télé.
  */
 export const TYPES_PROJET = [
   { id: 'clip', label: 'Clip', convention: '2642', genre: 'Fiction / documentaire' },
@@ -142,7 +141,7 @@ export function labelPourPoste(poste = {}) {
   if (poste.typeProjet) return labelType(poste.typeProjet);
   if (poste.convention === '3097_pub') return 'Pub';
   if (poste.convention === '3097_cinema') return 'Film / fiction';
-  if (poste.convention === '2121') return 'Édition phonographique';
+  if (poste.convention === '2121') return 'Clip';
   if (poste.convention === '2642' && poste.genre === 'Flux (émissions TV)') return 'Télé';
   if (poste.convention === '2642') return 'Clip';
   if (poste.convention === '1285' || poste.convention === '3090') return 'Captation / spectacle';
