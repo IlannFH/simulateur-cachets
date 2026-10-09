@@ -3,7 +3,7 @@ import { calculerLigne, convertirBudget, fraisFixes, REGLAGES_DEFAUT } from './d
 import { statutPourMetier, trouverPoste, unitesDisponibles, valeurUnitaire } from './catalogue.js';
 import { correspondType, indexerMetiers, typeParId } from './metiers.js';
 import { formatEuros, formatFrNombre } from './money.js';
-import { dureeResume } from './resume.js';
+import { dureeResume, phraseSansHoraire } from './resume.js';
 
 const euros = (cents) => formatEuros(cents).replace(/[\u202f\u00a0]/g, ' ');
 const HORAIRES = new Set(['horaire_grille', 'horaire_jauge', 'taux_horaire_calcule']);
@@ -149,12 +149,19 @@ export function comparerIntermediaires(data, poste, reglages = REGLAGES_DEFAUT) 
   });
 }
 
-function noteDecla(demande, options) {
+function noteDecla(demande, options, ctx = {}) {
   if (demande.kind === 'cachet' && options.length && !options.some((o) => o.kind === 'cachet')) {
     return 'Pas de cachet pour ce métier : on compare la journée et l’heure.';
   }
-  if (demande.kind === 'heure' && options.length && !options.some((o) => o.kind === 'heure') && options.some((o) => o.kind === 'jour')) {
-    return 'Pas de taux horaire publié : la journée est la déclaration pour ces heures.';
+  const aHeure = options.some((o) => o.kind === 'heure');
+  const regle = phraseSansHoraire({
+    typeProjet: ctx.typeProjet || '',
+    convention: options[0]?.convention || '',
+    aHeure,
+  });
+  if (regle) return regle;
+  if (demande.kind === 'heure' && options.length && !aHeure && options.some((o) => o.kind === 'jour')) {
+    return 'Pas de tarif horaire ni de demi-journée : la journée publiée est la déclaration pour ces heures.';
   }
   return '';
 }
@@ -279,7 +286,7 @@ export function solutionsBudget(data, opts = {}) {
     options,
     possible: options.some((o) => o.possible),
     minimumHt,
-    note: noteDecla(demande, options),
+    note: noteDecla(demande, options, { typeProjet: opts.typeProjet || '' }),
     typeProjet: opts.typeProjet || '',
     intermediaires: options[0] ? comparerIntermediaires(data, options[0].poste, reglages) : [],
     reco: maReco(data, { options, reglages, budgetEuros: budget, demande }),

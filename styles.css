@@ -207,6 +207,7 @@ label.lbl, .lbl { font-family: var(--body); font-size: 22px; color: var(--muted)
   -webkit-font-smoothing: none;
 }
 .ma-reco p { font-size: 26px; line-height: 1.2; }
+.ma-reco .reco-regle { font-size: 22px; line-height: 1.25; }
 .calcul { display: flex; flex-direction: column; gap: 6px; margin: 8px 0 4px; }
 .calcul p { font-size: 22px; }
 .cmp { display: flex; flex-direction: column; gap: 8px; }

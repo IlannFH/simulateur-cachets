@@ -13,6 +13,9 @@
    "SNTPCT_AV": "https://sntpct.fr/wp-content/uploads/2026/09/SNTPCT_salaires_mini_Prod_AV_01-07-2026-reevalues-par-le-sntpct-2026.pdf",
    "AV20": "https://lespi.org/wp-content/uploads/2025/03/PAV_Avenant-20_Salaires-signe-v2.pdf",
    "AV17": "https://www.uspa.fr/storage/wsm_medias/avenant-n017-a-la-convention-collective-nationale-de-la-production-audiovisuelle-idcc-2642-3.pdf",
+   "AV18": "https://www.uspa.fr/storage/wsm_medias/240416-avenant-18-signe.pdf",
+   "LMA_AV": "https://lma-asso.fr/salaires-et-conventions",
+   "SNTPCT_DEMI_PIGE": "https://sntpct.fr/2026/07/03/une-disposition-conventionnelle-qui-doit-sappliquer-telle-quelle-est-ecrite-et-pas-autrement/",
    "CCNEAC": "https://www.sceneensemble.com/wp-content/uploads/2026/08/accord-nao-2026-def.pdf",
    "CCNEAC_EXT": "https://presse.tripalio.fr/arrete-dextension-dun-avenant-a-un-accord-dans-la-ccn-des-entreprises-artistiques-et-culturelles/",
    "SVP_2025": "https://www.juristique.org/wp-content/uploads/2026/02/avenant-du-21-juillet-2025-salaires-2026-spectacle-vivant.pdf",
@@ -779,8 +782,8 @@
    "idcc": "2642",
    "date_effet": "Minima en vigueur depuis le 01/07/2025 (avenant 17 : +2,2 %/+1 % fiction ; +1 % flux/doc) – aucune revalorisation depuis ; grille SNTPCT publiée 07/2026.",
    "majorations": {
-    "journee_min_heures": 7,
-    "journee": "hebdo 39 h / 4,5 (engagements ≤ 4 jours)",
+    "journee_min_heures": 8,
+    "journee": "Journée de référence 8 h (heures supplémentaires au-delà de 8 h, art. VI.8.4). La journée de 7 h est celle du cinéma (art. 34), pas de l'audiovisuel. Engagement ≤ 4 jours : semaine 39 h ÷ 4,5 (art. IV.2.1).",
     "hebdo_36_43": 0.25,
     "hebdo_44_plus": 0.5,
     "hebdo_48_plus_ouvriers": 1.0,
@@ -791,8 +794,13 @@
     "ferie_1er_mai": 2.0,
     "ferie_principaux": 1.0,
     "ferie_paques_8mai_ascension": 0.5,
-    "source": "https://sntpct.fr/wp-content/uploads/2026/09/SNTPCT_salaires_mini_Prod_AV_01-07-2026-reevalues-par-le-sntpct-2026.pdf",
-    "note": "Choix du genre (fiction/doc vs flux) à confirmer pour un clip musical : non trouvé."
+    "source": [
+     "https://sntpct.fr/wp-content/uploads/2026/09/SNTPCT_salaires_mini_Prod_AV_01-07-2026-reevalues-par-le-sntpct-2026.pdf",
+     "https://lma-asso.fr/salaires-et-conventions",
+     "https://www.uspa.fr/storage/wsm_medias/240416-avenant-18-signe.pdf",
+     "https://sntpct.fr/2026/07/03/une-disposition-conventionnelle-qui-doit-sappliquer-telle-quelle-est-ecrite-et-pas-autrement/"
+    ],
+    "note": "Vidéomusiques = fiction (avenant 19)."
    },
    "lignes": [
     {

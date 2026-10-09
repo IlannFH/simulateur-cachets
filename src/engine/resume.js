@@ -3,6 +3,7 @@
 import { formatEuros, formatFrNombre, toCents } from './money.js';
 import { calculerLigne, fraisFixes, optionIntermediaire, packChoisi, REGLAGES_DEFAUT } from './devis.js';
 
+
 const euros = (cents) => formatEuros(cents).replace(/[\u202f\u00a0]/g, ' ');
 
 const QUI = {
@@ -50,6 +51,34 @@ export function eurosSaisi(montant) {
 }
 
 const tauxTxt = (n) => `${String(n).replace('.', ',')} %`;
+
+export const LIGNE_CLIP = 'Clip : pas de tarif horaire ni de demi-journée pour les techniciens. Contrat ≤ 4 jours : minimum par jour = salaire semaine 39 h ÷ 4,5 (art. IV.2.1), même pour 4 h de travail.';
+
+export const LIGNE_DEMI_PIGE = 'Demi-pige ? Pas prévue en tournage (clip, pub, fiction). Les services de 4 h existent seulement en spectacle vivant.';
+
+const REGLE_2642 = LIGNE_CLIP.replace(/^Clip : /, '');
+
+/** Grille sans taux horaire : la phrase exacte pour un clip, la même règle pour le reste de la 2642, une phrase plus courte ailleurs. */
+export function phraseSansHoraire({ typeProjet = '', convention = '', aHeure = false } = {}) {
+  if (aHeure) return '';
+  if (typeProjet === 'clip') return LIGNE_CLIP;
+  if (convention === '2642') {
+    if (typeProjet === 'edito') return `Édito / mode : ${REGLE_2642}`;
+    if (typeProjet === 'tele') return `Télé : ${REGLE_2642}`;
+    return LIGNE_CLIP;
+  }
+  if (typeProjet === 'pub' || typeProjet === 'film' || convention === '3097_pub' || convention === '3097_cinema') {
+    return 'Pas de tarif horaire ni de demi-journée : la journée publiée est la déclaration pour ces heures.';
+  }
+  return '';
+}
+
+export function ligneDemiPige({ typeProjet = '', convention = '' } = {}) {
+  if (['clip', 'edito', 'pub', 'film', 'tele'].includes(typeProjet) || convention === '2642' || String(convention).startsWith('3097')) {
+    return LIGNE_DEMI_PIGE;
+  }
+  return '';
+}
 
 function nomCotisation(libelle) {
   let s = String(libelle).replace(/\s*\([^)]*\)/g, '').trim();
@@ -153,6 +182,8 @@ export function lignesCalcul(data, bilan, reglages = REGLAGES_DEFAUT, ctx = {}) 
   const grille = ctx.grille ? `grille ${ctx.grille}, ` : '';
   const out = [];
   out.push(`Minimum conventionnel : ${euros(L.min.minimumCents)} (${grille}${unite} × ${qte}).`);
+  const demi = ligneDemiPige({ typeProjet: ctx.typeProjet, convention: ctx.convention || L.poste?.convention });
+  if (demi) out.push(demi);
   out.push(`Brut : ${euros(L.brutCents)}.`);
   out.push(`Cotisations patronales : ${euros(L.cot.patronal)}. Cotisations salariales : ${euros(L.cot.salarial)}.`);
   for (const l of L.cot.lignes) {
