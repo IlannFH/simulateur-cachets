@@ -3,6 +3,9 @@ import { readFileSync } from 'node:fs';
 import {
   listerPostes, calculerMinimum, calculerLigne, calculerDevis, calculerCotisations, fraisIntermediaire,
   comparerDemande, devisCSV, appliquerSurcharges, toCents, REGLAGES_DEFAUT, convertirBudget,
+  parseInput, formatEcartPct, formatDateFr, formatFrNombre, lignesRecapDevis, fraisFixes,
+  validerQuantite, validerHeuresJour, validerBrut, validerMois, validerSaisieParam, BORNES,
+  dureeApresChangementUnite, conserverSaisie,
 } from '../src/engine/index.js';
 
 const data = JSON.parse(readFileSync(new URL('../data/simulateur_data.json', import.meta.url), 'utf8'));
@@ -104,9 +107,11 @@ describe('Cotisations (§ 9, T14 : exemple officiel Audiens 2026)', () => {
     proche(c.net, 312.07);
     proche(c.coutEmployeur, 623.99);
   });
-  it('les lignes à patronal null sont comptées à 0 et signalées', () => {
-    const t = calculerCotisations(data, { brutCents: toCents(400), statut: { categorie: 'technicien', cadre: false }, idcc: 3097, jours: 1 });
-    const v = t.lignes.find((l) => l.code === 'urssaf_vieillesse_technicien');
+  it('une cotisation laissée à null est comptée à 0 et signalée', () => {
+    const d = structuredClone(data);
+    d.cotisations.lignes.push({ code: 'test_null', libelle: 'Ligne vide', patronal: null, salarial: null, applique_a: 'tous' });
+    const t = calculerCotisations(d, { brutCents: toCents(400), statut: { categorie: 'technicien', cadre: false }, idcc: 3097, jours: 1 });
+    const v = t.lignes.find((l) => l.code === 'test_null');
     expect(v.nonTrouve).toBe(true);
     expect(v.patronal).toBe(0);
     expect(t.nonTrouves).toBe(1);
@@ -202,5 +207,140 @@ describe('Convertisseur budget HT → cachet', () => {
   it('GUSO sur une pub : avertissement bloquant', () => {
     const r = convertirBudget(data, t1, 2000, { ...REGLAGES_DEFAUT, intermediaire: 'guso' });
     expect(r.avertissements.some((a) => a.niveau === 'bloquant' && /GUSO/.test(a.texte))).toBe(true);
+  });
+});
+
+describe('Vieillesse technicien (taux URSSAF 2026)', () => {
+  const brut = 409.37;
+  const tech = calculerCotisations(data, { brutCents: toCents(brut), statut: { categorie: 'technicien', cadre: false }, idcc: 3097, jours: 1 });
+  const art = calculerCotisations(data, { brutCents: toCents(brut), statut: { categorie: 'artiste', cadre: false }, idcc: 3097, jours: 1 });
+  const plaf = tech.lignes.find((l) => l.code === 'urssaf_vieillesse_plaf_technicien');
+  const de = tech.lignes.find((l) => l.code === 'urssaf_vieillesse_deplaf_technicien');
+
+  it('applique 8,55 % / 6,90 % sous le plafond SS et 2,11 % / 0,40 % sur le total', () => {
+    expect(plaf.tauxPatronal).toBe(8.55);
+    expect(plaf.tauxSalarial).toBe(6.9);
+    expect(de.tauxPatronal).toBe(2.11);
+    expect(de.tauxSalarial).toBe(0.4);
+    expect(plaf.nonTrouve).toBe(false);
+    proche(plaf.assiette, data.cotisations.parametres_calcul.plafond_ss_journalier);
+    proche(plaf.patronal, 220 * 8.55 / 100);
+    proche(plaf.salarial, 220 * 6.9 / 100);
+    proche(de.assiette, brut);
+    proche(de.patronal, brut * 2.11 / 100);
+    proche(de.salarial, brut * 0.4 / 100);
+    expect(plaf.note).toMatch(/gestionnaire de paie/);
+  });
+  it('les cotisations patronales du technicien dépassent celles de l’artiste au même brut', () => {
+    expect(tech.patronal).toBeGreaterThan(art.patronal);
+    expect(tech.patronal / toCents(brut)).toBeGreaterThan(0.55);
+    const artPlaf = art.lignes.find((l) => l.code === 'urssaf_vieillesse_plaf_artiste');
+    expect(artPlaf.tauxPatronal).toBeCloseTo(8.55 * 0.7, 2);
+    expect(artPlaf.tauxSalarial).toBeCloseTo(6.9 * 0.7, 2);
+  });
+});
+
+describe('Saisie, bornes et formats', () => {
+  it('lit le format 1.234,56 et garde le point décimal simple', () => {
+    expect(parseInput('1.234,56')).toBe(1234.56);
+    expect(parseInput('1 234,56')).toBe(1234.56);
+    expect(parseInput('1234,56')).toBe(1234.56);
+    expect(parseInput('1.5')).toBe(1.5);
+    expect(parseInput('12,31')).toBe(12.31);
+    expect(parseInput('abc')).toBe(null);
+    expect(parseInput('')).toBe(null);
+  });
+  it('rejette quantité vide, nulle, illisible ou démesurée', () => {
+    expect(validerQuantite('').ok).toBe(false);
+    expect(validerQuantite('0').ok).toBe(false);
+    expect(validerQuantite('abc').ok).toBe(false);
+    expect(validerQuantite('-2').ok).toBe(false);
+    expect(validerQuantite('1').ok).toBe(true);
+    expect(validerQuantite('1.234,5', 'heure').valeur).toBe(1234.5);
+    const enorme = validerQuantite('999999', 'jour');
+    expect(enorme.ok).toBe(false);
+    expect(enorme.message).toMatch(/maximum/);
+  });
+  it('rejette une journée de 30 h, un brut négatif ou 1e9, des mois négatifs', () => {
+    const h = validerHeuresJour('30');
+    expect(h.ok).toBe(false);
+    expect(h.message).toMatch(/24 h/);
+    expect(validerHeuresJour('10,5').valeur).toBe(10.5);
+    expect(validerHeuresJour('abc').ok).toBe(false);
+    const neg = validerBrut('-20');
+    expect(neg.ok).toBe(false);
+    expect(neg.message).toMatch(/négatif/);
+    const grand = validerBrut('1e9');
+    expect(grand.ok).toBe(false);
+    expect(grand.message).toMatch(/100 000/);
+    expect(validerBrut('1.234,56').valeur).toBe(1234.56);
+    expect(validerBrut('').ok).toBe(true);
+    const mois = validerMois('-1');
+    expect(mois.ok).toBe(false);
+    expect(mois.message).toMatch(/négative/);
+    expect(validerMois('abc').ok).toBe(false);
+    expect(validerMois('1,5').valeur).toBe(1.5);
+  });
+  it('une saisie SMIC illisible ne remplace pas la valeur précédente', () => {
+    const r = validerSaisieParam('abc', BORNES.smic);
+    expect(r.ok).toBe(false);
+    expect(r.message).toMatch(/ancienne valeur/);
+    const d = appliquerSurcharges(data, { smic: null, cotisations: { at_mp: { patronal: null } } });
+    expect(d.cotisations.smic_horaire_brut.valeur).toBe(data.cotisations.smic_horaire_brut.valeur);
+    expect(d.cotisations.lignes.find((l) => l.code === 'at_mp').patronal).toBe(1.19);
+    expect(d.cotisations.smic_horaire_brut.source).toMatch(/insee\.fr/);
+    expect(d.cotisations.smic_horaire_brut.reference).toMatch(/Journal officiel/);
+  });
+  it('borne un écart de pourcentage absurde et écrit les mois en français', () => {
+    expect(formatEcartPct(244277692.7)).toBe('> +999 %');
+    expect(formatEcartPct(-14.5)).toBe('-14,5 %');
+    expect(formatDateFr('2026-10-09')).toBe('9 octobre 2026');
+    const lignes = fraisFixes(data, 'movinmotion', { ...REGLAGES_DEFAUT, mois: 1.5, formule: 'basic' });
+    expect(lignes[0].libelle).toContain('1,5 mois');
+    expect(lignes[0].libelle).not.toMatch(/1\.5/);
+    expect(formatFrNombre(1.5)).toBe('1,5');
+  });
+  it('changer d’unité garde une durée saisie et met à jour la durée nominale', () => {
+    expect(dureeApresChangementUnite('10', 8, 7)).toBe('10');
+    expect(dureeApresChangementUnite('8', 8, 7)).toBe('7');
+    expect(dureeApresChangementUnite('', 8, 8)).toBe('8');
+    const suivant = conserverSaisie(
+      { quantite: '3', heuresParJour: '10', demande: { montant: '500', mode: 'total' }, heures: { nuit: '2' }, statutForce: true, statut: { categorie: 'artiste', cadre: true } },
+      { convention: '2642', quantite: '1', heuresParJour: '', demande: { montant: '', mode: 'total' }, heures: { nuit: '' }, statut: { categorie: 'technicien', cadre: false } },
+    );
+    expect(suivant.convention).toBe('2642');
+    expect(suivant.quantite).toBe('3');
+    expect(suivant.heuresParJour).toBe('10');
+    expect(suivant.demande.montant).toBe('500');
+    expect(suivant.heures.nuit).toBe('2');
+    expect(suivant.statut.categorie).toBe('artiste');
+  });
+});
+
+describe('Synthèse du devis', () => {
+  const t1 = base('3097_pub', '1er assistant opérateur', { unite: 'minimum_journee_8h', heuresParJour: 8 });
+  const danse = { convention: '1285', posteId: poste('1285', 'cachet représentation'), unite: 'cachet_palier', quantite: 1, representations: 1, heures: { nuit: 2 }, majoPct: { nuit: '' }, statut: { categorie: 'artiste', cadre: false } };
+
+  it('heures de nuit sans taux (1285) : avertissement, pas de +0 %', () => {
+    const m = calculerMinimum(data, danse);
+    expect(m.majorations.some((x) => /nuit/i.test(x.libelle))).toBe(false);
+    expect(m.avertissements.join(' ')).toMatch(/heures de nuit/);
+    expect(m.avertissements.join(' ')).not.toMatch(/\+0/);
+  });
+  it('artistes + techniciens + abonnement = total, et les frais par ligne ont leur ligne', () => {
+    const d = calculerDevis(data, [t1, danse], { ...REGLAGES_DEFAUT, mois: 1.5 });
+    const t = d.totaux;
+    expect(t.artistes + t.techniciens + t.fixes).toBe(t.coutTotal);
+    expect(t.coutEmployeur + t.fraisLignes + t.fixes).toBe(t.coutTotal);
+    const recap = lignesRecapDevis(d);
+    const libs = recap.detail.map(([lib]) => lib);
+    expect(libs).toContain("Frais d'intermédiaire par ligne");
+    expect(libs).toContain('Abonnement et frais fixes');
+    expect(recap.visibles.map(([lib]) => lib)).toEqual(['Brut', 'Coût employeur', 'Frais']);
+    const csv = devisCSV(d);
+    expect(csv).toContain("Frais d'intermédiaire par ligne");
+    expect(csv).toContain('Abonnement et frais fixes');
+    expect(csv).toContain('1,5 mois');
+    expect(csv).toContain('Montant brut proposé');
   });
 });

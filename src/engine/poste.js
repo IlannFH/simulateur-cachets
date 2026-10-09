@@ -114,14 +114,24 @@ export function calculerMinimum(data, poste) {
 
   if (majorationsSaisies(conv)) {
     const P = poste.majoPct || {};
-    const manque = (k, h) => n0(h) > 0 && (P[k] === '' || P[k] == null);
-    if (['sup', 'nuit', 'dimanche', 'ferie'].some((k) => manque(k, k === 'ferie' ? n0(H.ferie) + n0(H.premierMai) : H[k]))) {
-      avertissements.push('Majorations non trouvées pour cette convention : renseignez les taux (%).');
+    const noms = { sup: 'heures supplémentaires', nuit: 'heures de nuit', dimanche: 'heures de dimanche', ferie: 'heures de jour férié' };
+    const saisies = [
+      ['sup', n0(H.sup), (pct) => [`Heures supplémentaires (+${pct} %)`, 1 + pct / 100, false]],
+      ['nuit', n0(H.nuit), (pct) => [`Heures de nuit (+${pct} %)`, pct / 100, true]],
+      ['dimanche', n0(H.dimanche), (pct) => [`Heures du dimanche (+${pct} %)`, pct / 100, true]],
+      ['ferie', n0(H.ferie) + n0(H.premierMai), (pct) => [`Heures de jour férié (+${pct} %)`, pct / 100, true]],
+    ];
+    const manquants = [];
+    for (const [k, h, make] of saisies) {
+      if (!(h > 0)) continue;
+      // Taux vide : on n'affiche pas « +0 % », qui ressemble à un taux publié.
+      if (P[k] === '' || P[k] == null) { manquants.push(noms[k]); continue; }
+      const [lib, mult, supplement] = make(n0(P[k]));
+      ajoute(lib, h, mult, supplement);
     }
-    ajoute(`Heures supplémentaires (+${n0(P.sup)} %)`, n0(H.sup), 1 + n0(P.sup) / 100, false);
-    ajoute(`Heures de nuit (+${n0(P.nuit)} %)`, n0(H.nuit), n0(P.nuit) / 100);
-    ajoute(`Heures du dimanche (+${n0(P.dimanche)} %)`, n0(H.dimanche), n0(P.dimanche) / 100);
-    ajoute(`Heures de jour férié (+${n0(P.ferie)} %)`, n0(H.ferie) + n0(H.premierMai), n0(P.ferie) / 100);
+    if (manquants.length) {
+      avertissements.push(`Majoration non chiffrée (${manquants.join(', ')}) : cette convention ne publie pas le taux. Indiquez le pourcentage, sinon ces heures comptent pour 0 €.`);
+    }
   } else {
     const cap = m.plafond_cumul_conventionnel ?? Infinity;
     const c = (s) => Math.min(s, cap);

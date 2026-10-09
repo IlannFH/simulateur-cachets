@@ -1,5 +1,5 @@
 // Ligne complète (minimum → brut → cotisations → intermédiaire) et devis d'équipe.
-import { toCents, mul, pctOf, roundInt, formatEuros } from './money.js';
+import { toCents, mul, pctOf, roundInt, formatEuros, formatFrNombre } from './money.js';
 import { calculerMinimum, comparerDemande } from './poste.js';
 import { calculerCotisations } from './cotisations.js';
 
@@ -69,9 +69,9 @@ export function fraisFixes(data, optionId, reglages) {
   const ab = o.abonnement_mensuel_ht;
   if (ab && typeof ab === 'object') {
     const prix = ab[reglages.formule];
-    if (prix) lignes.push({ libelle: `Abonnement ${o.nom.split(' (')[0]} ${reglages.formule === 'premium' ? 'Premium' : 'Basic'} × ${mois} mois`, montant: mul(toCents(prix), mois) });
+    if (prix) lignes.push({ libelle: `Abonnement ${o.nom.split(' (')[0]} ${reglages.formule === 'premium' ? 'Premium' : 'Basic'} × ${formatFrNombre(mois)} mois`, montant: mul(toCents(prix), mois) });
   } else if (typeof ab === 'number' && ab > 0) {
-    lignes.push({ libelle: `Abonnement ${o.nom} × ${mois} mois`, montant: mul(toCents(ab), mois) });
+    lignes.push({ libelle: `Abonnement ${o.nom} × ${formatFrNombre(mois)} mois`, montant: mul(toCents(ab), mois) });
   }
   if (reglages.premiereInscription && o.frais_dossier_credits) {
     const v = reglages.valeurCredit ?? o.valeur_credit_ht?.defaut;
@@ -195,4 +195,34 @@ export function calculerDevis(data, postes, reglages = REGLAGES_DEFAUT) {
   t.frais = t.fraisLignes + t.fixes;
   t.coutTotal = t.coutEmployeur + t.frais;
   return { lignes, fixes, totaux: t };
+}
+
+/**
+ * Lignes de synthèse communes au web, au PDF et au CSV.
+ * Artistes + techniciens + abonnement = coût total.
+ * Coût employeur + frais par ligne + abonnement = coût total.
+ */
+export function lignesRecapDevis(devis) {
+  const t = devis.totaux;
+  const detail = [
+    ['Sous-total artistes', t.artistes],
+    ['Sous-total techniciens', t.techniciens],
+    ['Abonnement et frais fixes', t.fixes],
+    ['Total brut', t.brut],
+    ['Total cotisations patronales', t.patronal],
+    ['Coût employeur', t.coutEmployeur],
+    ["Frais d'intermédiaire par ligne", t.fraisLignes],
+    ...devis.fixes.map((f) => [f.libelle, f.montant]),
+    ["Total frais d'intermédiaire HT", t.frais],
+  ];
+  if (t.tva) detail.push(['TVA sur frais (non comprise)', t.tva]);
+  detail.push(["Coût total de l'équipe", t.coutTotal]);
+  return {
+    visibles: [
+      ['Brut', t.brut],
+      ['Coût employeur', t.coutEmployeur],
+      ['Frais', t.frais],
+    ],
+    detail,
+  };
 }

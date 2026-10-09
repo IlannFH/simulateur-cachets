@@ -47,7 +47,20 @@ export function calculerCotisations(data, o) {
     if (code === 'retraite_t2_cadre') return { cents: Math.max(0, Math.min(b, plafT2) - plafT1), txt: `T2 (${C.plafonds_2026.plafond_journalier_intermittent_cadre_T1} à ${P.plafond_journalier_T2} €/j)` };
     if (code === 'apec') return { cents: Math.min(b, plafT2), txt: `T1 + T2` };
     if (code === 'urssaf_vieillesse_plaf_artiste') return { cents: Math.min(b, plafVieillesse), txt: `plafonnée (${P.plafond_vieillesse_artiste_jour} €/j × ${jours} j)` };
+    // Assurance vieillesse technicien, taux plein 2026 (les taux artiste en sont 70 %).
+    // Part plafonnée : plafond journalier de la sécurité sociale (arrêté du 22/12/2025).
+    // Le plafond appliqué aux techniciens est à confirmer par un gestionnaire de paie :
+    // un cachet peut suivre le plafond de 360 €, et non le plafond journalier de 220 €.
+    if (code === 'urssaf_vieillesse_plaf_technicien') {
+      const capJour = Number(P.plafond_ss_journalier) * 100;
+      return { cents: Math.min(b, capJour * jours), txt: `plafonnée (plafond SS ${P.plafond_ss_journalier} €/j × ${jours} j) — plafond à confirmer par un gestionnaire de paie` };
+    }
+    if (code === 'urssaf_vieillesse_deplaf_technicien') return { cents: b, txt: 'totalité du brut' };
     if (code === 'urssaf_fnal_artiste') return { cents: mul(Math.min(b, plafVieillesse), P.fnal_majoration_assiette), txt: `plafonnée × ${String(P.fnal_majoration_assiette).replace('.', ',')}` };
+    // Retraite complémentaire non-cadre : le taux T1 reste appliqué à tout le brut.
+    // Le partager au-dessus du plafond n'est pas faisable proprement : l'exemple Audiens
+    // 2026 (400 €, artiste non cadre, 1 jour) applique ce taux à l'intégralité du brut,
+    // et les sources ne publient pas de taux T2 non-cadre distinct.
     return { cents: b, txt: b === brut ? 'brut' : `brut après abattement ${abat} %` };
   };
 
