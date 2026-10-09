@@ -411,15 +411,31 @@ function dureeParcours(poste) {
     heuresNominales: u?.heures || (u?.kind === 'jour' ? 8 : 0),
   });
 }
-function htmlReco(reco) {
-  if (!reco?.phrase) return '';
-  return `<aside class="ma-reco" id="ma-reco"><p class="tag">Ma reco</p><p>${esc(reco.phrase)}</p><p>${esc(reco.chiffres)}</p></aside>`;
+function regleGrille() {
+  const aHeure = unitesCourantes().some((u) => u.kind === 'heure' && !u.nonTrouve);
+  return E.phraseSansHoraire({
+    typeProjet: state.parcours.typeProjet,
+    convention: state.parcours.convention,
+    aHeure,
+  });
+}
+function htmlReco(reco, regle) {
+  if (!reco?.phrase && !regle) return '';
+  const corps = reco?.phrase
+    ? `<p class="tag">Ma reco</p><p>${esc(reco.phrase)}</p><p>${esc(reco.chiffres)}</p>`
+    : '';
+  const ligne = regle ? `<p class="reco-regle">${esc(regle)}</p>` : '';
+  return `<aside class="ma-reco" id="ma-reco">${corps}${ligne}</aside>`;
 }
 function htmlResume(args, bilan) {
   const { reco, ...reste } = args;
   const visible = E.texteResume(reste);
   const copie = reco ? E.texteResume({ ...reste, reco }) : visible;
-  const lignes = bilan ? E.lignesCalcul(DATA, bilan, state.reglages, { grille: args.projet || '' }) : [];
+  const lignes = bilan ? E.lignesCalcul(DATA, bilan, state.reglages, {
+    grille: args.projet || '',
+    typeProjet: state.parcours.typeProjet,
+    convention: state.parcours.convention || bilan.ligne?.poste?.convention,
+  }) : [];
   const open = state.parcours.calculOuvert ? 'open' : '';
   const detail = lignes.length
     ? `<details id="calcul" ${open}><summary>Comment c'est calculé</summary><div class="calcul">${lignes.map((l) => `<p>${esc(l)}</p>`).join('')}</div></details>`
@@ -462,7 +478,7 @@ function htmlChiffres() {
     let h = sous
       ? verdictKo('Pas possible', `Minimum nécessaire : ${E.formatEuros(L.min.minimumCents)}`)
       : verdictOk('');
-    h += htmlReco(reco);
+    h += htmlReco(reco, regleGrille());
     h += htmlResume({
       qui, projet, duree, mode: 'brut', possible: !sous,
       brutMinimumCents: L.min.minimumCents,
@@ -483,7 +499,7 @@ function htmlChiffres() {
     totalCents: bilan.totalCents,
   });
   let h = figure(E.formatEuros(bilan.ligne.min.minimumCents), 'Minimum');
-  h += htmlReco(recoMetier);
+  h += htmlReco(recoMetier, regleGrille());
   h += htmlResume({
     qui, projet, duree, mode: 'metier', possible: true,
     brutCents: bilan.ligne.brutCents,
@@ -549,8 +565,7 @@ function htmlSolutions() {
     const reduit = o.reduit?.texte ? `<p class="reduit">${esc(o.reduit.texte)}</p>` : '';
     return `<article class="sol ${o.possible ? 'ok' : 'ko'}${o.recommande ? ' reco' : ''}">${o.recommande ? '<p class="tag">Recommandé</p>' : ''}<h3>${esc(o.nom)}</h3><p class="lbl">${esc(o.uniteLabel)} · ${esc(libelleStatut(o.statut))}</p>${ligne}${reduit}</article>`;
   }).join('');
-  const note = s.note ? `<p class="note">${esc(s.note)}</p>` : '';
-  return `${top}${htmlReco(s.reco)}${resume}${note}<div class="sols">${cards}</div>${htmlComparaison(s.intermediaires)}`;
+  return `${top}${htmlReco(s.reco, s.note)}${resume}<div class="sols">${cards}</div>${htmlComparaison(s.intermediaires)}`;
 }
 function htmlDetail() {
   const c = DATA.conventions[state.parcours.convention];

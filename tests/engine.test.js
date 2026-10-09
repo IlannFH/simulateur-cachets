@@ -9,7 +9,7 @@ import {
   dureeApresChangementUnite, conserverSaisie,
   analyserPhrase, indexerMetiers, typesDisponibles, solutionsBudget, famillesDe, labelType,
   texteResume, bilanPoste, lignesCalcul, quiResume, dureeResume, comparerIntermediaires,
-  recoDepuisLigne,
+  recoDepuisLigne, LIGNE_CLIP, LIGNE_DEMI_PIGE, phraseSansHoraire,
 } from '../src/engine/index.js';
 
 const data = JSON.parse(readFileSync(new URL('../data/simulateur_data.json', import.meta.url), 'utf8'));
@@ -590,7 +590,8 @@ describe('Solutions de budget', () => {
     const mins = s.options.map((o) => o.budgetMinimum);
     expect([...mins].sort((a, b) => a - b)).toEqual(mins);
     expect(s.minimumHt).toBe(mins[0]);
-    expect(s.note).toMatch(/journée/);
+    expect(s.note).toBe(LIGNE_CLIP);
+    expect(s.note).not.toMatch(/indivisible/);
   });
 
   it('un gros budget recommande le grade de base en journée 8 h, pas le chef', () => {
@@ -646,7 +647,28 @@ describe('Solutions de budget', () => {
     const lignes = lignesCalcul(data, b, REGLAGES_DEFAUT, { grille: 'Clip' });
     expect(lignes.at(-1)).toContain('Total HT');
     expect(lignes.join(' ')).toMatch(/14 crédits de bulletin/);
-    expect(texte).not.toMatch(/Cotisations|crédits/);
+    expect(lignes.join(' ')).toMatch(/Demi-pige \?/);
+    expect(lignes.join(' ')).toContain(LIGNE_DEMI_PIGE);
+    expect(texte).not.toMatch(/Cotisations|crédits|Demi-pige/);
+  });
+
+  it('2642 : journée de référence 8 h, vidéomusiques en fiction, le cinéma reste à 7 h', () => {
+    const av = data.conventions['2642'].majorations;
+    expect(av.journee_min_heures).toBe(8);
+    expect(av.journee).toMatch(/8 h/);
+    expect(av.journee).toMatch(/VI\.8\.4/);
+    expect(av.journee).toMatch(/art\. 34/);
+    expect(av.note).toBe('Vidéomusiques = fiction (avenant 19).');
+    expect(av.source).toEqual(expect.arrayContaining([
+      'https://lma-asso.fr/salaires-et-conventions',
+      'https://www.uspa.fr/storage/wsm_medias/240416-avenant-18-signe.pdf',
+    ]));
+    expect(data.conventions['3097_cinema'].majorations.journee_min_heures).toBe(7);
+    expect(phraseSansHoraire({ typeProjet: 'pub', convention: '3097_pub', aHeure: false })).toMatch(/Pas de tarif horaire/);
+    expect(phraseSansHoraire({ typeProjet: 'clip', convention: '2642', aHeure: true })).toBe('');
+    const pub = solutionsBudget(data, { jobs, famille: 'elec', typeProjet: 'pub', budgetEuros: 5000, heures: 8, kind: 'heure' });
+    expect(pub.note).toMatch(/Pas de tarif horaire ni de demi-journée/);
+    expect(pub.note).not.toMatch(/IV\.2\.1/);
   });
 
   it('réduit les heures seulement quand un taux horaire est publié', () => {
