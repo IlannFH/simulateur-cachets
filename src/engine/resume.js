@@ -52,7 +52,11 @@ export function eurosSaisi(montant) {
 
 const tauxTxt = (n) => `${String(n).replace('.', ',')} %`;
 
-export const LIGNE_CLIP = 'Clip : pas de tarif horaire ni de demi-journée pour les techniciens. Contrat ≤ 4 jours : minimum par jour = salaire semaine 39 h ÷ 4,5 (art. IV.2.1), même pour 4 h de travail.';
+export const LIGNE_CLIP = 'Clip : pas de tarif horaire pour les techniciens. Contrat ≤ 4 jours : journée de 7 h = semaine 35 h ÷ 4,5, et ce plancher tient aussi en dessous de 7 h ; journée de 8 h = semaine 39 h ÷ 4,5 (art. IV.2.1). Au-delà de 8 h : heures supplémentaires (art. VI.8.4).';
+
+export const LIGNE_JOUR_2642 = "Journée isolée, contrat de 4 jours au plus (art. IV.2.1) : 7 h = semaine de 35 h ÷ 4,5, et ce plancher tient en dessous de 7 h ; 8 h = semaine de 39 h ÷ 4,5. Au-delà de 8 h : heures supplémentaires (art. VI.8.4). Grille USPA, avenant 22 du 30 juin 2025, minima au 1er juillet 2025. Pas de revalorisation salariale en 2026. Pas d'arrêté d'extension de l'avenant 22 trouvé. http://directeursdepostprod.com/wp-content/uploads/2025/11/pav-salaires-mini-1er-juillet-2025-vdef.pdf";
+
+export const LIGNE_COTISATIONS_TECH = "Cotisations patronales 2026 : Audiens (congés spectacles 15,5 % jusqu'au 31/03/2027, retraite, prévoyance, médecine du travail Thalie 0,42 %, AFDAS 2,1 %, chômage annexes 8 et 10) et URSSAF (maladie 13 %, allocations familiales 5,25 %, vieillesse, FNAL 0,10 % sous 50 salariés, contribution solidarité autonomie, réduction générale, SMIC de la formule gelé à 12,02 €, décret n° 2026-509). Le versement mobilité n'est pas inclus : il dépend de la commune de l'établissement. L'accident du travail reprend l'exemple Audiens à 1,19 %, à remplacer par le taux notifié.";
 
 export const LIGNE_ARTISTE_2642 = "Artiste : la journée n'est pas fractionnable (art. 5.1). Émission chorégraphique : 6 h de travail effectif au plus (art. 5.14.4). Le salaire horaire de base (journée ÷ 9) sert aux heures sup et à la nuit, pas à descendre sous le minimum journalier.";
 
@@ -259,6 +263,8 @@ export function lignesCalcul(data, bilan, reglages = REGLAGES_DEFAUT, ctx = {}) 
     out.push(`Ces ${formatFrNombre(tauxBulletin)} crédits de bulletin couvrent la paie, le bulletin, l'AEM, les congés spectacles et la DSN.`);
     out.push(phraseDpae(o, L));
   }
+  if (L.statut?.categorie === 'technicien' && (ctx.convention || L.poste?.convention) === '2642') out.push(LIGNE_JOUR_2642);
+  if (L.statut?.categorie === 'technicien') out.push(LIGNE_COTISATIONS_TECH);
   out.push(L.statut?.categorie === 'artiste' ? LIGNE_FRANCE_TRAVAIL_ARTISTE : LIGNE_FRANCE_TRAVAIL_TECH);
   out.push(`Total HT : ${euros(bilan.totalCents)}.`);
   return out;

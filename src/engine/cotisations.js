@@ -21,8 +21,19 @@ export function sApplique(applique_a, statut, idcc) {
 
 /**
  * Calcule les cotisations d'une ligne.
- * o : { brutCents, statut: {categorie, cadre}, idcc, jours, abattementPct?, rgduPct? }
+ * o : { brutCents, statut: {categorie, cadre}, idcc, jours, heures?, abattementPct?, rgduPct? }
  */
+
+/** Coefficient RGDU 2026, arrondi à 4 décimales. 0 au-delà de 3 SMIC de la période. */
+export function coefficientRgdu(brutEuros, heures, p) {
+  if (!(heures > 0) || !(brutEuros > 0)) return 0;
+  const smic = Number(p.rgdu_smic_horaire) * heures;
+  const inner = 0.5 * ((3 * smic) / brutEuros - 1);
+  if (!(inner > 0)) return 0;
+  const raw = Number(p.rgdu_t_min) + Number(p.rgdu_t_delta) * Math.pow(inner, Number(p.rgdu_p));
+  const cap = Number(p.rgdu_t_max);
+  return Math.round(Math.min(raw, cap) * 10000) / 10000;
+}
 export function calculerCotisations(data, o) {
   const C = data.cotisations;
   const P = C.parametres_calcul;
@@ -57,6 +68,11 @@ export function calculerCotisations(data, o) {
     }
     if (code === 'urssaf_vieillesse_deplaf_technicien') return { cents: b, txt: 'totalité du brut' };
     if (code === 'urssaf_fnal_artiste') return { cents: mul(Math.min(b, plafVieillesse), P.fnal_majoration_assiette), txt: `plafonnée × ${String(P.fnal_majoration_assiette).replace('.', ',')}` };
+    // FNAL < 50 salariés : 0,10 % de l'assiette plafonnée au plafond journalier, majorée de 11,5 %.
+    if (code === 'urssaf_fnal_technicien') {
+      const cap = Number(P.plafond_ss_journalier) * 100 * jours;
+      return { cents: mul(Math.min(b, cap), P.fnal_majoration_assiette), txt: `plafonnée × ${String(P.fnal_majoration_assiette).replace('.', ',')}` };
+    }
     // Retraite complémentaire non-cadre : le taux T1 reste appliqué à tout le brut.
     // Le partager au-dessus du plafond n'est pas faisable proprement : l'exemple Audiens
     // 2026 (400 €, artiste non cadre, 1 jour) applique ce taux à l'intégralité du brut,
@@ -86,10 +102,29 @@ export function calculerCotisations(data, o) {
     }
   }
 
-  // Réduction générale (RGDU), saisie à la main, désactivée par défaut
+  // Réduction générale. Une saisie manuelle remplace le calcul. Sinon, technicien non cadre seulement.
   if (o.rgduPct) {
     const r = -pctOf(brut, o.rgduPct);
     lignes.push({ code: 'rgdu', libelle: `Réduction générale saisie (${o.rgduPct} % du brut)`, assiette: brut, assietteTxt: 'brut', tauxPatronal: -Number(o.rgduPct), tauxSalarial: 0, patronal: r, salarial: 0, verifie: false, nonTrouve: false });
+  } else if (o.statut?.categorie === 'technicien' && !o.statut?.cadre && Number(o.heures) > 0) {
+    const coef = coefficientRgdu(brut / 100, Number(o.heures), P);
+    if (coef > 0) {
+      const pct = Math.round(coef * 10000) / 100;
+      lignes.push({
+        code: 'rgdu',
+        libelle: `Réduction générale, coefficient ${String(coef).replace('.', ',')}, URSSAF 2026, moins de 50 salariés`,
+        assiette: brut,
+        assietteTxt: 'brut',
+        tauxPatronal: -pct,
+        tauxSalarial: 0,
+        patronal: -mul(brut, coef),
+        salarial: 0,
+        verifie: true,
+        nonTrouve: false,
+        note: 'SMIC de la formule gelé à 12,02 € (décret n° 2026-509).',
+        source: 'https://www.urssaf.fr/accueil/employeur/beneficier-exonerations/reduction-generale-cotisation.html',
+      });
+    }
   }
 
   const patronal = lignes.reduce((s, l) => s + l.patronal, 0);

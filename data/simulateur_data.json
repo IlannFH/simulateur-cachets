@@ -27,7 +27,10 @@
    "SVP_2026_SMA": "https://www.sma-syndicat.org/docs-conventions/ccn-svp-nao-2026-nouveaux-salaires-applicables-au-1er-septembre-2026/",
    "AUDIENS": "https://www.audiens.org/files/live/sites/siteAudiens/files/03_documents/entreprise/Fiches-techniques/Parametres-et-taux-2026.pdf",
    "AUDIENS_WC": "https://www.audiens.org/files/live/sites/siteAudiens/files/06_medias/entreprise/Webconferences/Web-conf-Audiens-Nouveautes-reglementaires-2026.pdf",
-   "ARTCENA": "https://www.artcena.fr/precis-juridique/etudes/paie-et-cotisations/cotisations-et-contributions-sociales"
+   "ARTCENA": "https://www.artcena.fr/precis-juridique/etudes/paie-et-cotisations/cotisations-et-contributions-sociales",
+   "USPA_2642_FICTION_2025": "http://directeursdepostprod.com/wp-content/uploads/2025/11/pav-salaires-mini-1er-juillet-2025-vdef.pdf",
+   "AVENANT_22_2642": "https://www.uspa.fr/storage/wsm_medias/ccn-pav-signature-avenant-n02223-1751533778.pdf",
+   "URSSAF_RGDU_2026": "https://www.urssaf.fr/accueil/employeur/beneficier-exonerations/reduction-generale-cotisation.html"
   }
  },
  "conventions": {
@@ -785,10 +788,10 @@
   "2642": {
    "nom": "Production audiovisuelle (clips, séries, émissions, contenus)",
    "idcc": "2642",
-   "date_effet": "Minima en vigueur depuis le 01/07/2025 (avenant 17 : +2,2 %/+1 % fiction ; +1 % flux/doc) – aucune revalorisation depuis ; grille SNTPCT publiée 07/2026.",
+   "date_effet": "Grille avenant 22 du 30/06/2025, minima au 01/07/2025 (avenant 17 : +2,2 % jusqu'à 1 100 € par semaine de 35 h en fiction, +1 % au-delà). Pas de revalorisation salariale en 2026. Pas d'arrêté d'extension de l'avenant 22 trouvé.",
    "majorations": {
     "journee_min_heures": 8,
-    "journee": "Journée de référence 8 h (heures supplémentaires au-delà de 8 h, art. VI.8.4). La journée de 7 h est celle du cinéma (art. 34), pas de l'audiovisuel. Engagement ≤ 4 jours : semaine 39 h ÷ 4,5 (art. IV.2.1).",
+    "journee": "Heures supplémentaires au-delà de 8 h (art. VI.8.4). Contrat de 4 jours au plus : journée de 7 h = semaine 35 h ÷ 4,5, journée de 8 h = semaine 39 h ÷ 4,5 (art. IV.2.1). En dessous de 7 h, le plancher reste la journée de 7 h. La journée de 7 h du cinéma est l'art. 34 de l'IDCC 3097.",
     "hebdo_36_43": 0.25,
     "hebdo_44_plus": 0.5,
     "hebdo_48_plus_ouvriers": 1.0,
@@ -803,9 +806,11 @@
      "https://sntpct.fr/wp-content/uploads/2026/09/SNTPCT_salaires_mini_Prod_AV_01-07-2026-reevalues-par-le-sntpct-2026.pdf",
      "https://lma-asso.fr/salaires-et-conventions",
      "https://www.uspa.fr/storage/wsm_medias/240416-avenant-18-signe.pdf",
-     "https://sntpct.fr/2026/07/03/une-disposition-conventionnelle-qui-doit-sappliquer-telle-quelle-est-ecrite-et-pas-autrement/"
+     "https://sntpct.fr/2026/07/03/une-disposition-conventionnelle-qui-doit-sappliquer-telle-quelle-est-ecrite-et-pas-autrement/",
+     "http://directeursdepostprod.com/wp-content/uploads/2025/11/pav-salaires-mini-1er-juillet-2025-vdef.pdf",
+     "https://www.uspa.fr/storage/wsm_medias/ccn-pav-signature-avenant-n02223-1751533778.pdf"
     ],
-    "note": "Vidéomusiques = fiction (avenant 19)."
+    "note": "Vidéomusiques = fiction (avenant 19). La colonne 7 h est la semaine de 35 h ÷ 4,5, la colonne 8 h est la semaine de 39 h ÷ 4,5."
    },
    "lignes": [
     {
@@ -829,6 +834,7 @@
      "genre": "Fiction / documentaire",
      "minimum_semaine_35h": 1201.13,
      "minimum_semaine_39h": 1372.72,
+     "minimum_journee_7h": 266.92,
      "minimum_journee_8h": 305.05,
      "note": "Colonne « minima garantis » (pas la revendication SNTPCT). Journée (≤4 j) = hebdo 39 h / 4,5."
     },
@@ -841,6 +847,7 @@
      "genre": "Fiction / documentaire",
      "minimum_semaine_35h": 922.46,
      "minimum_semaine_39h": 1054.24,
+     "minimum_journee_7h": 204.99,
      "minimum_journee_8h": 234.27,
      "note": "Colonne « minima garantis » (pas la revendication SNTPCT). Journée (≤4 j) = hebdo 39 h / 4,5."
     },
@@ -853,6 +860,7 @@
      "genre": "Fiction / documentaire",
      "minimum_semaine_35h": 1114.66,
      "minimum_semaine_39h": 1273.9,
+     "minimum_journee_7h": 247.7,
      "minimum_journee_8h": 283.09,
      "note": "Colonne « minima garantis » (pas la revendication SNTPCT). Journée (≤4 j) = hebdo 39 h / 4,5."
     },
@@ -865,6 +873,7 @@
      "genre": "Fiction / documentaire",
      "minimum_semaine_35h": 2241.51,
      "minimum_semaine_39h": 2561.72,
+     "minimum_journee_7h": 498.11,
      "minimum_journee_8h": 569.27,
      "note": "Colonne « minima garantis » (pas la revendication SNTPCT). Journée (≤4 j) = hebdo 39 h / 4,5."
     },
@@ -877,6 +886,7 @@
      "genre": "Fiction / documentaire",
      "minimum_semaine_35h": 1201.13,
      "minimum_semaine_39h": 1372.72,
+     "minimum_journee_7h": 266.92,
      "minimum_journee_8h": 305.05,
      "note": "Colonne « minima garantis » (pas la revendication SNTPCT). Journée (≤4 j) = hebdo 39 h / 4,5."
     },
@@ -889,6 +899,7 @@
      "genre": "Fiction / documentaire",
      "minimum_semaine_35h": 2270.94,
      "minimum_semaine_39h": 2595.36,
+     "minimum_journee_7h": 504.65,
      "minimum_journee_8h": 576.75,
      "note": "Colonne « minima garantis » (pas la revendication SNTPCT). Journée (≤4 j) = hebdo 39 h / 4,5."
     },
@@ -901,6 +912,7 @@
      "genre": "Fiction / documentaire",
      "minimum_semaine_35h": 1426.42,
      "minimum_semaine_39h": 1630.19,
+     "minimum_journee_7h": 316.98,
      "minimum_journee_8h": 362.27,
      "note": "Colonne « minima garantis » (pas la revendication SNTPCT). Journée (≤4 j) = hebdo 39 h / 4,5."
     },
@@ -913,6 +925,7 @@
      "genre": "Fiction / documentaire",
      "minimum_semaine_35h": 1134.43,
      "minimum_semaine_39h": 1296.5,
+     "minimum_journee_7h": 252.1,
      "minimum_journee_8h": 288.11,
      "note": "Colonne « minima garantis » (pas la revendication SNTPCT). Journée (≤4 j) = hebdo 39 h / 4,5."
     },
@@ -925,6 +938,7 @@
      "genre": "Fiction / documentaire",
      "minimum_semaine_35h": 1011.45,
      "minimum_semaine_39h": 1155.94,
+     "minimum_journee_7h": 224.77,
      "minimum_journee_8h": 256.88,
      "note": "Colonne « minima garantis » (pas la revendication SNTPCT). Journée (≤4 j) = hebdo 39 h / 4,5."
     },
@@ -937,20 +951,22 @@
      "genre": "Fiction / documentaire",
      "minimum_semaine_35h": 1011.45,
      "minimum_semaine_39h": 1155.94,
-     "minimum_journee_8h": 229.56,
-     "note": "Colonne « minima garantis » (pas la revendication SNTPCT). Journée (≤4 j) = hebdo 39 h / 4,5. Journalier publié ≠ hebdo/4,5 (256,88) : anomalie de la source, à vérifier"
+     "minimum_journee_7h": 224.77,
+     "minimum_journee_8h": 256.88,
+     "note": "Grille USPA, avenant 22, 01/07/2025 : même minima que le chef électricien. Journée 8 h = 1 155,94 ÷ 4,5 = 256,88 €. Le montant 229,56 € était une autre fonction."
     },
     {
      "categorie": "Technicien",
      "departement": "Électriciens / machinistes",
      "metier": "Électricien / éclairagiste",
-     "source": "https://sntpct.fr/wp-content/uploads/2026/09/SNTPCT_salaires_mini_Prod_AV_01-07-2026-reevalues-par-le-sntpct-2026.pdf",
+     "source": "http://directeursdepostprod.com/wp-content/uploads/2025/11/pav-salaires-mini-1er-juillet-2025-vdef.pdf",
      "date_effet": "01/07/2025",
      "genre": "Fiction / documentaire",
      "minimum_semaine_35h": 829.85,
      "minimum_semaine_39h": 948.4,
+     "minimum_journee_7h": 184.41,
      "minimum_journee_8h": 210.76,
-     "note": "Colonne « minima garantis » (pas la revendication SNTPCT). Journée (≤4 j) = hebdo 39 h / 4,5."
+     "note": "Filière D, niveau V. Les vidéomusiques sont dans la grille fiction. Avenant 22 du 30/06/2025 : semaine 35 h 829,85 €, semaine 39 h 948,40 €, journée 7 h 184,41 €, journée 8 h 210,76 €. Pas de revalorisation 2026. Pas d'arrêté d'extension de l'avenant 22 trouvé."
     },
     {
      "categorie": "Technicien",
@@ -961,6 +977,7 @@
      "genre": "Fiction / documentaire",
      "minimum_semaine_35h": 829.85,
      "minimum_semaine_39h": 948.4,
+     "minimum_journee_7h": 184.41,
      "minimum_journee_8h": 210.76,
      "note": "Colonne « minima garantis » (pas la revendication SNTPCT). Journée (≤4 j) = hebdo 39 h / 4,5."
     },
@@ -973,6 +990,7 @@
      "genre": "Fiction / documentaire",
      "minimum_semaine_35h": 1578.11,
      "minimum_semaine_39h": 1803.55,
+     "minimum_journee_7h": 350.69,
      "minimum_journee_8h": 400.79,
      "note": "Colonne « minima garantis » (pas la revendication SNTPCT). Journée (≤4 j) = hebdo 39 h / 4,5."
     },
@@ -985,6 +1003,7 @@
      "genre": "Fiction / documentaire",
      "minimum_semaine_35h": 1093.23,
      "minimum_semaine_39h": 1249.41,
+     "minimum_journee_7h": 242.94,
      "minimum_journee_8h": 277.65,
      "note": "Colonne « minima garantis » (pas la revendication SNTPCT). Journée (≤4 j) = hebdo 39 h / 4,5."
     },
@@ -997,6 +1016,7 @@
      "genre": "Fiction / documentaire",
      "minimum_semaine_35h": 916.45,
      "minimum_semaine_39h": 1047.37,
+     "minimum_journee_7h": 203.66,
      "minimum_journee_8h": 232.75,
      "note": "Colonne « minima garantis » (pas la revendication SNTPCT). Journée (≤4 j) = hebdo 39 h / 4,5."
     },
@@ -1009,6 +1029,7 @@
      "genre": "Fiction / documentaire",
      "minimum_semaine_35h": 1121.6,
      "minimum_semaine_39h": 1281.82,
+     "minimum_journee_7h": 249.24,
      "minimum_journee_8h": 284.85,
      "note": "Colonne « minima garantis » (pas la revendication SNTPCT). Journée (≤4 j) = hebdo 39 h / 4,5."
     },
@@ -1021,6 +1042,7 @@
      "genre": "Fiction / documentaire",
      "minimum_semaine_35h": 916.45,
      "minimum_semaine_39h": 1047.37,
+     "minimum_journee_7h": 203.66,
      "minimum_journee_8h": 232.75,
      "note": "Colonne « minima garantis » (pas la revendication SNTPCT). Journée (≤4 j) = hebdo 39 h / 4,5."
     },
@@ -1033,6 +1055,7 @@
      "genre": "Fiction / documentaire",
      "minimum_semaine_35h": 822.64,
      "minimum_semaine_39h": 940.16,
+     "minimum_journee_7h": 182.81,
      "minimum_journee_8h": 208.92,
      "note": "Colonne « minima garantis » (pas la revendication SNTPCT). Journée (≤4 j) = hebdo 39 h / 4,5."
     },
@@ -1045,6 +1068,7 @@
      "genre": "Fiction / documentaire",
      "minimum_semaine_35h": 916.45,
      "minimum_semaine_39h": 1047.37,
+     "minimum_journee_7h": 203.66,
      "minimum_journee_8h": 232.75,
      "note": "Colonne « minima garantis » (pas la revendication SNTPCT). Journée (≤4 j) = hebdo 39 h / 4,5."
     },
@@ -1057,6 +1081,7 @@
      "genre": "Fiction / documentaire",
      "minimum_semaine_35h": 1124.37,
      "minimum_semaine_39h": 1285.0,
+     "minimum_journee_7h": 249.86,
      "minimum_journee_8h": 285.56,
      "note": "Colonne « minima garantis » (pas la revendication SNTPCT). Journée (≤4 j) = hebdo 39 h / 4,5."
     },
@@ -1069,6 +1094,7 @@
      "genre": "Fiction / documentaire",
      "minimum_semaine_35h": 715.59,
      "minimum_semaine_39h": 817.82,
+     "minimum_journee_7h": 159.02,
      "minimum_journee_8h": 181.74,
      "note": "Colonne « minima garantis » (pas la revendication SNTPCT). Journée (≤4 j) = hebdo 39 h / 4,5."
     },
@@ -1081,6 +1107,7 @@
      "genre": "Fiction / documentaire",
      "minimum_semaine_35h": 1261.13,
      "minimum_semaine_39h": 1441.29,
+     "minimum_journee_7h": 280.25,
      "minimum_journee_8h": 320.29,
      "note": "Colonne « minima garantis » (pas la revendication SNTPCT). Journée (≤4 j) = hebdo 39 h / 4,5."
     },
@@ -1093,6 +1120,7 @@
      "genre": "Fiction / documentaire",
      "minimum_semaine_35h": 986.19,
      "minimum_semaine_39h": 1127.08,
+     "minimum_journee_7h": 219.15,
      "minimum_journee_8h": 250.46,
      "note": "Colonne « minima garantis » (pas la revendication SNTPCT). Journée (≤4 j) = hebdo 39 h / 4,5."
     },
@@ -1105,6 +1133,7 @@
      "genre": "Fiction / documentaire",
      "minimum_semaine_35h": 1361.89,
      "minimum_semaine_39h": 1556.44,
+     "minimum_journee_7h": 302.64,
      "minimum_journee_8h": 340.76,
      "note": "Colonne « minima garantis » (pas la revendication SNTPCT). Journée (≤4 j) = hebdo 39 h / 4,5."
     },
@@ -1117,6 +1146,7 @@
      "genre": "Flux (émissions TV)",
      "minimum_semaine_35h": 1661.1,
      "minimum_semaine_39h": 1898.4,
+     "minimum_journee_7h": 369.13,
      "minimum_journee_8h": 379.68,
      "note": "Colonne « minima garantis »."
     },
@@ -1129,6 +1159,7 @@
      "genre": "Flux (émissions TV)",
      "minimum_semaine_35h": 957.89,
      "minimum_semaine_39h": 1094.73,
+     "minimum_journee_7h": 212.86,
      "minimum_journee_8h": 243.27,
      "note": "Colonne « minima garantis »."
     },
@@ -1141,6 +1172,7 @@
      "genre": "Flux (émissions TV)",
      "minimum_semaine_35h": 957.89,
      "minimum_semaine_39h": 1094.73,
+     "minimum_journee_7h": 212.86,
      "minimum_journee_8h": 243.27,
      "note": "Colonne « minima garantis »."
     },
@@ -1153,6 +1185,7 @@
      "genre": "Flux (émissions TV)",
      "minimum_semaine_35h": 1524.67,
      "minimum_semaine_39h": 1742.49,
+     "minimum_journee_7h": 338.82,
      "minimum_journee_8h": 387.22,
      "note": "Colonne « minima garantis »."
     },
@@ -1165,6 +1198,7 @@
      "genre": "Flux (émissions TV)",
      "minimum_semaine_35h": 957.89,
      "minimum_semaine_39h": 1094.73,
+     "minimum_journee_7h": 212.86,
      "minimum_journee_8h": 243.27,
      "note": "Colonne « minima garantis »."
     },
@@ -1177,6 +1211,7 @@
      "genre": "Flux (émissions TV)",
      "minimum_semaine_35h": 957.89,
      "minimum_semaine_39h": 1094.73,
+     "minimum_journee_7h": 212.86,
      "minimum_journee_8h": 238.48,
      "note": "Colonne « minima garantis »."
     },
@@ -1189,6 +1224,7 @@
      "genre": "Flux (émissions TV)",
      "minimum_semaine_35h": 1258.1,
      "minimum_semaine_39h": 1437.83,
+     "minimum_journee_7h": 279.58,
      "minimum_journee_8h": 319.52,
      "note": "Colonne « minima garantis »."
     },
@@ -1201,6 +1237,7 @@
      "genre": "Flux (émissions TV)",
      "minimum_semaine_35h": 1119.66,
      "minimum_semaine_39h": 1279.61,
+     "minimum_journee_7h": 248.81,
      "minimum_journee_8h": 284.36,
      "note": "Colonne « minima garantis »."
     },
@@ -1213,6 +1250,7 @@
      "genre": "Flux (émissions TV)",
      "minimum_semaine_35h": 984.95,
      "minimum_semaine_39h": 1125.65,
+     "minimum_journee_7h": 218.88,
      "minimum_journee_8h": 250.15,
      "note": "Colonne « minima garantis »."
     },
@@ -1225,6 +1263,7 @@
      "genre": "Flux (émissions TV)",
      "minimum_semaine_35h": 984.95,
      "minimum_semaine_39h": 1125.65,
+     "minimum_journee_7h": 218.88,
      "minimum_journee_8h": 250.15,
      "note": "Colonne « minima garantis »."
     },
@@ -1237,8 +1276,9 @@
      "genre": "Flux (émissions TV)",
      "minimum_semaine_35h": 808.11,
      "minimum_semaine_39h": 923.55,
-     "minimum_journee_8h": 232.45,
-     "note": "Colonne « minima garantis ». Journalier publié incohérent avec hebdo/4,5 (205,23) : à vérifier"
+     "minimum_journee_7h": 179.58,
+     "minimum_journee_8h": 205.23,
+     "note": "Grille flux, niveau V : semaine 35 h 808,11 €, semaine 39 h 923,55 €, journée 7 h 179,58 €, journée 8 h 205,23 € (923,55 ÷ 4,5)."
     },
     {
      "categorie": "Technicien",
@@ -1249,6 +1289,7 @@
      "genre": "Flux (émissions TV)",
      "minimum_semaine_35h": 800.11,
      "minimum_semaine_39h": 914.41,
+     "minimum_journee_7h": 177.8,
      "minimum_journee_8h": 203.2,
      "note": "Colonne « minima garantis »."
     },
@@ -1261,6 +1302,7 @@
      "genre": "Flux (émissions TV)",
      "minimum_semaine_35h": 1206.8,
      "minimum_semaine_39h": 1379.2,
+     "minimum_journee_7h": 268.18,
      "minimum_journee_8h": 306.49,
      "note": "Colonne « minima garantis »."
     },
@@ -1273,6 +1315,7 @@
      "genre": "Flux (émissions TV)",
      "minimum_semaine_35h": 710.9,
      "minimum_semaine_39h": 812.46,
+     "minimum_journee_7h": 157.98,
      "minimum_journee_8h": 180.55,
      "note": "Colonne « minima garantis »."
     },
@@ -1285,6 +1328,7 @@
      "genre": "Flux (émissions TV)",
      "minimum_semaine_35h": 710.9,
      "minimum_semaine_39h": 812.46,
+     "minimum_journee_7h": 157.98,
      "minimum_journee_8h": 180.55,
      "note": "Colonne « minima garantis »."
     },
@@ -1297,6 +1341,7 @@
      "genre": "Flux (émissions TV)",
      "minimum_semaine_35h": 880.2,
      "minimum_semaine_39h": 1005.95,
+     "minimum_journee_7h": 195.6,
      "minimum_journee_8h": 223.54,
      "note": "Colonne « minima garantis »."
     },
@@ -1309,6 +1354,7 @@
      "genre": "Flux (émissions TV)",
      "minimum_semaine_35h": 801.08,
      "minimum_semaine_39h": 915.52,
+     "minimum_journee_7h": 178.02,
      "minimum_journee_8h": 203.45,
      "note": "Colonne « minima garantis »."
     },
@@ -1321,6 +1367,7 @@
      "genre": "Flux (émissions TV)",
      "minimum_semaine_35h": 890.09,
      "minimum_semaine_39h": 1017.25,
+     "minimum_journee_7h": 197.8,
      "minimum_journee_8h": 226.06,
      "note": "Colonne « minima garantis »."
     },
@@ -1333,6 +1380,7 @@
      "genre": "Flux (émissions TV)",
      "minimum_semaine_35h": 936.93,
      "minimum_semaine_39h": 1070.78,
+     "minimum_journee_7h": 208.21,
      "minimum_journee_8h": 237.95,
      "note": "Colonne « minima garantis »."
     },
@@ -1345,6 +1393,7 @@
      "genre": "Flux (émissions TV)",
      "minimum_semaine_35h": 1121.96,
      "minimum_semaine_39h": 1282.24,
+     "minimum_journee_7h": 249.32,
      "minimum_journee_8h": 284.94,
      "note": "Colonne « minima garantis »."
     },
@@ -2147,9 +2196,9 @@
     "patronal": 13.0,
     "salarial": 0,
     "applique_a": "technicien",
-    "verifie": false,
-    "note": "7 % si rémunération < 2,25 SMIC (règle 2026, Audiens) ; taux 13 % issu d'ARTCENA 2022 – À VÉRIFIER",
-    "source": "https://www.artcena.fr/precis-juridique/etudes/paie-et-cotisations/cotisations-et-contributions-sociales"
+    "verifie": true,
+    "note": "13 % au 01/01/2026. Le taux réduit de 7 % sous 2,25 SMIC a été supprimé et remplacé par la réduction générale dégressive unique. Exemple Audiens 2026, technicien : 13 %.",
+    "source": "https://www.audiens.org/files/live/sites/siteAudiens/files/06_medias/entreprise/Webconferences/Web-conf-Audiens-Nouveautes-reglementaires-2026.pdf"
    },
    {
     "code": "urssaf_af_technicien",
@@ -2157,9 +2206,9 @@
     "patronal": 5.25,
     "salarial": 0,
     "applique_a": "technicien",
-    "verifie": false,
-    "note": "3,45 % si < 3,3 SMIC ; ARTCENA 2022 – À VÉRIFIER",
-    "source": "https://www.artcena.fr/precis-juridique/etudes/paie-et-cotisations/cotisations-et-contributions-sociales"
+    "verifie": true,
+    "note": "5,25 % au 01/01/2026. Le taux réduit de 3,45 % sous 3,3 SMIC a été supprimé et remplacé par la réduction générale dégressive unique.",
+    "source": "https://www.audiens.org/files/live/sites/siteAudiens/files/06_medias/entreprise/Webconferences/Web-conf-Audiens-Nouveautes-reglementaires-2026.pdf"
    },
    {
     "code": "urssaf_vieillesse_plaf_technicien",
@@ -2183,13 +2232,13 @@
    },
    {
     "code": "urssaf_fnal_technicien",
-    "libelle": "FNAL – technicien (< 50 sal.)",
+    "libelle": "FNAL – technicien (< 50 sal., assiette plafonnée majorée 11,5 %)",
     "patronal": 0.1,
     "salarial": 0,
     "applique_a": "technicien",
-    "verifie": false,
-    "note": "ARTCENA 2022 – À VÉRIFIER",
-    "source": "https://www.artcena.fr/precis-juridique/etudes/paie-et-cotisations/cotisations-et-contributions-sociales"
+    "verifie": true,
+    "note": "0,10 % sous 50 salariés, assiette plafonnée majorée de 11,5 %, comme l'exemple Audiens. Le taux de 0,50 % (50 salariés et plus) n'est pas appliqué.",
+    "source": "https://www.audiens.org/files/live/sites/siteAudiens/files/06_medias/entreprise/Webconferences/Web-conf-Audiens-Nouveautes-reglementaires-2026.pdf"
    },
    {
     "code": "csg_crds",
@@ -2214,13 +2263,18 @@
    }
   ],
   "reductions": {
-   "note": "Réduction générale dégressive unique (RGDU) 2026 et abattement pour frais professionnels : NON modélisés par défaut (option désactivée, à vérifier)."
+   "note": "Réduction générale dégressive unique 2026 appliquée aux techniciens non cadres (entreprises de moins de 50 salariés). Les artistes, aux taux spécifiques, n'y ont pas droit. L'abattement pour frais professionnels reste une option. Le versement mobilité n'est pas inclus : il dépend de la commune de l'établissement."
   },
   "parametres_calcul": {
-   "_note": "Paramètres de calcul ajoutés pour le simulateur (éditables dans la page Paramètres). plafond_ss_journalier : arrêté du 22 décembre 2025 (JO du 23 décembre 2025), valeur journalière 220 €. Le plafond appliqué aux techniciens est à confirmer par un gestionnaire de paie.",
+   "_note": "Paramètres de calcul ajoutés pour le simulateur (éditables dans la page Paramètres). plafond_ss_journalier : arrêté du 22 décembre 2025 (JO du 23 décembre 2025), valeur journalière 220 €. Le plafond appliqué aux techniciens est à confirmer par un gestionnaire de paie. RGDU 2026 : SMIC horaire gelé à 12,02 € (décret n° 2026-509), Tmin 0,0200, Tdelta 0,3781 (FNAL 0,10 %), plafond du coefficient 0,3981, puissance 1,75.",
    "plafond_journalier_T2": 1540,
    "plafond_vieillesse_artiste_jour": 360,
    "plafond_ss_journalier": 220,
+   "rgdu_smic_horaire": 12.02,
+   "rgdu_t_min": 0.02,
+   "rgdu_t_delta": 0.3781,
+   "rgdu_t_max": 0.3981,
+   "rgdu_p": 1.75,
    "fnal_majoration_assiette": 1.115,
    "csg_assiette_pct": 98.25,
    "heures_mensuelles": 151.67,

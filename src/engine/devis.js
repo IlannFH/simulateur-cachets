@@ -177,7 +177,8 @@ export function calculerLigne(data, poste, reglages = REGLAGES_DEFAUT) {
   // Une ligne enregistrée ou dupliquée ne peut pas garder une catégorie contraire au métier.
   const statut = statutPourMetier(min.entree, poste.statut);
   const jours = Number(poste.jours) > 0 ? Number(poste.jours) : min.jours;
-  const cot = calculerCotisations(data, { brutCents, statut, idcc: min.conv.idcc, jours, abattementPct: poste.abattementPct, rgduPct: poste.rgduPct });
+  const heures = (min.heuresNominales || 0) * (min.quantite || 1);
+  const cot = calculerCotisations(data, { brutCents, statut, idcc: min.conv.idcc, jours, heures, abattementPct: poste.abattementPct, rgduPct: poste.rgduPct });
   const intermediaire = poste.intermediaire || reglages.intermediaire;
   const frais = fraisIntermediaire(data, intermediaire, {
     coutEmployeurCents: cot.coutEmployeur, convention: poste.convention,
