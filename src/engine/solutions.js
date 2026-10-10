@@ -312,6 +312,9 @@ export function solutionsBudget(data, opts = {}) {
     }
     const reduit = reduits.get(cleVar);
     for (const unite of unitesDecla(entree, conv)) {
+      // Au-dessus de 7 h, la colonne publiée est la journée de 8 h. À 7 h et en dessous, le plancher est la journée de 7 h.
+      if (unite.key === 'minimum_journee_7h' && Number(demande.heures) > 7) continue;
+      if (unite.key === 'minimum_journee_8h' && Number(demande.heures) > 0 && Number(demande.heures) <= 7) continue;
       const quantite = quantitePour(unite, demande);
       const poste = {
         convention: v.convention,

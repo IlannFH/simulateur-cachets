@@ -10,7 +10,7 @@ import {
   analyserPhrase, indexerMetiers, typesDisponibles, solutionsBudget, famillesDe, labelType,
   texteResume, bilanPoste, lignesCalcul, quiResume, dureeResume, comparerIntermediaires,
   recoDepuisLigne, LIGNE_CLIP, LIGNE_DEMI_PIGE, LIGNE_DEMI_ARTISTE, LIGNE_ARTISTE_2642,
-  LIGNE_ARTISTE_2121, LIGNE_DEMI_ARTISTE_2121,
+  LIGNE_ARTISTE_2121, LIGNE_DEMI_ARTISTE_2121, LIGNE_JOUR_2642, LIGNE_COTISATIONS_TECH,
   LIGNE_FRANCE_TRAVAIL_ARTISTE, LIGNE_FRANCE_TRAVAIL_TECH, phraseSansHoraire,
   dureeAuBrut, valeurUnitaire,
 } from '../src/engine/index.js';
@@ -797,7 +797,12 @@ describe('Solutions de budget', () => {
     expect(dureeResume(opt)).toBe('1 jour 8 h');
     expect(texte).toBe(`Élec · Clip · 1 jour 8 h — Pas possible avec 250 € HT. Minimum : coût employeur ${texte.split('coût employeur ')[1]}`);
     expect(texte).toMatch(/^Élec · Clip · 1 jour 8 h — Pas possible avec 250 € HT\. Minimum : coût employeur .+ €, coût total .+ € HT\. Brut .+ €, net .+ €\.$/);
-    expect(texte).toContain('Minimum : coût employeur 347,07 €, coût total 399,27 € HT. Brut 210,76 €, net 159,67 €.');
+    expect(texte).toContain('Minimum : coût employeur 338,75 €, coût total 390,95 € HT. Brut 210,76 €, net 159,67 €.');
+    expect(opt.brut).toBe(21076);
+    expect(opt.employeur).toBe(33875);
+    expect(opt.net).toBe(15967);
+    expect(opt.heuresNominales).toBe(8);
+    expect(s.options.every((o) => o.heuresNominales !== 7)).toBe(true);
     expect(s.options.every((o) => o.reduit == null)).toBe(true);
     const b = bilanPoste(data, opt.poste, REGLAGES_DEFAUT);
     expect(b.totalCents).toBe(opt.budgetMinimum);
@@ -809,6 +814,12 @@ describe('Solutions de budget', () => {
     expect(b.ligne.frais.credits).toBe(16);
     expect(lignes.join(' ')).toMatch(/Demi-pige \?/);
     expect(lignes.join(' ')).toContain(LIGNE_DEMI_PIGE);
+    expect(lignes).toContain(LIGNE_JOUR_2642);
+    expect(lignes).toContain(LIGNE_COTISATIONS_TECH);
+    expect(lignes.join(' ')).toMatch(/coefficient 0,0396/);
+    expect(lignes.join(' ')).toMatch(/Congés Spectacles : patronal 15,5 %/);
+    expect(lignes.at(-2)).toBe(LIGNE_FRANCE_TRAVAIL_TECH);
+    expect(lignes.at(-1)).toMatch(/^Total HT/);
     expect(texte).not.toMatch(/Cotisations|crédits|Demi-pige/);
   });
 
@@ -818,7 +829,7 @@ describe('Solutions de budget', () => {
     expect(av.journee).toMatch(/8 h/);
     expect(av.journee).toMatch(/VI\.8\.4/);
     expect(av.journee).toMatch(/art\. 34/);
-    expect(av.note).toBe('Vidéomusiques = fiction (avenant 19).');
+    expect(av.note).toBe('Vidéomusiques = fiction (avenant 19). La colonne 7 h est la semaine de 35 h ÷ 4,5, la colonne 8 h est la semaine de 39 h ÷ 4,5.');
     expect(av.source).toEqual(expect.arrayContaining([
       'https://lma-asso.fr/salaires-et-conventions',
       'https://www.uspa.fr/storage/wsm_medias/240416-avenant-18-signe.pdf',
@@ -833,6 +844,29 @@ describe('Solutions de budget', () => {
     const pub = solutionsBudget(data, { jobs, famille: 'elec', typeProjet: 'pub', budgetEuros: 5000, heures: 8, kind: 'heure' });
     expect(pub.note).toMatch(/Pas de tarif horaire ni de demi-journée/);
     expect(pub.note).not.toMatch(/IV\.2\.1/);
+  });
+
+  it('2642 électricien : 7 h = 184,41 €, 8 h = 210,76 €, réduction générale patronale seulement', () => {
+    const ligne = data.conventions['2642'].lignes.find((l) => l.metier === 'Électricien / éclairagiste' && l.genre === 'Fiction / documentaire');
+    expect(ligne.minimum_semaine_35h).toBe(829.85);
+    expect(ligne.minimum_semaine_39h).toBe(948.4);
+    expect(ligne.minimum_journee_7h).toBe(184.41);
+    expect(ligne.minimum_journee_8h).toBe(210.76);
+    const s7 = solutionsBudget(data, { jobs, famille: 'elec', typeProjet: 'clip', heures: 7, kind: 'heure', budgetEuros: 250 });
+    expect(s7.options[0].nom).toMatch(/éclairagiste/);
+    expect(s7.options[0].brut).toBe(18441);
+    expect(s7.options[0].employeur).toBe(29639);
+    expect(s7.options[0].net).toBe(13969);
+    expect(s7.options[0].budgetMinimum).toBe(34859);
+    expect(s7.options[0].heuresNominales).toBe(7);
+    expect(s7.options.every((o) => o.heuresNominales !== 8)).toBe(true);
+    const s4 = solutionsBudget(data, { jobs, famille: 'elec', typeProjet: 'clip', heures: 4, kind: 'heure', budgetEuros: 250 });
+    expect(s4.options[0].brut).toBe(18441);
+    expect(s4.options[0].heuresNominales).toBe(7);
+    const art = calculerCotisations(data, { brutCents: toCents(210.76), statut: { categorie: 'artiste', cadre: false }, idcc: 2642, jours: 1, heures: 8 });
+    expect(art.lignes.some((l) => l.code === 'rgdu')).toBe(false);
+    const sansHeures = calculerCotisations(data, { brutCents: toCents(210.76), statut: { categorie: 'technicien', cadre: false }, idcc: 2642, jours: 1 });
+    expect(sansHeures.lignes.some((l) => l.code === 'rgdu')).toBe(false);
   });
 
   it('réduit les heures seulement quand un taux horaire est publié', () => {
@@ -879,11 +913,11 @@ describe('Solutions de budget', () => {
   it('250 € pour un élec en clip : CulturePay, le moins cher au tarif public, sans heure inventée', () => {
     const s = solutionsBudget(data, { ...baseOpts, budgetEuros: 250 });
     expect(s.reco.id).toBe('culturepay');
-    expect(s.reco.total).toBe(36497);
+    expect(s.reco.total).toBe(35665);
     expect(s.reco.brut).toBe(21076);
     expect(s.reco.net).toBe(15967);
-    expect(s.reco.employeur).toBe(34707);
-    expect(s.reco.texte).toBe('Passe par CulturePay et monte à 364,97 € HT. Coût employeur 347,07 €, coût total 364,97 € HT. Brut 210,76 €, net 159,67 €.');
+    expect(s.reco.employeur).toBe(33875);
+    expect(s.reco.texte).toBe('Passe par CulturePay et monte à 356,65 € HT. Coût employeur 338,75 €, coût total 356,65 € HT. Brut 210,76 €, net 159,67 €.');
     expect(s.reco.texte).not.toMatch(/heure|GUSO|#DIESE|direct/i);
     const copie = texteResume({
       qui: 'Électricien / éclairagiste', projet: 'Clip', duree: '1 jour 8 h',
@@ -891,7 +925,7 @@ describe('Solutions de budget', () => {
       employeurCents: s.options[0].employeur, brutCents: s.options[0].brut, netCents: s.options[0].net,
       reco: s.reco.texte,
     });
-    expect(copie).toContain('Ma reco : Passe par CulturePay et monte à 364,97 € HT.');
+    expect(copie).toContain('Ma reco : Passe par CulturePay et monte à 356,65 € HT.');
     expect(copie).not.toMatch(/Cotisations|crédits/);
   });
 
@@ -900,7 +934,7 @@ describe('Solutions de budget', () => {
       ...baseOpts, budgetEuros: 250,
       reglages: { ...REGLAGES_DEFAUT, intermediaire: 'culturepay' },
     });
-    expect(s.reco.texte).toBe('Monte le budget à 364,97 € HT. Coût employeur 347,07 €, coût total 364,97 € HT. Brut 210,76 €, net 159,67 €.');
+    expect(s.reco.texte).toBe('Monte le budget à 356,65 € HT. Coût employeur 338,75 €, coût total 356,65 € HT. Brut 210,76 €, net 159,67 €.');
   });
 
   it('un budget qui passe confirme l’option, sans dire de monter', () => {
@@ -917,7 +951,7 @@ describe('Solutions de budget', () => {
     expect(s.options[0].possible).toBe(false);
     expect(s.reco.possible).toBe(true);
     expect(s.reco.id).toBe('culturepay');
-    expect(s.reco.texte).toBe('Passe par CulturePay. Coût employeur 352,10 €, coût total 370,00 € HT. Brut 213,83 €, net 161,98 €.');
+    expect(s.reco.texte).toBe('Passe par CulturePay. Coût employeur 352,10 €, coût total 370,00 € HT. Brut 218,48 €, net 165,50 €.');
   });
 
   it('raccourcit seulement quand la grille publie l’heure', () => {
@@ -942,9 +976,9 @@ describe('Solutions de budget', () => {
   it('un brut sous le minimum dit de le monter, un métier confirme la ligne', () => {
     const bas = recoDepuisLigne({
       nom: 'Électricien / éclairagiste', duree: '1 jour 8 h', sousMinimum: true,
-      brutMinimumCents: 21076, employeurCents: 34707, brutCents: 21076, netCents: 15967, totalCents: 34707,
+      brutMinimumCents: 21076, employeurCents: 33875, brutCents: 21076, netCents: 15967, totalCents: 33875,
     });
-    expect(bas.texte).toBe('Monte le brut à 210,76 €. Coût employeur 347,07 €, coût total 347,07 € HT. Brut 210,76 €, net 159,67 €.');
+    expect(bas.texte).toBe('Monte le brut à 210,76 €. Coût employeur 338,75 €, coût total 338,75 € HT. Brut 210,76 €, net 159,67 €.');
     const ok = recoDepuisLigne({
       nom: 'Électricien / éclairagiste', duree: '1 jour 8 h', sousMinimum: false,
       employeurCents: 62399, brutCents: 40000, netCents: 31207, totalCents: 62399,
@@ -1015,6 +1049,10 @@ describe('Solutions de budget', () => {
     const lignesTech = lignesCalcul(data, bilanPoste(data, elec, REGLAGES_DEFAUT), REGLAGES_DEFAUT, { typeProjet: 'clip', convention: '2642' });
     expect(lignesTech.at(-2)).toBe(LIGNE_FRANCE_TRAVAIL_TECH);
     expect(lignesTech).toContain(LIGNE_DEMI_PIGE);
+    expect(lignesTech).toContain(LIGNE_JOUR_2642);
+    expect(lignesTech).toContain(LIGNE_COTISATIONS_TECH);
+    expect(lignesArt.join('\n')).not.toContain(LIGNE_COTISATIONS_TECH);
+    expect(lignesClip.join('\n')).not.toContain(LIGNE_COTISATIONS_TECH);
     const texte = texteResume({
       qui: 'Danseur', projet: 'Clip', duree: '1 jour', mode: 'budget', possible: false, budgetEuros: 250,
       minimumCents: 1, employeurCents: 1, brutCents: 28923, netCents: 1,
