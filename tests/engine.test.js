@@ -862,11 +862,29 @@ describe('Solutions de budget', () => {
     expect(s7.options.every((o) => o.heuresNominales !== 8)).toBe(true);
     const s4 = solutionsBudget(data, { jobs, famille: 'elec', typeProjet: 'clip', heures: 4, kind: 'heure', budgetEuros: 250 });
     expect(s4.options[0].brut).toBe(18441);
+    expect(s4.options[0].employeur).toBe(29639);
+    expect(s4.options[0].budgetMinimum).toBe(34859);
     expect(s4.options[0].heuresNominales).toBe(7);
+    expect(s4.options[0].mention).toBe('Pour 4 h : minimum de la journée 7 h, 184,41 € brut');
+    expect(s4.options.every((o) => o.heuresNominales !== 8)).toBe(true);
+    expect(s4.options.every((o) => !/Journée 8 h/.test(o.uniteLabel))).toBe(true);
     const art = calculerCotisations(data, { brutCents: toCents(210.76), statut: { categorie: 'artiste', cadre: false }, idcc: 2642, jours: 1, heures: 8 });
     expect(art.lignes.some((l) => l.code === 'rgdu')).toBe(false);
     const sansHeures = calculerCotisations(data, { brutCents: toCents(210.76), statut: { categorie: 'technicien', cadre: false }, idcc: 2642, jours: 1 });
     expect(sansHeures.lignes.some((l) => l.code === 'rgdu')).toBe(false);
+  });
+
+  it('2642 sans durée : journée de 7 h, avec le montant de la journée de 8 h', () => {
+    const s = solutionsBudget(data, { jobs, famille: 'elec', typeProjet: 'clip', budgetEuros: 250 });
+    expect(s.options[0].nom).toMatch(/éclairagiste/);
+    expect(s.options[0].heuresNominales).toBe(7);
+    expect(s.options[0].brut).toBe(18441);
+    expect(s.options[0].mention).toBe('Sans durée : journée de 7 h. 8 h = 210,76 € brut');
+    expect(s.options.every((o) => o.heuresNominales !== 8)).toBe(true);
+    const b = bilanPoste(data, s.options[0].poste, REGLAGES_DEFAUT);
+    const lignes = lignesCalcul(data, b, REGLAGES_DEFAUT, { convention: '2642', mention: s.options[0].mention });
+    expect(lignes).toContain('Sans durée : journée de 7 h. 8 h = 210,76 € brut');
+    expect(lignes.at(-2)).toBe(LIGNE_FRANCE_TRAVAIL_TECH);
   });
 
   it('réduit les heures seulement quand un taux horaire est publié', () => {

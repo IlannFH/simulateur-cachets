@@ -93,6 +93,23 @@ export function phraseSansHoraire({ typeProjet = '', convention = '', aHeure = f
   return '';
 }
 
+/**
+ * Technicien 2642 : sous 7 h, le plancher est la journée de 7 h.
+ * Sans durée, la journée affichée est aussi celle de 7 h, avec le montant de la journée de 8 h.
+ */
+export function mentionJour2642({ convention = '', categorie = '', heures = null, uniteKey = '', minimumCents = 0, jour8Cents = 0 } = {}) {
+  if (String(convention) !== '2642' || categorie === 'artiste') return '';
+  if (uniteKey !== 'minimum_journee_7h') return '';
+  const h = Number(heures);
+  if (h > 0 && h < 7 && minimumCents > 0) {
+    return `Pour ${formatFrNombre(h)} h : minimum de la journée 7 h, ${euros(minimumCents)} brut`;
+  }
+  if (!(h > 0) && jour8Cents > 0) {
+    return `Sans durée : journée de 7 h. 8 h = ${euros(jour8Cents)} brut`;
+  }
+  return '';
+}
+
 export function ligneDemiPige({ typeProjet = '', convention = '', categorie = '' } = {}) {
   if (categorie === 'artiste') {
     if (convention === '2121' || typeProjet === 'clip') return LIGNE_DEMI_ARTISTE_2121;
@@ -240,6 +257,7 @@ export function lignesCalcul(data, bilan, reglages = REGLAGES_DEFAUT, ctx = {}) 
   const grille = ctx.grille ? `grille ${ctx.grille}, ` : '';
   const out = [];
   out.push(`Minimum conventionnel : ${euros(L.min.minimumCents)} (${grille}${unite} × ${qte}).`);
+  if (ctx.mention) out.push(ctx.mention);
   const demi = ligneDemiPige({
     typeProjet: ctx.typeProjet,
     convention: ctx.convention || L.poste?.convention,

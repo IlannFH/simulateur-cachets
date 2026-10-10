@@ -3,7 +3,7 @@ import { calculerLigne, convertirBudget, fraisFixes, REGLAGES_DEFAUT } from './d
 import { categorieStatut, statutPourMetier, trouverPoste, unitesDisponibles, valeurUnitaire } from './catalogue.js';
 import { correspondType, indexerMetiers, typeParId } from './metiers.js';
 import { formatEuros, formatFrNombre, toCents } from './money.js';
-import { dureeResume, phraseSansHoraire } from './resume.js';
+import { dureeResume, mentionJour2642, phraseSansHoraire } from './resume.js';
 
 const euros = (cents) => formatEuros(cents).replace(/[\u202f\u00a0]/g, ' ');
 const HORAIRES = new Set(['horaire_grille', 'horaire_jauge', 'taux_horaire_calcule']);
@@ -311,10 +311,14 @@ export function solutionsBudget(data, opts = {}) {
       }, reglages, budget, cible));
     }
     const reduit = reduits.get(cleVar);
+    const plancher7 = v.convention === '2642' && st.categorie === 'technicien' && entree.ligne.minimum_journee_7h != null;
     for (const unite of unitesDecla(entree, conv)) {
+      const hDem = Number(demande.heures);
       // Au-dessus de 7 h, la colonne publiée est la journée de 8 h. À 7 h et en dessous, le plancher est la journée de 7 h.
-      if (unite.key === 'minimum_journee_7h' && Number(demande.heures) > 7) continue;
-      if (unite.key === 'minimum_journee_8h' && Number(demande.heures) > 0 && Number(demande.heures) <= 7) continue;
+      if (unite.key === 'minimum_journee_7h' && hDem > 7) continue;
+      if (unite.key === 'minimum_journee_8h' && hDem > 0 && hDem <= 7) continue;
+      // Sans durée, le technicien 2642 est chiffré sur la journée de 7 h.
+      if (plancher7 && unite.key === 'minimum_journee_8h' && !(hDem > 7)) continue;
       const quantite = quantitePour(unite, demande);
       const poste = {
         convention: v.convention,
@@ -369,6 +373,14 @@ export function solutionsBudget(data, opts = {}) {
         brut: r.possible ? r.brutCents : r.minimumCents,
         brutPlafond: r.brutCents,
         lecture,
+        mention: mentionJour2642({
+          convention: v.convention,
+          categorie: st.categorie,
+          heures: demande.heures,
+          uniteKey: unite.key,
+          minimumCents: r.minimumCents,
+          jour8Cents: entree.ligne.minimum_journee_8h != null ? toCents(entree.ligne.minimum_journee_8h) : 0,
+        }),
         net: r.netCents ?? null,
         employeur: r.employeurCents ?? null,
         total: r.possible && r.ligne ? r.ligne.coutTotal + r.fixesCents : r.budgetMinimum,

@@ -129,7 +129,12 @@ function lierPoste() {
   p.grille = v.grille || '2026';
   const us = unitesCourantes(entreeCourante());
   const kind = p.kindDemande;
-  const u = us.find((x) => x.kind === kind) || (kind === 'heure' ? us.find((x) => x.kind === 'jour') : null) || us[0];
+  const hDem = p.heuresDemandees ? E.parseInput(p.heuresDemandees) : null;
+  const j7 = us.find((x) => x.key === 'minimum_journee_7h' && !x.nonTrouve);
+  const j8 = us.find((x) => x.key === 'minimum_journee_8h' && !x.nonTrouve);
+  const tech2642 = p.convention === '2642' && p.statut !== 'artiste' && j7;
+  const u2642 = tech2642 ? (hDem > 7 ? (j8 || j7) : j7) : null;
+  const u = u2642 || us.find((x) => x.kind === kind) || (kind === 'heure' ? us.find((x) => x.kind === 'jour') : null) || us[0];
   p.unite = u?.key || null;
   if (kind === 'heure' && u?.kind === 'heure' && p.heuresDemandees) p.quantite = String(p.heuresDemandees);
   else if (kind === 'jour' && p.joursDemandes) p.quantite = String(p.joursDemandes);
@@ -478,6 +483,7 @@ function htmlResume(args, bilan) {
     grille: args.projet || '',
     typeProjet: state.parcours.typeProjet,
     convention: state.parcours.convention || bilan.ligne?.poste?.convention,
+    mention: args.mention || '',
   }) : [];
   const open = state.parcours.calculOuvert ? 'open' : '';
   const detail = lignes.length
@@ -493,6 +499,19 @@ function htmlComparaison(liste) {
   }).join('');
   const warns = [...new Set(liste.flatMap((x) => x.avertissements || []))].map((t) => `<p class="note">${esc(t)}</p>`).join('');
   return `<section class="cmp"><h3>Intermédiaires</h3><ul>${rows}</ul>${warns}</section>`;
+}
+function mentionDepuisParcours(minimumCents) {
+  const p = state.parcours;
+  const ligne = entreeCourante()?.ligne;
+  const u = uniteCourante();
+  return E.mentionJour2642({
+    convention: p.convention,
+    categorie: p.statut || statutCourant().categorie,
+    heures: p.heuresDemandees ? E.parseInput(p.heuresDemandees) : null,
+    uniteKey: u?.key || '',
+    minimumCents,
+    jour8Cents: ligne?.minimum_journee_8h != null ? E.toCents(ligne.minimum_journee_8h) : 0,
+  });
 }
 function htmlChiffres() {
   const aff = Object.values(erreursAffiner());
@@ -523,7 +542,9 @@ function htmlChiffres() {
     let h = sous
       ? verdictKo('Pas possible', `Minimum : coût employeur ${E.formatEuros(employeur)}, coût total ${E.formatEuros(bilan.totalCents)} HT`)
       : verdictOk('');
+    const mentionBrut = mentionDepuisParcours(L.min.minimumCents);
     h += htmlCouts(employeur, bilan.totalCents, bilan.ligne.brutCents, bilan.ligne.cot.net);
+    if (mentionBrut) h += `<p class="lecture">${esc(mentionBrut)}</p>`;
     h += htmlReco(reco, regleGrille());
     h += htmlResume({
       qui, projet, duree, mode: 'brut', possible: !sous,
@@ -533,6 +554,7 @@ function htmlChiffres() {
       netCents: bilan.ligne.cot.net,
       totalCents: bilan.totalCents,
       reco: reco.texte,
+      mention: mentionBrut,
     }, bilan);
     h += notesCalcul(sous ? bilan.ligne : L).map((t) => `<p class="note">${esc(t)}</p>`).join('');
     return h;
@@ -547,7 +569,9 @@ function htmlChiffres() {
     netCents: bilan.ligne.cot.net,
     totalCents: bilan.totalCents,
   });
+  const mentionMetier = mentionDepuisParcours(bilan.ligne.min.minimumCents);
   let h = htmlCouts(employeurMetier, bilan.totalCents, bilan.ligne.brutCents, bilan.ligne.cot.net);
+  if (mentionMetier) h += `<p class="lecture">${esc(mentionMetier)}</p>`;
   h += htmlReco(recoMetier, regleGrille());
   h += htmlResume({
     qui, projet, duree, mode: 'metier', possible: true,
@@ -556,6 +580,7 @@ function htmlChiffres() {
     netCents: bilan.ligne.cot.net,
     totalCents: bilan.totalCents,
     reco: recoMetier.texte,
+    mention: mentionMetier,
   }, bilan);
   h += notesCalcul(bilan.ligne).map((t) => `<p class="note">${esc(t)}</p>`).join('');
   return h;
@@ -600,7 +625,7 @@ function htmlSolutions() {
   const qui = E.quiResume(p.metierCle ? '' : p.famille, p.metierCle ? (jobCourant()?.nom || opt.nom) : '');
   const projet = E.labelType(p.typeProjet);
   const totalAffiche = opt.possible ? opt.total : opt.budgetMinimum;
-  const lecture = opt.lecture ? `<p class="lecture">${esc(opt.lecture)}</p>` : '';
+  const lecture = `${opt.mention ? `<p class="lecture">${esc(opt.mention)}</p>` : ''}${opt.lecture ? `<p class="lecture">${esc(opt.lecture)}</p>` : ''}`;
   const marque = `<p class="stat">${esc(marqueStatut(opt.statut.categorie, opt.convention))}</p>`;
   const top = opt.possible
     ? `${marque}${verdictOk(`${opt.nom} · ${opt.uniteLabel}`)}${htmlCouts(opt.employeur, totalAffiche, opt.brut, opt.net)}${lecture}`
@@ -614,13 +639,15 @@ function htmlSolutions() {
     netCents: opt.net,
     totalCents: opt.total,
     reco: s.reco?.texte,
+    mention: opt.mention,
   }, bilan);
   const cards = s.options.map((o) => {
     const totalCarte = o.possible ? o.total : o.budgetMinimum;
     const ligne = `<p class="cout-ligne">Coût employeur ${esc(E.formatEuros(o.employeur))}</p><p class="cout-ligne">Coût total ${esc(E.formatEuros(totalCarte))} HT</p><p class="secondaire">Brut ${esc(E.formatEuros(o.brut))}, net ${esc(E.formatEuros(o.net))}</p>${o.possible ? '<p class="ok-txt">Possible</p>' : '<p class="ko-txt">Pas possible</p>'}`;
+    const mention = o.mention ? `<p class="lecture">${esc(o.mention)}</p>` : '';
     const reduit = o.reduit?.texte ? `<p class="reduit">${esc(o.reduit.texte)}</p>` : '';
     const lu = o.lecture ? `<p class="lecture">${esc(o.lecture)}</p>` : '';
-    return `<article class="sol ${o.possible ? 'ok' : 'ko'}${o.recommande ? ' reco' : ''}">${o.recommande ? '<p class="tag">Recommandé</p>' : ''}<h3>${esc(o.nom)}</h3><p class="lbl">${esc(marqueStatut(o.statut.categorie, o.convention))}</p><p class="lbl">${esc(o.uniteLabel)}</p>${ligne}${lu}${reduit}</article>`;
+    return `<article class="sol ${o.possible ? 'ok' : 'ko'}${o.recommande ? ' reco' : ''}">${o.recommande ? '<p class="tag">Recommandé</p>' : ''}<h3>${esc(o.nom)}</h3><p class="lbl">${esc(marqueStatut(o.statut.categorie, o.convention))}</p><p class="lbl">${esc(o.uniteLabel)}</p>${ligne}${mention}${lu}${reduit}</article>`;
   }).join('');
   return `${top}${htmlReco(s.reco, s.note)}${resume}<div class="sols">${cards}</div>${htmlComparaison(s.intermediaires)}`;
 }
